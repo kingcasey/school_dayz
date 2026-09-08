@@ -104,8 +104,8 @@ day gets the column, so the coloured edges stay in line.
 
 **Section dividers carry down.** A row with a name and nothing else is a
 divider, and it sets both the left-edge colour and the default `Who` for the
-rows beneath it: *Parent Led* → ochre and *With an adult*, *Self-Paced* →
-periwinkle and *On her own*, *Rituals* → navy, *Activities* → plum. Trombone
+rows beneath it: *Parent Led* → ochre and *Instructor/parent-led*, *Self-Paced*
+→ periwinkle and *Independent*, *Rituals* → navy, *Activities* → plum. Trombone
 and STEM lab stay plum wherever you file them. So `Who` only needs filling in
 where a row differs from its section.
 
