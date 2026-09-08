@@ -16,6 +16,16 @@ Plain HTML/CSS/JS in `index.html`. No framework, no npm, no accounts for
 anyone viewing it. Views are linkable: `#today`, `#plan`, `#map`, `#reading`,
 `#wins`.
 
+## Where it runs
+
+Deployed from `main` on Vercel — every push republishes. There is no build
+step: the host serves `index.html` as-is, framework preset "Other", build
+command empty, output directory `./`. It is served from a custom subdomain,
+which is deliberately not written down here.
+
+GitHub Pages is still switched on for the old address, but is no longer the
+one that matters. If a Pages build fails, it is not the live site.
+
 ## Connecting it
 
 In the Sheet: **File › Share › Publish to web**, pick a tab, choose **CSV**,
