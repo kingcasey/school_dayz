@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>B — this week</title>
+<meta name="robots" content="noindex, nofollow">
+<title>B — school</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,13 +28,18 @@
      line-height:.95;margin-top:.15rem}
   .date{font-size:.95rem;color:var(--ink-soft);margin-top:.35rem}
 
-  .weekstep{display:flex;justify-content:space-between;gap:.5rem;margin-top:.8rem}
+  .weekstep{display:flex;justify-content:space-between;gap:.5rem;margin-top:.8rem;
+            align-items:center}
   .stepbtn{font-family:inherit;font-size:.85rem;font-weight:600;color:var(--navy);
     background:transparent;border:1.5px solid var(--rule);border-radius:.2rem;
     padding:.4rem .75rem;cursor:pointer}
   .stepbtn:hover:not(:disabled){border-color:var(--navy)}
   .stepbtn:disabled{opacity:.35;cursor:default}
   .stepbtn:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .jump{font-family:inherit;font-size:.85rem;font-weight:600;color:var(--ink);
+    background:transparent;border:1.5px solid var(--rule);border-radius:.2rem;
+    padding:.4rem .4rem;max-width:11rem;flex:1}
+  .jump:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
 
   .helper{margin:1rem 0 .2rem;border:1.5px solid var(--ink);border-radius:.2rem}
   .helper summary{cursor:pointer;list-style:none;padding:.7rem .85rem;font-weight:600;
@@ -47,13 +53,14 @@
 
   nav{position:sticky;top:0;z-index:10;background:var(--cream);padding:.85rem 0 .6rem;
       margin-top:1.1rem;border-bottom:1px solid var(--rule)}
-  .tabs{display:flex;gap:.4rem}
-  .tab{flex:1;font-family:inherit;font-size:.9rem;font-weight:600;padding:.55rem .2rem;
+  .tabs{display:flex;gap:.3rem}
+  .tab{flex:1;font-family:inherit;font-size:.82rem;font-weight:600;padding:.55rem .1rem;
        background:transparent;color:var(--ink-soft);border:1.5px solid transparent;
-       border-radius:.2rem;cursor:pointer}
+       border-radius:.2rem;cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
   .tab:hover{color:var(--ink)}
   .tab[aria-selected="true"]{background:var(--navy);color:var(--cream);border-color:var(--navy)}
   .tab:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  @media (max-width:23rem){ .tab{font-size:.74rem} }
 
   .standing{margin:1.1rem 0 .4rem;padding:.75rem .85rem;background:var(--cream-deep);
             border-radius:.2rem;font-size:.88rem}
@@ -62,17 +69,22 @@
   .day{padding-top:.4rem}
   .block{display:grid;grid-template-columns:3.6rem 1fr;gap:.75rem;padding:.85rem 0;
          border-bottom:1px solid var(--rule);align-items:start}
+  .block.notime{grid-template-columns:1fr;gap:0}
   .time{font-size:.82rem;font-weight:600;color:var(--ink-soft);padding-top:.15rem;
         font-variant-numeric:tabular-nums}
   .card{border-left:5px solid var(--edge,var(--rule));padding-left:.8rem}
   .row{display:flex;align-items:flex-start;gap:.6rem}
   .name{font-size:1.06rem;font-weight:600;letter-spacing:-.012em;flex:1}
-  .what{font-size:.9rem;color:var(--ink-soft);margin-top:.15rem}
-  .who{display:inline-block;margin-top:.4rem;font-size:.76rem;font-weight:600;
+  .what{font-size:.9rem;color:var(--ink-soft);margin-top:.15rem;white-space:pre-line}
+  .memo{font-size:.85rem;color:var(--ink-soft);font-style:italic;margin-top:.25rem}
+  .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+  .who{display:inline-block;font-size:.76rem;font-weight:600;
        padding:.13rem .45rem;border-radius:.15rem}
   .who.adult{background:var(--ochre);color:#fff}
   .who.own{background:var(--cream-deep);color:var(--ink-soft)}
   .who.dad{background:var(--plum);color:#fff}
+  .tag{display:inline-block;font-size:.76rem;font-weight:600;padding:.13rem .45rem;
+       border-radius:.15rem;border:1.5px solid var(--plum);color:var(--plum)}
 
   .check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:1.4rem;height:1.4rem;
          border:1.8px solid var(--ink);border-radius:.2rem;background:transparent;
@@ -92,6 +104,23 @@
   .evening h2{font-size:.9rem;font-weight:600;margin-bottom:.5rem}
   .evening p{font-size:.9rem;color:var(--ink-soft)}
 
+  .sect{margin:1.6rem 0 .1rem;padding-top:.5rem;font-size:.76rem;font-weight:600;
+        letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
+        border-top:1.5px solid var(--ink)}
+  .prow{padding:.75rem 0;border-bottom:1px solid var(--rule)}
+  .pname{font-size:1.04rem;font-weight:600;letter-spacing:-.012em}
+  .psrc{font-size:.76rem;font-weight:400;color:var(--ink-soft);margin-left:.4rem}
+  .quiet{margin-top:1.2rem;font-size:.82rem;color:var(--ink-soft)}
+
+  .empty{margin:1.4rem 0;padding:1.1rem;border:1.5px dashed var(--rule);border-radius:.2rem;
+         background:var(--cream-deep);font-size:.9rem;color:var(--ink-soft)}
+  .empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:.4rem;font-size:.98rem}
+  .empty p+p{margin-top:.55rem}
+  .empty ul{margin:.5rem 0 0 1.1rem}
+  .empty li{margin-top:.2rem}
+  .empty code{font-family:ui-monospace,monospace;font-size:.82rem;word-break:break-word;
+              color:var(--ink)}
+
   .error{margin:1.5rem 0;padding:1rem;border:2px solid #A32B1E;border-radius:.2rem;
          background:#F7DED9;font-size:.9rem;color:#231A12}
   .error b{display:block;margin-bottom:.4rem}
@@ -100,9 +129,9 @@
   .foot{margin-top:1.6rem;font-size:.8rem;color:var(--ink-soft)}
 
   @media print{
-    nav,.helper,.check,.weekstep,.stepbtn{display:none}
+    nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot{display:none}
     body{background:#fff}
-    .block{page-break-inside:avoid}
+    .block,.prow{page-break-inside:avoid}
   }
   @media (prefers-reduced-motion:no-preference){
     .day{animation:in .18s ease-out}
@@ -115,15 +144,12 @@
 
 <header>
   <div class="kicker" id="kicker"></div>
-  <h1>B's week</h1>
+  <h1 id="title">Today</h1>
   <div class="date" id="dates"></div>
-  <div class="weekstep">
-    <button class="stepbtn" id="prevWk" aria-label="Show the previous week">‹ Prev week</button>
-    <button class="stepbtn" id="nextWk" aria-label="Show the next week">Next week ›</button>
-  </div>
+  <div class="weekstep" id="stepper"></div>
 </header>
 
-<details class="helper">
+<details class="helper" id="helper">
   <summary>If you're helping today, read this</summary>
   <div class="body">
     <p>School runs <b>9:00 to 3:00</b>. The times are a guide, not a bell schedule — if something runs long, shift the rest.</p>
@@ -134,14 +160,10 @@
 </details>
 
 <nav>
-  <div class="tabs" role="tablist"></div>
+  <div class="tabs" id="viewtabs" role="tablist"></div>
 </nav>
 
-<div id="error"></div>
-<div id="reading" class="standing"></div>
-<div id="weeknote"></div>
-<div id="day" class="day"></div>
-<div id="evening"></div>
+<div id="view" class="day"></div>
 
 <p class="foot" id="foot"></p>
 
@@ -149,58 +171,170 @@
 
 <script>
 /* ==========================================================================
-   B — this week
-   The plan is read from a Google Sheet (the PLAN tab, published to the web as
-   CSV). Nothing here needs weekly editing — edit the Sheet, the page follows.
+   B — school
+   Every view reads a tab of one Google Sheet, published to the web as CSV.
+   Nothing here needs weekly editing — edit the Sheet, the page follows.
 
-   To connect the sheet: paste the published CSV link between the quotes below.
+   TO CONNECT:
+   In the Sheet: File > Share > Publish to web > pick the tab > CSV > Publish.
+   Google gives a link like
+     https://docs.google.com/spreadsheets/d/e/2PACX-1vABC.../pub?gid=123456&single=true&output=csv
+   The 2PACX-... part is the same for every tab — paste it into PUB_ID once.
+   The gid=... number is different per tab — paste each into GID below.
+   A tab left as "" is simply not connected yet; its view says so politely.
    ========================================================================== */
-const SHEET_CSV_URL = "";
+
+const PUB_ID = "2PACX-1vRMQiMoSlVIa7yXr-SqAOC7P9QiE4-98mXm6ZkM1dRjliLYUJeRG8ss41op_URx1K57AyHWvy8UL5zO";
+
+const GID = {
+  plan:    "2064533394",      // the existing week-level "plan" tab
+  daily:   "277283136",       // the new day-level "daily" tab  (see README)
+  map:     "",                // Education map      — not built yet
+  reading: "",                // Reading list       — not built yet
+  wins:    "",                // Accomplishments    — not built yet
+};
 
 /* --- knobs (rarely change) ---------------------------------------------- */
-const POLL_MS   = 60000;               // how often to check the sheet for changes
-const CACHE_KEY = "schoolweek.csv.v1"; // offline copy lives here (this browser)
+const POLL_MS = 60000;                 // how often to check the sheet for changes
+const CACHE   = "schooldayz.v2.";      // offline copies live here (this browser)
 
-/* --- design: left-edge colour by subject key (kept in the page, not the sheet) */
-const EDGE = {
-  rituals:"#16394F", ela:"#9C6B2B", english:"#9C6B2B", history:"#9C6B2B", grammar:"#9C6B2B",
-  lifeskills:"#9C6B2B", math:"#7E92E2", science:"#7E92E2", asl:"#7E92E2",
-  writing:"#7E92E2", vocab:"#7E92E2", trombone:"#4A1145", stemlab:"#4A1145",
+/* --- the five views, in tab order --------------------------------------- */
+const VIEWS = [
+  {id:"today",   tab:"Today",   title:"Today",           needs:"daily"},
+  {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
+  {id:"map",     tab:"Map",     title:"Education map",   needs:"map"},
+  {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
+  {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
+];
+
+/* --- colour of the left edge -------------------------------------------
+   Preferred source: which section a subject sits under on the plan tab.
+   Rituals -> navy, Parent Led -> ochre, Self-Paced -> periwinkle.
+   Anything the plan doesn't know about falls back to the list below.     */
+const SECTION_EDGE = [
+  [/ritual/,  "#16394F"],
+  [/parent/,  "#9C6B2B"],
+  [/self|independent/, "#7E92E2"],
+];
+const EDGE_FALLBACK = {
+  rituals:"#16394F", ritual:"#16394F", morningrituals:"#16394F", bible:"#16394F",
+  criticalthinking:"#16394F", currentevents:"#16394F", cnn10:"#16394F",
+  english:"#9C6B2B", ela:"#9C6B2B", englishela:"#9C6B2B", literature:"#9C6B2B",
+  history:"#9C6B2B", ushistory:"#9C6B2B", socialstudies:"#9C6B2B",
+  grammar:"#9C6B2B", lifeskills:"#9C6B2B", supplement:"#9C6B2B", livingbooks:"#9C6B2B",
+  math:"#7E92E2", algebra:"#7E92E2", algebra1:"#7E92E2",
+  science:"#7E92E2", physicalscience:"#7E92E2",
+  asl:"#7E92E2", worldlanguage:"#7E92E2", writing:"#7E92E2",
+  vocab:"#7E92E2", vocabulary:"#7E92E2", reading:"#7E92E2",
+  trombone:"#4A1145", trombonepractice:"#4A1145", stemlab:"#4A1145", hcastemlab:"#4A1145",
 };
-const LABEL = {adult:"With an adult", own:"On her own", dad:"With Dad"};
-const DAYNUM = {mon:1, tue:2, wed:3, thu:4, fri:5};
-const DAYLABEL = {mon:"Mon", tue:"Tue", wed:"Wed", thu:"Thu", fri:"Fri"};
+const OTHER_EDGE = "#4A1145";
+const EDGE_OVERRIDE = [
+  [/trombone/, "#4A1145"],
+  [/stem\s*lab/, "#4A1145"],
+];
+
+const LABEL   = {adult:"With an adult", own:"On her own", dad:"With Dad"};
+const WEEKDAY = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MONTH   = ["January","February","March","April","May","June","July","August",
+                 "September","October","November","December"];
 
 /* --- state -------------------------------------------------------------- */
-let model = null;            // parsed weeks
-let currentWeekIdx = null;   // which week is showing
-let currentDay = null;       // which day tab is showing
-let lastGoodText = null;     // last CSV text that parsed cleanly
-let haveGood = false;        // have we ever rendered real data?
-const session = new Set();   // her in-memory ticks: "week|day|time|name"
+const sheet = {};              // per tab: {state, rows, text, error, cached}
+let planModel  = null;         // parsed plan tab
+let planError  = null;         // why the plan tab wouldn't parse, if it wouldn't
+let dailyModel = null;         // parsed daily tab
+let currentView = "today";
+let weekIdx = null;            // which week the Plan view is showing
+let dayIdx  = null;            // which day the Today view is showing
+let dayAuto = true;            // true while Today is on the day it picked itself
+const session = new Set();     // her ticks. In memory only. Never written anywhere.
 
-/* --- helpers ------------------------------------------------------------ */
+/* --- small helpers ------------------------------------------------------ */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,
   c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
 
+function el(tag, cls, text){
+  const n=document.createElement(tag);
+  if(cls) n.className=cls;
+  if(text!=null) n.textContent=text;
+  return n;
+}
+
+function blank(s){
+  s=String(s==null?"":s).trim();
+  return s==="" || s==="--" || s==="—" || s==="-" || s==="–";
+}
+
 function parseDate(s){
-  s=(s||"").trim(); if(!s) return null;
+  s=String(s==null?"":s).trim(); if(!s) return null;
   let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if(m) return new Date(+m[1],+m[2]-1,+m[3]);
-  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m) return new Date(+m[3],+m[1]-1,+m[2]);
+  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if(m){ let y=+m[3]; if(y<100) y+=2000; return new Date(y,+m[1]-1,+m[2]); }
   const d=new Date(s); return isNaN(d)?null:d;
 }
 
+function iso(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+
+         String(d.getDate()).padStart(2,"0");
+}
+function today(){ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+
+function longDate(d){ return WEEKDAY[d.getDay()]+", "+MONTH[d.getMonth()]+" "+d.getDate(); }
+function shortDate(d){ return MONTH[d.getMonth()].slice(0,3)+" "+d.getDate(); }
+function weekRange(d){
+  const e=new Date(d.getFullYear(),d.getMonth(),d.getDate()+4);
+  return d.getMonth()===e.getMonth()
+    ? MONTH[d.getMonth()]+" "+d.getDate()+"–"+e.getDate()+", "+e.getFullYear()
+    : MONTH[d.getMonth()]+" "+d.getDate()+" – "+MONTH[e.getMonth()]+" "+e.getDate()+", "+e.getFullYear();
+}
+
+/* Times are school hours: 1:40 means the afternoon, 9:00 the morning. */
+function minutes(s){
+  s=String(s==null?"":s).trim().toLowerCase(); if(!s) return null;
+  const m=s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+  if(!m) return null;
+  let h=+m[1]; const mi=m[2]?+m[2]:0;
+  if(m[3]==="pm" && h<12) h+=12;
+  else if(m[3]==="am" && h===12) h=0;
+  else if(!m[3] && h>=1 && h<=6) h+=12;      // 1:40 is after lunch, not dawn
+  return h*60+mi;
+}
+
 function normWho(s){
-  s=(s||"").trim().toLowerCase();
-  if(s==="adult"||s==="a"||s==="with an adult") return "adult";
+  s=String(s==null?"":s).trim().toLowerCase();
+  if(s==="adult"||s==="a"||s==="with an adult"||s==="mom"||s==="me") return "adult";
   if(s==="dad"||s==="d"||s==="with dad") return "dad";
   return "own";
 }
 
-function isTruthy(s){
-  return /^(true|1|yes|y|x|done|taught|✓)$/i.test((s||"").trim());
+function normStatus(s){
+  s=String(s==null?"":s).trim().toLowerCase();
+  if(/^(done|taught|complete|completed|true|yes|y|x|✓)$/.test(s)) return "done";
+  if(/^(carried|carry|carryover|carried over|rollover|moved)$/.test(s)) return "carried";
+  if(/^(skip|skipped|n\/a|na|cancelled|canceled)$/.test(s)) return "skip";
+  return "";
+}
+
+/* Subject -> colour. Tries the whole name, then the part before "/" or "(". */
+function keysFor(name){
+  const clean=t=>String(t||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const s=String(name||"");
+  const out=[clean(s)];
+  if(s.indexOf("/")>0) out.push(clean(s.split("/")[0]));
+  if(s.indexOf("(")>0) out.push(clean(s.split("(")[0]));
+  return out.filter(Boolean);
+}
+function edgeFor(name){
+  const low=String(name||"").toLowerCase();
+  for(const [re,c] of EDGE_OVERRIDE) if(re.test(low)) return c;
+  const ks=keysFor(name);
+  if(planModel){
+    for(const k of ks) if(planModel.edge[k]) return planModel.edge[k];
+  }
+  for(const k of ks) if(EDGE_FALLBACK[k]) return EDGE_FALLBACK[k];
+  return OTHER_EDGE;
 }
 
 /* --- CSV parser (RFC-4180-ish: quotes, doubled quotes, embedded newlines) */
@@ -223,275 +357,578 @@ function parseCSV(text){
   return rows;
 }
 
-/* --- shape rows into weeks, or throw a clear Error ---------------------- */
-function buildModel(rows){
-  if(!rows.length) throw new Error("The sheet came back empty.");
-  const header=rows[0].map(h=>String(h||"").trim().toLowerCase());
-  const col={}; header.forEach((h,idx)=>{ if(h && !(h in col)) col[h]=idx; });
-  const required=["week","week_start","day","time","name"];
-  const missing=required.filter(r=>!(r in col));
+/* ==========================================================================
+   THE PLAN TAB — week-level, as it already exists.
+   Subjects down the left, weeks across the top, section dividers in between.
+   Read as-is. Nothing about the sheet's shape is changed by this page.
+   ========================================================================== */
+function buildPlan(rows){
+  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
+  const first=r=> cell(r,0).toLowerCase();
+
+  let weekRow=-1;
+  for(let r=0;r<Math.min(rows.length,12);r++){ if(first(r)==="week"){ weekRow=r; break; } }
+  if(weekRow<0) throw new Error(
+    'Could not find the week row. One row near the top must start with the word "Week" '+
+    'in column A, with the week numbers running across it.');
+
+  let dateRow=-1, headRow=-1;
+  for(let r=weekRow+1;r<Math.min(rows.length,weekRow+6);r++){
+    if(first(r)==="date" && dateRow<0) dateRow=r;
+    if(first(r)==="subject" && headRow<0) headRow=r;
+  }
+  const bodyStart = headRow>=0 ? headRow+1 : (dateRow>=0 ? dateRow+1 : weekRow+1);
+
+  // Which column holds "Source", and where the week columns start.
+  let sourceCol=-1;
+  if(headRow>=0){
+    for(let c=0;c<(rows[headRow]||[]).length;c++){
+      if(cell(headRow,c).toLowerCase()==="source"){ sourceCol=c; break; }
+    }
+  }
+  if(sourceCol<0) sourceCol=1;
+
+  const weeks=[];
+  const width=Math.max(...rows.map(r=>r.length));
+  for(let c=sourceCol+1;c<width;c++){
+    const w=cell(weekRow,c);
+    if(w==="") continue;                       // blank column = a week off
+    const d=dateRow>=0 ? parseDate(cell(dateRow,c)) : null;
+    weeks.push({col:c, num:w, date:d});
+  }
+  if(!weeks.length) throw new Error(
+    "The week row was found, but there are no week numbers across it.");
+
+  const sections=[]; const edge={};
+  let current={name:"", rows:[], colour:OTHER_EDGE};
+  sections.push(current);
+
+  for(let r=bodyStart;r<rows.length;r++){
+    const name=cell(r,0);
+    if(!name) continue;
+    const source=cell(r,sourceCol);
+    const cells=weeks.map(w=>cell(r,w.col));
+    const hasWork=cells.some(v=>!blank(v));
+
+    if(!source && !hasWork){                   // a section divider row
+      let colour=OTHER_EDGE;
+      for(const [re,c] of SECTION_EDGE) if(re.test(name.toLowerCase())){ colour=c; break; }
+      current={name:name, rows:[], colour:colour};
+      sections.push(current);
+      continue;
+    }
+    current.rows.push({name:name, source:source, cells:cells});
+    keysFor(name).forEach(k=>{ if(!edge[k]) edge[k]=current.colour; });
+  }
+
+  const live=sections.filter(s=>s.rows.length);
+  if(!live.length) throw new Error("The plan tab has a week row but no subject rows under it.");
+  return {weeks:weeks, sections:live, edge:edge};
+}
+
+function planWeekIndex(){
+  if(!planModel) return 0;
+  const t=today(); let idx=0, seen=false;
+  planModel.weeks.forEach((w,i)=>{ if(w.date && w.date<=t){ idx=i; seen=true; } });
+  return seen?idx:0;
+}
+
+/* ==========================================================================
+   THE DAILY TAB — day-level. One row per thing, per day. Doubles as the log.
+   Columns (row 1, any order, extra columns ignored):
+     date  start  subject  detail  who  status  type  note
+   ========================================================================== */
+function buildDaily(rows){
+  if(!rows.length) throw new Error("The daily tab came back empty.");
+  const head=rows[0].map(h=>String(h==null?"":h).trim().toLowerCase());
+  const col={}; head.forEach((h,i)=>{ if(h && !(h in col)) col[h]=i; });
+  const missing=["date","subject"].filter(k=>!(k in col));
   if(missing.length) throw new Error(
-    "The first row is missing the heading(s): "+missing.join(", ")+
-    ". Row 1 must contain the exact column headings.");
+    'Row 1 of the daily tab is missing the heading(s): '+missing.join(", ")+
+    ". Row 1 must be the column headings: date, start, subject, detail, who, status, type, note.");
   const get=(r,name)=> col[name]!=null ? String(r[col[name]]==null?"":r[col[name]]).trim() : "";
 
-  const weeksMap=new Map();
-  for(let ri=1; ri<rows.length; ri++){
-    const r=rows[ri];
-    if(r.every(x=>String(x==null?"":x).trim()==="")) continue;   // blank spacer line
-    const wRaw=get(r,"week");
-    if(wRaw==="") continue;                                        // row with no week = ignore
-    const wnum=parseInt(wRaw,10);
-    if(isNaN(wnum)) throw new Error('Row '+(ri+1)+': "week" should be a number, but it says "'+wRaw+'".');
-    const dayKey=get(r,"day").toLowerCase().slice(0,3);
-    if(!DAYNUM[dayKey]) throw new Error('Row '+(ri+1)+': "day" should be mon, tue, wed, thu or fri, but it says "'+get(r,"day")+'".');
-    const start=parseDate(get(r,"week_start"));
-    if(!start) throw new Error('Row '+(ri+1)+': "week_start" should be a date like 2026-09-07, but it says "'+get(r,"week_start")+'".');
+  const byDate=new Map();      // iso -> {date, items, notes, evenings, readings}
+  const always={notes:[], evenings:[], readings:[]};
+  let order=0;
 
-    let wk=weeksMap.get(wnum);
-    if(!wk){ wk={num:wnum,start:start,label:"",term:"",reading:"",note:"",days:{},dayOrder:[]}; weeksMap.set(wnum,wk); }
-    if(!wk.label)   wk.label   = get(r,"week_label");
-    if(!wk.term)    wk.term    = get(r,"term");
-    if(!wk.reading) wk.reading = get(r,"daily_reading");
-    if(!wk.note)    wk.note    = get(r,"week_note");
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];
+    if(row.every(x=>String(x==null?"":x).trim()==="")) continue;
 
-    let dy=wk.days[dayKey];
-    if(!dy){ dy={note:"",evening:"",blocks:[]}; wk.days[dayKey]=dy; wk.dayOrder.push(dayKey); }
-    if(!dy.note)    dy.note    = get(r,"day_note");
-    if(!dy.evening) dy.evening = get(r,"evening");
+    const type=(get(row,"type")||"block").toLowerCase();
+    const text=get(row,"detail")||get(row,"subject");
+    const raw=get(row,"date");
+    const d=raw?parseDate(raw):null;
+    if(raw && !d) throw new Error(
+      'Row '+(r+1)+' of the daily tab: "date" should look like 2026-09-08 or 9/8/2026, '+
+      'but it says "'+raw+'".');
 
-    const type=get(r,"type").toLowerCase();
-    const isPause = type==="pause" || type==="break";
-    dy.blocks.push({
-      time:    get(r,"time"),
-      pause:   isPause,
-      subject: get(r,"subject").toLowerCase(),
-      name:    get(r,"name"),
-      detail:  get(r,"detail"),
-      who:     normWho(get(r,"who")),
-      taught:  isTruthy(get(r,"taught")),
+    const bucketOf=(dd)=>{
+      const k=iso(dd);
+      if(!byDate.has(k)) byDate.set(k,{date:dd, items:[], notes:[], evenings:[], readings:[]});
+      return byDate.get(k);
+    };
+
+    if(type==="note" || type==="evening" || type==="reading"){
+      if(!text) continue;
+      const key = type==="note" ? "notes" : (type==="evening" ? "evenings" : "readings");
+      (d ? bucketOf(d) : always)[key].push(text);
+      continue;
+    }
+
+    if(!d) continue;                            // a block with no date can't be placed
+    const status=normStatus(get(row,"status"));
+    if(status==="skip") continue;
+
+    bucketOf(d).items.push({
+      order:  order++,
+      day:    iso(d),
+      start:  get(row,"start"),
+      mins:   minutes(get(row,"start")),
+      subject:get(row,"subject"),
+      detail: get(row,"detail"),
+      note:   get(row,"note"),
+      who:    get(row,"who") ? normWho(get(row,"who")) : "own",
+      hasWho: !!get(row,"who"),
+      status: status,
+      pause:  type==="break" || type==="pause" || type==="lunch",
+      row:    r+1,
     });
   }
-  if(!weeksMap.size) throw new Error("The sheet has headings but no plan rows.");
-  const weeks=[...weeksMap.values()].sort((a,b)=>a.start-b.start);
-  weeks.forEach(w=>w.dayOrder.sort((a,b)=>DAYNUM[a]-DAYNUM[b]));
-  return {weeks:weeks};
-}
 
-/* --- which week is "now": last week whose Monday is on/before today ----- */
-function pickWeekIndex(){
-  const t=new Date(); const today=new Date(t.getFullYear(),t.getMonth(),t.getDate());
-  let idx=0;
-  for(let i=0;i<model.weeks.length;i++){ if(model.weeks[i].start<=today) idx=i; else break; }
-  return idx;
-}
-
-function chooseInitial(){
-  currentWeekIdx=pickWeekIndex();
-  const w=model.weeks[currentWeekIdx];
-  const wd=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
-  currentDay = w.days[wd] ? wd : w.dayOrder[0];
-}
-
-/* --- rendering ---------------------------------------------------------- */
-function renderAll(){
-  const w=model.weeks[currentWeekIdx];
-  document.getElementById("kicker").textContent = "Week "+w.num+(w.term?" · "+w.term:"");
-  document.getElementById("dates").textContent  = w.label||"";
-
-  const rd=document.getElementById("reading");
-  if(w.reading){ rd.style.display=""; rd.innerHTML="<b>Every day, outside the blocks:</b> "+esc(w.reading); }
-  else rd.style.display="none";
-
-  document.getElementById("weeknote").innerHTML =
-    w.note ? '<div class="standing"><b>'+esc(w.note)+"</b></div>" : "";
-
-  document.getElementById("prevWk").disabled = currentWeekIdx<=0;
-  document.getElementById("nextWk").disabled = currentWeekIdx>=model.weeks.length-1;
-
-  const tabs=document.querySelector(".tabs"); tabs.innerHTML="";
-  w.dayOrder.forEach(dk=>{
-    const b=document.createElement("button");
-    b.className="tab"; b.setAttribute("role","tab"); b.dataset.day=dk;
-    b.textContent=DAYLABEL[dk]||dk;
-    b.addEventListener("click",()=>{ currentDay=dk; renderDay(); });
-    tabs.appendChild(b);
+  const days=[...byDate.values()].sort((a,b)=>a.date-b.date);
+  days.forEach(day=>{
+    day.items.sort((a,b)=>{
+      const am=a.mins==null?-1:a.mins, bm=b.mins==null?-1:b.mins;
+      return am!==bm ? am-bm : a.order-b.order;
+    });
+    day.notes    = always.notes.concat(day.notes);
+    day.evenings = always.evenings.concat(day.evenings);
+    day.readings = always.readings.concat(day.readings);
   });
 
-  if(!w.days[currentDay]) currentDay=w.dayOrder[0];
-  renderDay();
+  // Anything marked carried shows again on the next day the sheet knows about.
+  days.forEach((day,i)=>{
+    day.carried=[];
+    if(i===0) return;
+    const prev=days[i-1];
+    prev.items.forEach(it=>{
+      if(it.status==="carried" && !it.pause){
+        day.carried.push(Object.assign({}, it, {
+          carriedFrom: WEEKDAY[prev.date.getDay()],
+          status: "",
+          start: "", mins: null,
+        }));
+      }
+    });
+  });
+
+  if(!days.length) throw new Error("The daily tab has headings but no rows yet.");
+  return {days:days};
 }
 
-function renderDay(){
-  const w=model.weeks[currentWeekIdx];
-  const dk=currentDay, day=w.days[dk];
-  const host=document.getElementById("day"); host.innerHTML="";
-  if(!day) return;
+function dailyDayIndex(){
+  if(!dailyModel || !dailyModel.days.length) return 0;
+  const k=iso(today());
+  const days=dailyModel.days;
+  for(let i=0;i<days.length;i++) if(iso(days[i].date)===k) return i;
+  for(let i=0;i<days.length;i++) if(days[i].date>today()) return i;   // nearest ahead
+  return days.length-1;                                              // else the last one
+}
 
-  if(day.note){
-    const n=document.createElement("div");
-    n.className="standing"; n.innerHTML="<b>"+esc(day.note)+"</b>";
-    host.appendChild(n);
+/* ==========================================================================
+   Loading. One published CSV per tab, cached, polled.
+   ========================================================================== */
+function urlFor(name){
+  if(!PUB_ID || !GID[name]) return null;
+  return "https://docs.google.com/spreadsheets/d/e/"+PUB_ID+"/pub?gid="+GID[name]+
+         "&single=true&output=csv&cb="+Date.now();
+}
+
+async function load(name){
+  const s = sheet[name] || (sheet[name]={state:"unset", rows:null, text:null, error:null, cached:false});
+  const url=urlFor(name);
+  if(!url){ s.state="unset"; return s; }
+
+  try{
+    const cached=localStorage.getItem(CACHE+name);
+    if(cached && s.text==null){ s.text=cached; s.rows=parseCSV(cached); s.state="ok"; s.cached=true; }
+  }catch(_){}
+
+  try{
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status+" — is that tab published to the web?");
+    const txt=await res.text();
+    if(/^\s*</.test(txt)) throw new Error(
+      "Got a web page instead of CSV — that tab probably isn't published to the web yet.");
+    if(txt===s.text && !s.cached){ s.state="ok"; return s; }
+    s.text=txt; s.rows=parseCSV(txt); s.state="ok"; s.error=null; s.cached=false;
+    try{ localStorage.setItem(CACHE+name, txt); }catch(_){}
+  }catch(err){
+    s.error=err;
+    s.state = s.text ? "ok" : "error";     // a saved copy beats an empty screen
+    if(s.text) s.cached=true;
   }
-
-  day.blocks.forEach((b,i)=>{
-    const row=document.createElement("div");
-    row.className="block"+(b.pause?" pause":"");
-
-    const t=document.createElement("div");
-    t.className="time"; t.textContent=b.time; row.appendChild(t);
-
-    const card=document.createElement("div"); card.className="card";
-    if(!b.pause && EDGE[b.subject]) card.style.setProperty("--edge",EDGE[b.subject]);
-
-    if(b.pause){
-      const n=document.createElement("div");
-      n.className="name"; n.textContent=b.name; card.appendChild(n);
-    } else {
-      const line=document.createElement("div"); line.className="row";
-
-      const box=document.createElement("input");
-      box.type="checkbox"; box.className="check"; box.id=dk+"-"+i;
-      const key=w.num+"|"+dk+"|"+b.time+"|"+b.name;
-
-      if(b.taught){
-        // My record from the sheet: locked, pre-checked, struck through.
-        box.checked=true; box.disabled=true; row.classList.add("done");
-        box.setAttribute("aria-label", b.name+" — already taught (from the plan)");
-      } else {
-        // Her tick: session-only, in memory.
-        box.checked=session.has(key);
-        if(box.checked) row.classList.add("done");
-        box.setAttribute("aria-label","Mark "+b.name+" done");
-        box.addEventListener("change",()=>{
-          row.classList.toggle("done",box.checked);
-          if(box.checked) session.add(key); else session.delete(key);
-        });
-      }
-
-      const nm=document.createElement("label");
-      nm.className="name"; nm.setAttribute("for",box.id); nm.textContent=b.name;
-      line.append(box,nm); card.appendChild(line);
-
-      if(b.detail){
-        const wd=document.createElement("div");
-        wd.className="what"; wd.textContent=b.detail; card.appendChild(wd);
-      }
-
-      const who=document.createElement("span");
-      who.className="who "+b.who; who.textContent=LABEL[b.who]; card.appendChild(who);
-    }
-    row.appendChild(card); host.appendChild(row);
-  });
-
-  const ev=document.getElementById("evening");
-  ev.innerHTML = day.evening
-    ? '<div class="evening"><h2>This evening</h2><p>'+esc(day.evening)+"</p></div>"
-    : "";
-
-  document.querySelectorAll(".tab").forEach(t=>
-    t.setAttribute("aria-selected", String(t.dataset.day===dk)));
+  return s;
 }
 
-/* --- foot / error / banner --------------------------------------------- */
-function setFoot(mode){
-  const f=document.getElementById("foot");
-  f.textContent = mode==="offline"
-    ? "No connection — showing the last saved copy."
-    : "Reading from the plan sheet · updates on its own.";
+/* ==========================================================================
+   Rendering
+   ========================================================================== */
+function emptyCard(title, html){
+  const n=el("div","empty");
+  n.innerHTML="<b>"+esc(title)+"</b>"+html;
+  return n;
 }
 function errorCard(title, body, detail){
-  return '<div class="error"><b>'+esc(title)+"</b>"+esc(body)+
-    (detail?'<br><br><code>'+esc(detail)+"</code>":"")+"</div>";
+  const n=el("div","error");
+  n.innerHTML="<b>"+esc(title)+"</b>"+esc(body)+
+    (detail?'<br><br><code>'+esc(detail)+"</code>":"");
+  return n;
 }
-function showError(title, body, detail){
-  document.getElementById("error").innerHTML=errorCard(title,body,detail);
-  ["reading","weeknote","day","evening"].forEach(id=>document.getElementById(id).innerHTML="");
-  document.querySelector(".tabs").innerHTML="";
-  document.getElementById("foot").textContent="";
-}
-function showBanner(title, body, detail){
-  document.getElementById("error").innerHTML=errorCard(title,body,detail);
-}
-function clearError(){ document.getElementById("error").innerHTML=""; }
 
-/* --- apply text: parse, and either render or report -------------------- */
-function tryApply(text, remember){
-  let m;
-  try{ m=buildModel(parseCSV(text)); }
-  catch(e){ return {ok:false, error:e}; }
-  model=m; lastGoodText=text; haveGood=true;
-  if(remember){ try{ localStorage.setItem(CACHE_KEY,text); }catch(_){} }
-  if(currentWeekIdx===null){ chooseInitial(); }
-  else {
-    currentWeekIdx=Math.min(currentWeekIdx, model.weeks.length-1);
-    if(!model.weeks[currentWeekIdx].days[currentDay]) currentDay=model.weeks[currentWeekIdx].dayOrder[0];
+const NOT_CONNECTED = {
+  plan: 'The <code>plan</code> tab isn\'t connected yet. In the Sheet: '+
+        'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>plan</b> tab &rsaquo; '+
+        'CSV &rsaquo; Publish. Then paste the id and the gid into the top of this file.',
+  daily:'The <code>daily</code> tab isn\'t built yet. It wants these column headings in row 1:'+
+        '<ul><li><code>date</code> — 2026-09-08</li><li><code>start</code> — 9:00 (optional)</li>'+
+        '<li><code>subject</code> — English, Algebra 1, Break…</li>'+
+        '<li><code>detail</code> — what to do that day</li>'+
+        '<li><code>who</code> — adult / own / dad</li>'+
+        '<li><code>status</code> — blank / done / carried / skip</li>'+
+        '<li><code>type</code> — blank / break / note / evening / reading</li>'+
+        '<li><code>note</code> — your own line about how it went</li></ul>',
+  map:  'This is where subjects and credits from now through 12th grade will live. '+
+        'Nothing is wired up yet — the tab and the shape of it come next.',
+  reading:'Reading now, to read, and finished will live here. '+
+        'Nothing is wired up yet — the tab and the shape of it come next.',
+  wins: 'Competitions, performances, projects, milestones. '+
+        'Nothing is wired up yet — the tab and the shape of it come next.',
+};
+
+function setHead(kicker, title, dates){
+  document.getElementById("kicker").textContent=kicker||"";
+  document.getElementById("title").textContent=title||"";
+  document.getElementById("dates").textContent=dates||"";
+}
+
+function stepper(items){
+  const host=document.getElementById("stepper");
+  host.innerHTML="";
+  items.forEach(n=>host.appendChild(n));
+  host.style.display=items.length?"":"none";
+}
+
+function makeStep(label, aria, disabled, fn){
+  const b=el("button","stepbtn",label);
+  b.setAttribute("aria-label",aria);
+  b.disabled=!!disabled;
+  b.addEventListener("click",fn);
+  return b;
+}
+
+/* --- one block row, shared by Today and the plan fallback --------------- */
+function blockRow(it){
+  const row=el("div","block"+(it.pause?" pause":"")+(it.start?"":" notime"));
+
+  if(it.start){
+    row.appendChild(el("div","time",it.start));
   }
-  clearError(); renderAll();
-  return {ok:true};
+
+  const card=el("div","card");
+  if(!it.pause) card.style.setProperty("--edge", edgeFor(it.subject));
+
+  if(it.pause){
+    card.appendChild(el("div","name", it.detail || it.subject));
+    row.appendChild(card);
+    return row;
+  }
+
+  const line=el("div","row");
+  const box=document.createElement("input");
+  box.type="checkbox"; box.className="check";
+  box.id="chk-"+it.order+"-"+(it.carriedFrom?"c":"d");
+
+  if(it.status==="done"){
+    // My record, from the sheet. Locked for everyone.
+    box.checked=true; box.disabled=true; row.classList.add("done");
+    box.setAttribute("aria-label", it.subject+" — already done (from the sheet)");
+  } else {
+    // Her tick. In memory, this session only.
+    const key=it.day+"|"+(it.carriedFrom||"")+"|"+it.subject+"|"+it.detail;
+    box.checked=session.has(key);
+    if(box.checked) row.classList.add("done");
+    box.setAttribute("aria-label","Mark "+it.subject+" done");
+    box.addEventListener("change",()=>{
+      row.classList.toggle("done", box.checked);
+      if(box.checked) session.add(key); else session.delete(key);
+    });
+  }
+
+  const nm=el("label","name",it.subject);
+  nm.setAttribute("for",box.id);
+  line.append(box,nm);
+  card.appendChild(line);
+
+  if(it.detail) card.appendChild(el("div","what",it.detail));
+  if(it.note)   card.appendChild(el("div","memo",it.note));
+
+  const tags=el("div","tags");
+  if(it.carriedFrom) tags.appendChild(el("span","tag","carried from "+it.carriedFrom));
+  else if(it.status==="carried") tags.appendChild(el("span","tag","carried over"));
+  tags.appendChild(el("span","who "+it.who, LABEL[it.who]));
+  if(tags.children.length) card.appendChild(tags);
+
+  row.appendChild(card);
+  return row;
 }
 
-async function fetchCsv(){
-  const u=SHEET_CSV_URL+(SHEET_CSV_URL.indexOf("?")>=0?"&":"?")+"cb="+Date.now();
-  const res=await fetch(u,{cache:"no-store"});
-  if(!res.ok) throw new Error("HTTP "+res.status);
-  const txt=await res.text();
-  if(/^\s*</.test(txt)) throw new Error("Got a web page instead of CSV — the tab may not be published to the web.");
-  return txt;
+/* --- Today -------------------------------------------------------------- */
+function renderToday(host){
+  const s=sheet.daily||{state:"unset"};
+
+  if(s.state==="unset"){
+    setHead("B", "Today", longDate(today()));
+    stepper([]);
+    host.appendChild(emptyCard("The daily plan isn't connected yet.", "<p>"+NOT_CONNECTED.daily+"</p>"));
+    planFallback(host, "In the meantime, here's what the week plan says.");
+    return;
+  }
+  if(s.state==="error"){
+    setHead("B", "Today", longDate(today()));
+    stepper([]);
+    host.appendChild(errorCard("Can't reach the daily plan right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    planFallback(host, "The week plan is still readable, so here it is.");
+    return;
+  }
+
+  try{ dailyModel=buildDaily(s.rows); }
+  catch(err){
+    setHead("B", "Today", longDate(today()));
+    stepper([]);
+    host.appendChild(s.rows && s.rows.length>1
+      ? errorCard("The daily tab can't be read.",
+          "It's reachable, but the format isn't what this page expects. Here's the problem:",
+          String(err.message||err))
+      : emptyCard("The daily tab is published, but empty.",
+          "<p>Add the column headings in row 1 and one row per thing, per day. Then this page fills itself in.</p>"+
+          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
+    planFallback(host, "Until then, here's what the week plan says.");
+    return;
+  }
+
+  if(dayIdx===null){ dayIdx=dailyDayIndex(); dayAuto=true; }
+  dayIdx=Math.max(0, Math.min(dayIdx, dailyModel.days.length-1));
+  const day=dailyModel.days[dayIdx];
+  const isToday = iso(day.date)===iso(today());
+
+  setHead("B"+(s.cached?" · saved copy":""), isToday?"Today":WEEKDAY[day.date.getDay()],
+          longDate(day.date));
+  stepper([
+    makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;render();}),
+    makeStep("Next day ›","Show the next day", dayIdx>=dailyModel.days.length-1, ()=>{dayIdx++;dayAuto=false;render();}),
+  ]);
+
+  if(!isToday && dayAuto){
+    host.appendChild(emptyCard("Nothing is scheduled for today.",
+      "<p>Showing <b>"+esc(longDate(day.date))+"</b> instead — the nearest day the sheet has.</p>"));
+  }
+
+  day.readings.forEach(t=>{
+    const n=el("div","standing");
+    n.innerHTML="<b>Every day, outside the blocks:</b> "+esc(t);
+    host.appendChild(n);
+  });
+  day.notes.forEach(t=>{
+    const n=el("div","standing");
+    n.innerHTML="<b>"+esc(t)+"</b>";
+    host.appendChild(n);
+  });
+
+  const all=day.carried.concat(day.items);
+  if(!all.length){
+    host.appendChild(emptyCard("Nothing listed for this day.",
+      "<p>The daily tab has no rows dated "+esc(iso(day.date))+" yet.</p>"));
+  }
+  all.forEach(it=>host.appendChild(blockRow(it)));
+
+  if(day.evenings.length){
+    const ev=el("div","evening");
+    ev.appendChild(el("h2",null,"This evening"));
+    day.evenings.forEach(t=>ev.appendChild(el("p",null,t)));
+    host.appendChild(ev);
+  }
+}
+
+/* If the daily tab can't tell us anything, the week plan still can. */
+function planFallback(host, why){
+  if(!planModel) return;
+  host.appendChild(el("p","quiet",why));
+  planWeekBody(host, planWeekIndex());
+}
+
+/* --- Lesson plan -------------------------------------------------------- */
+function planWeekBody(host, wi){
+  const nothing=[];
+  planModel.sections.forEach(sec=>{
+    const rows=sec.rows.filter(r=>!blank(r.cells[wi]));
+    sec.rows.forEach(r=>{ if(blank(r.cells[wi])) nothing.push(r.name); });
+    if(!rows.length) return;
+    if(sec.name) host.appendChild(el("h2","sect",sec.name));
+    rows.forEach(r=>{
+      const prow=el("div","prow");
+      const card=el("div","card");
+      card.style.setProperty("--edge", sec.colour);
+      const nm=el("div","pname"); nm.textContent=r.name;
+      if(r.source){ const sp=el("span","psrc",r.source); nm.appendChild(sp); }
+      card.appendChild(nm);
+      card.appendChild(el("div","what", r.cells[wi]));
+      prow.appendChild(card);
+      host.appendChild(prow);
+    });
+  });
+  if(nothing.length){
+    host.appendChild(el("p","quiet","Nothing scheduled this week: "+nothing.join(", ")+"."));
+  }
+}
+
+function renderPlan(host){
+  const s=sheet.plan||{state:"unset"};
+
+  if(s.state==="unset"){
+    setHead("B", "Lesson plan", "");
+    stepper([]);
+    host.appendChild(emptyCard("The plan tab isn't connected yet.","<p>"+NOT_CONNECTED.plan+"</p>"));
+    return;
+  }
+  if(s.state==="error"){
+    setHead("B", "Lesson plan", "");
+    stepper([]);
+    host.appendChild(errorCard("Can't reach the plan right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    return;
+  }
+  if(planError){
+    setHead("B", "Lesson plan", "");
+    stepper([]);
+    host.appendChild(errorCard("The plan tab can't be read.",
+      "It's reachable, but this page couldn't find its shape. Here's the problem:",
+      String(planError.message||planError)));
+    return;
+  }
+  if(!planModel){ setHead("B","Lesson plan",""); stepper([]); return; }
+
+  if(weekIdx===null) weekIdx=planWeekIndex();
+  weekIdx=Math.max(0, Math.min(weekIdx, planModel.weeks.length-1));
+  const w=planModel.weeks[weekIdx];
+
+  setHead("B · week "+w.num+" of "+planModel.weeks.length+(s.cached?" · saved copy":""),
+          "Lesson plan", w.date?weekRange(w.date):"");
+
+  const pick=el("select","jump");
+  pick.setAttribute("aria-label","Jump to a week");
+  planModel.weeks.forEach((wk,i)=>{
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent="Week "+wk.num+(wk.date?" · "+shortDate(wk.date):"");
+    if(i===weekIdx) o.selected=true;
+    pick.appendChild(o);
+  });
+  pick.addEventListener("change",()=>{ weekIdx=+pick.value; render(); });
+
+  stepper([
+    makeStep("‹","Show the previous week", weekIdx<=0, ()=>{weekIdx--;render();}),
+    pick,
+    makeStep("›","Show the next week", weekIdx>=planModel.weeks.length-1, ()=>{weekIdx++;render();}),
+  ]);
+
+  planWeekBody(host, weekIdx);
+}
+
+/* --- the three that aren't built yet ------------------------------------ */
+function renderStub(host, view){
+  setHead("B", view.title, "");
+  stepper([]);
+  host.appendChild(emptyCard("Not built yet.", "<p>"+NOT_CONNECTED[view.needs]+"</p>"));
+}
+
+/* --- the frame ---------------------------------------------------------- */
+function renderTabs(){
+  const host=document.getElementById("viewtabs");
+  if(host.children.length===VIEWS.length){
+    VIEWS.forEach((v,i)=>host.children[i].setAttribute("aria-selected",String(v.id===currentView)));
+    return;
+  }
+  host.innerHTML="";
+  VIEWS.forEach(v=>{
+    const b=el("button","tab",v.tab);
+    b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",String(v.id===currentView));
+    b.addEventListener("click",()=>{
+      currentView=v.id;
+      location.hash=v.id;
+      render();
+      window.scrollTo({top:0,behavior:"instant"});
+    });
+    host.appendChild(b);
+  });
+}
+
+function render(){
+  const view=VIEWS.find(v=>v.id===currentView)||VIEWS[0];
+  renderTabs();
+  document.getElementById("helper").style.display =
+    (view.id==="today"||view.id==="plan") ? "" : "none";
+
+  const host=document.getElementById("view");
+  host.innerHTML="";
+
+  if(view.id==="today")      renderToday(host);
+  else if(view.id==="plan")  renderPlan(host);
+  else                       renderStub(host, view);
+
+  const f=document.getElementById("foot");
+  const s=sheet[view.needs];
+  if(!s || s.state==="unset" || s.state==="error") f.textContent="";
+  else if(s.cached) f.textContent="No connection — showing the last saved copy.";
+  else f.textContent="Reading from the sheet · updates on its own.";
 }
 
 async function refresh(){
-  if(!SHEET_CSV_URL){
-    showError("Not connected to the plan sheet yet.",
-      "Once the PLAN tab is published to the web as CSV, its link goes in this page. Until then there's nothing to show.");
-    return;
+  // The plan is loaded whatever the view: Today borrows its colours, and falls
+  // back to it when the daily tab has nothing to say.
+  await Promise.all([load("plan"), load("daily")]);
+  planModel=null; planError=null;
+  if(sheet.plan && sheet.plan.state==="ok"){
+    try{ planModel=buildPlan(sheet.plan.rows); }
+    catch(err){ planError=err; }
   }
-  let text;
-  try{ text=await fetchCsv(); }
-  catch(netErr){
-    if(haveGood) setFoot("offline");
-    else showError("Can't reach the plan right now.",
-      "There's no saved copy on this device yet, so there's nothing to show. Check the connection — it will load on its own when it's back.",
-      String(netErr.message||netErr));
-    return;
-  }
-  if(text===lastGoodText){ setFoot("live"); return; }
-  const r=tryApply(text,true);
-  if(r.ok){ setFoot("live"); }
-  else if(haveGood){
-    setFoot("live");
-    showBanner("The plan sheet has a format problem right now.",
-      "So this is the last good copy. Fix the sheet and the page will refresh on its own.",
-      String(r.error.message||r.error));
-  } else {
-    showError("The plan sheet can't be read.",
-      "It's reachable, but the format isn't what this page expects. Here's the specific problem:",
-      String(r.error.message||r.error));
-  }
+  render();
 }
 
 /* --- boot --------------------------------------------------------------- */
 (function boot(){
   try{
-    document.getElementById("prevWk").addEventListener("click",()=>{
-      if(model && currentWeekIdx>0){ currentWeekIdx--; renderAll(); }
-    });
-    document.getElementById("nextWk").addEventListener("click",()=>{
-      if(model && currentWeekIdx<model.weeks.length-1){ currentWeekIdx++; renderAll(); }
+    const h=(location.hash||"").replace("#","");
+    if(VIEWS.some(v=>v.id===h)) currentView=h;
+    window.addEventListener("hashchange",()=>{
+      const k=(location.hash||"").replace("#","");
+      if(VIEWS.some(v=>v.id===k) && k!==currentView){ currentView=k; render(); }
     });
 
-    // Show the offline copy instantly, if we have one, before the network answers.
-    try{
-      const c=localStorage.getItem(CACHE_KEY);
-      if(c){ const r=tryApply(c,false); if(r.ok) setFoot("offline"); }
-    }catch(_){}
-
+    render();                       // draw the frame before the network answers
     refresh();
-    if(SHEET_CSV_URL) setInterval(refresh, POLL_MS);
+    if(PUB_ID) setInterval(refresh, POLL_MS);
   }catch(err){
-    showError("Something went wrong loading the page.",
-      "This shouldn't happen — try reloading. If it keeps happening, the detail below will help.",
-      String(err && err.message || err));
+    document.getElementById("view").innerHTML=
+      '<div class="error"><b>Something went wrong loading the page.</b>'+
+      "This shouldn't happen — try reloading. If it keeps happening, the detail below will help."+
+      '<br><br><code>'+esc(String(err && err.message || err))+"</code></div>";
   }
 })();
 </script>

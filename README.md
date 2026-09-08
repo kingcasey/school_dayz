@@ -1,55 +1,103 @@
-# School week
+# School
 
-A single-page, phone-first view of one homeschool week. It reads the plan
-straight from a Google Sheet (the **PLAN** tab, published to the web as CSV),
-so the sheet is the only thing that ever needs updating.
+One phone-first page, five views, no build step. Every view reads a tab of the
+same Google Sheet, published to the web as CSV, so the Sheet stays the only
+thing that ever gets edited.
 
-- **No accounts, no app, no login** for anyone viewing it.
-- Shows the current week automatically (by date), with prev/next arrows.
-- Her checkboxes are session-only (reset on reload); the plan's own "taught"
-  marks render pre-checked and struck through — that's the teaching record.
-- Caches the last good copy in the browser, so it still opens with no signal.
-- Polls the sheet every 60 seconds and updates on its own when it changes.
+| view | reads | state |
+|---|---|---|
+| **Today** (opens here) | `daily` tab | built |
+| **Plan** — the week at a glance | `plan` tab | built |
+| **Map** — subjects and credits to 12th grade | `map` tab | stub |
+| **Reading** — reading now / to read / finished | `reading` tab | stub |
+| **Wins** — accomplishments | `wins` tab | stub |
 
-Plain HTML/CSS/JS. No build step, no framework, no dependencies.
+Plain HTML/CSS/JS in `index.html`. No framework, no npm, no accounts for
+anyone viewing it. Views are linkable: `#today`, `#plan`, `#map`, `#reading`,
+`#wins`.
 
-## How it's wired
+## Connecting it
 
-`index.html` holds everything. The only line that connects it to the data is
-near the top of the script:
+In the Sheet: **File › Share › Publish to web**, pick a tab, choose **CSV**,
+Publish. Google hands back a link shaped like:
 
-```js
-const SHEET_CSV_URL = "...";   // the PLAN tab, published to the web as CSV
+```
+https://docs.google.com/spreadsheets/d/e/2PACX-1vABC.../pub?gid=123456&single=true&output=csv
 ```
 
-## Sheet format
+The `2PACX-...` id is the same for every tab. The `gid=` number is different
+per tab. Both go at the top of `index.html`:
 
-The PLAN tab (or a flat helper tab published as CSV) must have these column
-headings in row 1. Order doesn't matter; extra columns are ignored.
+```js
+const PUB_ID = "2PACX-1vABC...";
+const GID = { plan: "0", daily: "123456", map: "", reading: "", wins: "" };
+```
+
+A tab left as `""` is simply not connected. Its view says so and the rest of
+the page carries on.
+
+## The `plan` tab
+
+Read exactly as it already is — week-level, subjects down the left, weeks
+across the top, section dividers in between. Nothing about its shape needs to
+change. The page looks for:
+
+- a row starting with **Week** in column A, week numbers running across it
+- a row starting with **Date** (optional), the Monday of each week under it
+- a row starting with **Subject** with **Source** beside it (optional)
+- everything below that: one row per subject
+- a row with a name but no source and no week cells = a **section divider**
+- a blank column = a week off; `--` in a cell = nothing that week
+
+Section names set the left-edge colour: *Rituals* navy, *Parent Led* ochre,
+*Self-Paced* periwinkle. Trombone and STEM lab stay plum. Cells with line
+breaks in them render as separate lines.
+
+## The `daily` tab
+
+Row 1 is the headings. Order doesn't matter, extra columns are ignored, and
+only `date` and `subject` have to exist as columns. One row per thing, per day.
+`daily-template.csv` is a filled-in week you can paste straight in.
 
 | column | required | meaning |
 |---|---|---|
-| `week` | yes | week number, 1–12 |
-| `week_start` | yes | the Monday of that week, e.g. `2026-09-07` |
-| `week_label` | no | human date shown under the title, e.g. `September 7–11, 2026` |
-| `term` | no | e.g. `Term 1` |
-| `daily_reading` | no | grey standing bar for the week |
-| `week_note` | no | optional banner for the whole week |
-| `day` | yes | `mon` `tue` `wed` `thu` `fri` |
-| `day_note` | no | note at the top of that day |
-| `evening` | no | evening activity line for that day |
-| `time` | yes | e.g. `9:00` |
-| `type` | no | `block` (default) or `pause` for breaks/lunch |
-| `subject` | no | colour key: rituals, ela/english, history, grammar, lifeskills, math, science, asl, writing, vocab, trombone, stemlab |
-| `name` | yes | what shows in bold, e.g. `English` |
-| `detail` | no | the smaller description line |
-| `who` | no | `adult`, `own` (default), or `dad` |
-| `taught` | no | `TRUE` = already taught: pre-checked, struck, dimmed |
+| `date` | yes | `2026-09-08` or `9/8/2026`. Blank is only allowed on `note`, `evening` and `reading` rows, where it means *every day*. |
+| `start` | no | `9:00`, `1:40`. Afternoon is assumed for 1–6 unless you write `am`. Blank = no time, sorts to the top. |
+| `subject` | yes | The bold line, and the left-edge colour. Matches the plan tab's subject names where it can. |
+| `detail` | no | The grey line under it — what to do that day. |
+| `who` | no | `adult`, `dad`, or `own` (the default). Ochre tag, plum tag, plain tag. |
+| `status` | no | blank, `done`, `carried`, or `skip`. See below. |
+| `type` | no | blank = a block. `break` = grey italic pause, no checkbox. `note` = banner at the top of the day. `evening` = the evening line. `reading` = the grey standing bar. |
+| `note` | no | Your own line about how it went. Renders in italic under the detail — it's on the page, not private. |
 
-One row = one block, in schedule order top to bottom.
+**status**
 
-## If the sheet format breaks
+- blank — a normal block, with an empty checkbox
+- `done` — pre-checked, struck through, dimmed, and locked, for everyone. This
+  is the teaching record.
+- `carried` — shows on its own day tagged *carried over*, and again on the next
+  day the sheet knows about, tagged *carried from Monday*. To move it further
+  than one day, change its `date`.
+- `skip` — the row doesn't render at all
 
-The page never shows a blank screen. If the sheet is unreadable or the
-headings are wrong, it keeps showing the last good copy (or a clear red
-message naming the exact problem — which row, which column).
+Her checkboxes are in memory only. They reset on reload and are never written
+anywhere — not to the Sheet, not to the browser.
+
+## When a tab is missing or empty
+
+Nothing ever shows a blank screen, and a problem with one tab never takes down
+the others.
+
+| situation | what happens |
+|---|---|
+| gid left as `""` | A calm dashed card in that view saying it isn't connected, and for `daily`, the exact columns it wants. Today falls back to showing the week's plan. |
+| tab not published / 404 / HTML back instead of CSV | Red banner in that view naming the problem. Today falls back to the week's plan. Other views unaffected. |
+| no connection, but this browser has seen it before | The last saved copy, with *saved copy* in the kicker and *No connection — showing the last saved copy* at the foot. |
+| tab published but completely empty | Dashed card: published, but empty. Not an error. |
+| headings missing or misspelled | Red banner naming the missing headings. |
+| a `date` that isn't a date | Red banner naming the row number and what it says. |
+| `daily` has rows, but none for today | Today shows the nearest day it does have, and says so. |
+| `daily` has rows for today but the `plan` tab is broken | Today works. Colours fall back to a built-in list. |
+
+The page re-checks the Sheet every 60 seconds and updates on its own. Google
+caches published CSVs for a few minutes, so an edit takes a moment to show up.
