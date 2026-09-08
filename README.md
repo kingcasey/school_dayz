@@ -91,13 +91,31 @@ which is how Break and Lunch move around during the week.
 `x-axis practice` is not mistaken for a done marker; the marker only counts
 when a space or the end of the cell follows it.
 
-**Rows named `Break`, `Lunch`, `Note`, `Evening` or `Reading`** are treated
-specially — the first two as grey pauses with no checkbox, the rest as the day
-note, the evening line, and the grey standing bar. `Reading` holds: set it in
-the cell where a book starts and it carries across until you change it.
+**Rows named `Break`, `Lunch`, `Note` or `Evening`** are treated specially —
+the first two as grey pauses with no checkbox, the other two as the day's
+banner and its evening line. Everything else, Reading included, is an ordinary
+task with a checkbox.
 
-Row order doesn't matter — the page sorts each day by time. Columns holding
-nothing but a standing reading aren't treated as school days, so a year of
+**The sheet's row order is the day's order.** A time is shown when you give
+one, but it never reorders anything — so if you want a break mid-morning, put
+the `Break` row where it belongs in the list rather than at the bottom. The
+time gutter is all-or-nothing per day: give one item a time and every row that
+day gets the column, so the coloured edges stay in line.
+
+**Section dividers carry down.** A row with a name and nothing else is a
+divider, and it sets both the left-edge colour and the default `Who` for the
+rows beneath it: *Parent Led* → ochre and *With an adult*, *Self-Paced* →
+periwinkle and *On her own*, *Rituals* → navy, *Activities* → plum. Trombone
+and STEM lab stay plum wherever you file them. So `Who` only needs filling in
+where a row differs from its section.
+
+A divider is only allowed to change the section if its name reads like one
+(*rituals, parent, self-paced, independent, activities, around*). A subject row
+you haven't started using yet looks identical to a divider — empty, with just a
+name — so an unrecognised empty row is left alone rather than silently
+resetting the section for everything under it.
+
+Columns with nothing in them aren't treated as school days, so a year of
 pre-filled dates costs nothing.
 
 Her checkboxes are in memory only. They reset on reload and are never written

@@ -212,10 +212,17 @@ const VIEWS = [
    Rituals -> navy, Parent Led -> ochre, Self-Paced -> periwinkle.
    Anything the plan doesn't know about falls back to the list below.     */
 const SECTION_EDGE = [
-  [/ritual/,  "#16394F"],
-  [/parent/,  "#9C6B2B"],
-  [/self|independent/, "#7E92E2"],
+  [/ritual|morning/,            "#16394F"],
+  [/parent|adult|together|led/, "#9C6B2B"],
+  [/self|independent|paced/,    "#7E92E2"],
+  [/activit|extra|outside/,     "#4A1145"],
+  [/around|elsewhere|other/,    ""],        // groups the day without a colour
 ];
+function sectionMatch(name){
+  const low=String(name||"").toLowerCase();
+  for(const [re,c] of SECTION_EDGE) if(re.test(low)) return {edge:c||null, name:low};
+  return null;                              // not a section name we recognise
+}
 const EDGE_FALLBACK = {
   rituals:"#16394F", ritual:"#16394F", morningrituals:"#16394F", bible:"#16394F",
   criticalthinking:"#16394F", currentevents:"#16394F", cnn10:"#16394F",
@@ -326,9 +333,10 @@ function keysFor(name){
   if(s.indexOf("(")>0) out.push(clean(s.split("(")[0]));
   return out.filter(Boolean);
 }
-function edgeFor(name){
+function edgeFor(name, sectionColour){
   const low=String(name||"").toLowerCase();
   for(const [re,c] of EDGE_OVERRIDE) if(re.test(low)) return c;
+  if(sectionColour) return sectionColour;
   const ks=keysFor(name);
   if(planModel){
     for(const k of ks) if(planModel.edge[k]) return planModel.edge[k];
@@ -411,9 +419,8 @@ function buildPlan(rows){
     const hasWork=cells.some(v=>!blank(v));
 
     if(!source && !hasWork){                   // a section divider row
-      let colour=OTHER_EDGE;
-      for(const [re,c] of SECTION_EDGE) if(re.test(name.toLowerCase())){ colour=c; break; }
-      current={name:name, rows:[], colour:colour};
+      const sec=sectionMatch(name);
+      current={name:name, rows:[], colour:(sec && sec.edge) || OTHER_EDGE};
       sections.push(current);
       continue;
     }
@@ -447,9 +454,11 @@ function planWeekIndex(){
      @dad         who, just for that day, overriding column C
      // ....      your note about how it went
 
-   Rows called Break, Lunch, Note, Evening or Reading are treated specially.
+   Rows called Break, Lunch, Note or Evening are treated specially. Everything
+   else — Reading included — is an ordinary task with a checkbox, in the
+   section it sits under.
    ========================================================================== */
-const DAY_SPECIAL = /^(break|lunch|recess|note|notes|evening|evenings|reading)$/;
+const DAY_SPECIAL = /^(break|lunch|recess|note|notes|evening|evenings)$/;
 
 /* One cell, unpacked. Returns null when the day has nothing. */
 function readCell(text, rowTime, rowWho){
@@ -509,7 +518,7 @@ function buildDaily(rows){
   const days=[];
   for(let c=1;c<width;c++){
     const d=parseDate(cell(dateRow,c).replace(/^[A-Za-z]{3,9}\.?\s+/,""));
-    if(d) days.push({col:c, date:d, items:[], notes:[], evenings:[], readings:[], carried:[]});
+    if(d) days.push({col:c, date:d, items:[], notes:[], evenings:[], carried:[]});
   }
   if(!days.length) throw new Error(
     "The date row was found, but there are no dates across it.");
@@ -531,27 +540,33 @@ function buildDaily(rows){
   const bodyStart = headRow>=0 ? headRow+1 : dateRow+1;
 
   let order=0, sawSubject=false;
+  let secEdge=null, secWho="";
   for(let r=bodyStart;r<rows.length;r++){
     const name=cell(r,0);
     if(!name) continue;
     const rowTime = timeCol>=0 ? cell(r,timeCol) : "";
     const rowWho  = whoCol>=0  ? cell(r,whoCol)  : "";
     const cells=days.map(d=>cell(r,d.col));
-    if(!rowTime && !rowWho && !cells.some(v=>!blank(v))) continue;   // section divider
+    if(!rowTime && !rowWho && !cells.some(v=>!blank(v))){
+      // Nothing on this row anywhere in the year. Either a section divider or a
+      // subject not in use yet — and only a name we recognise as a section is
+      // allowed to change the section for the rows beneath it.
+      const sec=sectionMatch(name);
+      if(sec){
+        secEdge=sec.edge;
+        secWho = /parent|adult|together|led/.test(sec.name) ? "adult"
+               : /self|independent|paced/.test(sec.name)    ? "own" : "";
+      }
+      continue;
+    }
     sawSubject=true;
 
     const kind=name.toLowerCase();
     const special=DAY_SPECIAL.test(kind);
     const isPause = kind==="break" || kind==="lunch" || kind==="recess";
-    let held=null;                       // Reading holds until you change it
 
     days.forEach((day,i)=>{
-      const p=readCell(cells[i], rowTime, rowWho);
-      if(kind==="reading"){
-        if(p && p.detail) held=p.detail;
-        if(held) day.readings.push(held);
-        return;
-      }
+      const p=readCell(cells[i], rowTime, rowWho||secWho);
       if(!p) return;
       if(kind==="note"||kind==="notes"){ if(p.detail) day.notes.push(p.detail); return; }
       if(kind==="evening"||kind==="evenings"){ if(p.detail) day.evenings.push(p.detail); return; }
@@ -565,17 +580,13 @@ function buildDaily(rows){
         note:   p.note,
         who:    normWho(p.who),
         hasWho: p.hasWho,
+        edge:   secEdge,
         status: special && !isPause ? "" : p.status,
         pause:  isPause,
       });
     });
   }
   if(!sawSubject) throw new Error("The daily tab has a date row but no subject rows under it.");
-
-  days.forEach(day=>day.items.sort((a,b)=>{
-    const am=a.mins==null?-1:a.mins, bm=b.mins==null?-1:b.mins;
-    return am!==bm ? am-bm : a.order-b.order;
-  }));
 
   // Anything marked > shows again on the next day the sheet knows about.
   days.forEach((day,i)=>{
@@ -590,7 +601,7 @@ function buildDaily(rows){
     });
   });
 
-  // A column with only a standing reading in it isn't a school day.
+  // A date column with nothing under it isn't a school day.
   const live=days.filter(d=>d.items.length||d.notes.length||d.evenings.length||d.carried.length);
   if(!live.length) throw new Error("The daily tab has dates and subjects, but no days filled in yet.");
   return {days:live};
@@ -698,15 +709,13 @@ function makeStep(label, aria, disabled, fn){
 }
 
 /* --- one block row, shared by Today and the plan fallback --------------- */
-function blockRow(it){
-  const row=el("div","block"+(it.pause?" pause":"")+(it.start?"":" notime"));
+function blockRow(it, showTime){
+  const row=el("div","block"+(it.pause?" pause":"")+(showTime?"":" notime"));
 
-  if(it.start){
-    row.appendChild(el("div","time",it.start));
-  }
+  if(showTime) row.appendChild(el("div","time", it.start||""));
 
   const card=el("div","card");
-  if(!it.pause) card.style.setProperty("--edge", edgeFor(it.subject));
+  if(!it.pause) card.style.setProperty("--edge", edgeFor(it.subject, it.edge));
 
   if(it.pause){
     card.appendChild(el("div","name", it.detail || it.subject));
@@ -806,11 +815,6 @@ function renderToday(host){
       "<p>Showing <b>"+esc(longDate(day.date))+"</b> instead — the nearest day the sheet has.</p>"));
   }
 
-  day.readings.forEach(t=>{
-    const n=el("div","standing");
-    n.innerHTML="<b>Every day, outside the blocks:</b> "+esc(t);
-    host.appendChild(n);
-  });
   day.notes.forEach(t=>{
     const n=el("div","standing");
     n.innerHTML="<b>"+esc(t)+"</b>";
@@ -822,7 +826,8 @@ function renderToday(host){
     host.appendChild(emptyCard("Nothing listed for this day.",
       "<p>The daily tab has no rows dated "+esc(iso(day.date))+" yet.</p>"));
   }
-  all.forEach(it=>host.appendChild(blockRow(it)));
+  const showTime=all.some(it=>it.start);
+  all.forEach(it=>host.appendChild(blockRow(it, showTime)));
 
   if(day.evenings.length){
     const ev=el("div","evening");
