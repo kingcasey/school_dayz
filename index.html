@@ -955,8 +955,9 @@ function renderTabs(){
 function render(){
   const view=VIEWS.find(v=>v.id===currentView)||VIEWS[0];
   renderTabs();
+  // The helper is about running a school day, so it belongs to Today alone.
   document.getElementById("helper").style.display =
-    (view.id==="today"||view.id==="plan") ? "" : "none";
+    view.id==="today" ? "" : "none";
 
   const host=document.getElementById("view");
   host.innerHTML="";
