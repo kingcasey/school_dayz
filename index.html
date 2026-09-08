@@ -434,98 +434,166 @@ function planWeekIndex(){
 }
 
 /* ==========================================================================
-   THE DAILY TAB — day-level. One row per thing, per day. Doubles as the log.
-   Columns (row 1, any order, extra columns ignored):
-     date  start  subject  detail  who  status  type  note
+   THE DAILY TAB — the same shape as the plan tab, one step finer.
+   Subjects down the left, one column per school day across the top, section
+   dividers in between. Column A the subject, B its usual time, C who leads.
+   Freeze A:C and scroll right; a new week is five new columns.
+
+   Inside a day's cell:
+     x ....       done — struck through and locked, for everyone
+     > ....       carried on to the next day
+     -  or empty  nothing that day
+     9:55 ....    a time just for that day, overriding column B
+     @dad         who, just for that day, overriding column C
+     // ....      your note about how it went
+
+   Rows called Break, Lunch, Note, Evening or Reading are treated specially.
    ========================================================================== */
+const DAY_SPECIAL = /^(break|lunch|recess|note|notes|evening|evenings|reading)$/;
+
+/* One cell, unpacked. Returns null when the day has nothing. */
+function readCell(text, rowTime, rowWho){
+  let s=String(text==null?"":text).trim();
+  if(blank(s)) return null;
+
+  let status="";
+  let m=s.match(/^(x|✓)(\s+|$)/i);
+  if(m){ status="done"; s=s.slice(m[0].length).trim(); }
+  else if(/^>+\s*/.test(s)){ status="carried"; s=s.replace(/^>+\s*/,"").trim(); }
+
+  let start=rowTime;
+  m=s.match(/^(\d{1,2}:\d{2}\s*(?:am|pm)?)(\s+|$)/i);
+  if(m){ start=m[1].trim(); s=s.slice(m[0].length).trim(); }
+
+  let who=rowWho, hasWho=!!rowWho;
+  m=s.match(/@(adult|own|dad|mom|me)\b/i);
+  if(m){ who=m[1]; hasWho=true; s=(s.slice(0,m.index)+s.slice(m.index+m[0].length)).replace(/\s{2,}/g," ").trim(); }
+
+  let note="";
+  const n=s.indexOf("//");
+  if(n>=0){ note=s.slice(n+2).trim(); s=s.slice(0,n).trim(); }
+
+  return {status:status, start:start, who:who, hasWho:hasWho, detail:s, note:note};
+}
+
 function buildDaily(rows){
   if(!rows.length) throw new Error("The daily tab came back empty.");
-  const head=rows[0].map(h=>String(h==null?"":h).trim().toLowerCase());
-  const col={}; head.forEach((h,i)=>{ if(h && !(h in col)) col[h]=i; });
-  const missing=["date","subject"].filter(k=>!(k in col));
-  if(missing.length) throw new Error(
-    'Row 1 of the daily tab is missing the heading(s): '+missing.join(", ")+
-    ". Row 1 must be the column headings: date, start, subject, detail, who, status, type, note.");
-  const get=(r,name)=> col[name]!=null ? String(r[col[name]]==null?"":r[col[name]]).trim() : "";
+  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
+  const first=r=> cell(r,0).toLowerCase();
+  const width=Math.max(...rows.map(r=>r.length));
+  const look=Math.min(rows.length,12);
 
-  const byDate=new Map();      // iso -> {date, items, notes, evenings, readings}
-  const always={notes:[], evenings:[], readings:[]};
-  let order=0;
+  // The layout this replaced put its headings in row 1. Say so, rather than
+  // leaving a puzzling error while the tab is mid-swap.
+  const h0=(rows[0]||[]).map(x=>String(x==null?"":x).trim().toLowerCase());
+  if(h0[0]==="date" && ["start","status","type","detail"].some(k=>h0.indexOf(k)>0))
+    throw new Error(
+      "This is the old one-row-per-item daily tab. The page now reads the grid version — "+
+      "subjects down the left, one column per school day across the top. "+
+      "daily-template.csv in the repo is the whole year, ready to paste in.");
 
-  for(let r=1;r<rows.length;r++){
-    const row=rows[r];
-    if(row.every(x=>String(x==null?"":x).trim()==="")) continue;
-
-    const type=(get(row,"type")||"block").toLowerCase();
-    const text=get(row,"detail")||get(row,"subject");
-    const raw=get(row,"date");
-    const d=raw?parseDate(raw):null;
-    if(raw && !d) throw new Error(
-      'Row '+(r+1)+' of the daily tab: "date" should look like 2026-09-08 or 9/8/2026, '+
-      'but it says "'+raw+'".');
-
-    const bucketOf=(dd)=>{
-      const k=iso(dd);
-      if(!byDate.has(k)) byDate.set(k,{date:dd, items:[], notes:[], evenings:[], readings:[]});
-      return byDate.get(k);
-    };
-
-    if(type==="note" || type==="evening" || type==="reading"){
-      if(!text) continue;
-      const key = type==="note" ? "notes" : (type==="evening" ? "evenings" : "readings");
-      (d ? bucketOf(d) : always)[key].push(text);
-      continue;
+  // The date row: the one starting with "Date", or the first with dates across it.
+  let dateRow=-1;
+  for(let r=0;r<look;r++) if(first(r)==="date"){ dateRow=r; break; }
+  if(dateRow<0){
+    for(let r=0;r<look;r++){
+      let n=0;
+      for(let c=1;c<width;c++) if(parseDate(cell(r,c).replace(/^[A-Za-z]{3,9}\.?\s+/,""))) n++;
+      if(n>=2){ dateRow=r; break; }
     }
+  }
+  if(dateRow<0) throw new Error(
+    'Could not find the date row. One row near the top must start with the word "Date" in '+
+    "column A, with each school day's date running across it.");
 
-    if(!d) continue;                            // a block with no date can't be placed
-    const status=normStatus(get(row,"status"));
-    if(status==="skip") continue;
+  const days=[];
+  for(let c=1;c<width;c++){
+    const d=parseDate(cell(dateRow,c).replace(/^[A-Za-z]{3,9}\.?\s+/,""));
+    if(d) days.push({col:c, date:d, items:[], notes:[], evenings:[], readings:[], carried:[]});
+  }
+  if(!days.length) throw new Error(
+    "The date row was found, but there are no dates across it.");
 
-    bucketOf(d).items.push({
-      order:  order++,
-      day:    iso(d),
-      start:  get(row,"start"),
-      mins:   minutes(get(row,"start")),
-      subject:get(row,"subject"),
-      detail: get(row,"detail"),
-      note:   get(row,"note"),
-      who:    get(row,"who") ? normWho(get(row,"who")) : "own",
-      hasWho: !!get(row,"who"),
-      status: status,
-      pause:  type==="break" || type==="pause" || type==="lunch",
-      row:    r+1,
+  // The heading row: "Subject" in column A, with Time and Who beside it.
+  let headRow=-1;
+  for(let r=0;r<look;r++) if(first(r)==="subject"){ headRow=r; break; }
+  let timeCol=-1, whoCol=-1;
+  const firstDayCol=days[0].col;
+  if(headRow>=0){
+    for(let c=1;c<firstDayCol;c++){
+      const h=cell(headRow,c).toLowerCase();
+      if(h==="time" && timeCol<0) timeCol=c;
+      if(h==="who"  && whoCol<0)  whoCol=c;
+    }
+  }
+  if(timeCol<0 && firstDayCol>1) timeCol=1;
+  if(whoCol<0  && firstDayCol>2) whoCol=2;
+  const bodyStart = headRow>=0 ? headRow+1 : dateRow+1;
+
+  let order=0, sawSubject=false;
+  for(let r=bodyStart;r<rows.length;r++){
+    const name=cell(r,0);
+    if(!name) continue;
+    const rowTime = timeCol>=0 ? cell(r,timeCol) : "";
+    const rowWho  = whoCol>=0  ? cell(r,whoCol)  : "";
+    const cells=days.map(d=>cell(r,d.col));
+    if(!rowTime && !rowWho && !cells.some(v=>!blank(v))) continue;   // section divider
+    sawSubject=true;
+
+    const kind=name.toLowerCase();
+    const special=DAY_SPECIAL.test(kind);
+    const isPause = kind==="break" || kind==="lunch" || kind==="recess";
+    let held=null;                       // Reading holds until you change it
+
+    days.forEach((day,i)=>{
+      const p=readCell(cells[i], rowTime, rowWho);
+      if(kind==="reading"){
+        if(p && p.detail) held=p.detail;
+        if(held) day.readings.push(held);
+        return;
+      }
+      if(!p) return;
+      if(kind==="note"||kind==="notes"){ if(p.detail) day.notes.push(p.detail); return; }
+      if(kind==="evening"||kind==="evenings"){ if(p.detail) day.evenings.push(p.detail); return; }
+      day.items.push({
+        order:  order++,
+        day:    iso(day.date),
+        start:  p.start,
+        mins:   minutes(p.start),
+        subject:name,
+        detail: isPause ? (p.detail||name) : p.detail,
+        note:   p.note,
+        who:    normWho(p.who),
+        hasWho: p.hasWho,
+        status: special && !isPause ? "" : p.status,
+        pause:  isPause,
+      });
     });
   }
+  if(!sawSubject) throw new Error("The daily tab has a date row but no subject rows under it.");
 
-  const days=[...byDate.values()].sort((a,b)=>a.date-b.date);
-  days.forEach(day=>{
-    day.items.sort((a,b)=>{
-      const am=a.mins==null?-1:a.mins, bm=b.mins==null?-1:b.mins;
-      return am!==bm ? am-bm : a.order-b.order;
-    });
-    day.notes    = always.notes.concat(day.notes);
-    day.evenings = always.evenings.concat(day.evenings);
-    day.readings = always.readings.concat(day.readings);
-  });
+  days.forEach(day=>day.items.sort((a,b)=>{
+    const am=a.mins==null?-1:a.mins, bm=b.mins==null?-1:b.mins;
+    return am!==bm ? am-bm : a.order-b.order;
+  }));
 
-  // Anything marked carried shows again on the next day the sheet knows about.
+  // Anything marked > shows again on the next day the sheet knows about.
   days.forEach((day,i)=>{
-    day.carried=[];
     if(i===0) return;
-    const prev=days[i-1];
-    prev.items.forEach(it=>{
+    days[i-1].items.forEach(it=>{
       if(it.status==="carried" && !it.pause){
         day.carried.push(Object.assign({}, it, {
-          carriedFrom: WEEKDAY[prev.date.getDay()],
-          status: "",
-          start: "", mins: null,
+          carriedFrom: WEEKDAY[days[i-1].date.getDay()],
+          status:"", start:"", mins:null,
         }));
       }
     });
   });
 
-  if(!days.length) throw new Error("The daily tab has headings but no rows yet.");
-  return {days:days};
+  // A column with only a standing reading in it isn't a school day.
+  const live=days.filter(d=>d.items.length||d.notes.length||d.evenings.length||d.carried.length);
+  if(!live.length) throw new Error("The daily tab has dates and subjects, but no days filled in yet.");
+  return {days:live};
 }
 
 function dailyDayIndex(){
@@ -592,14 +660,14 @@ const NOT_CONNECTED = {
   plan: 'The <code>plan</code> tab isn\'t connected yet. In the Sheet: '+
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>plan</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. Then paste the id and the gid into the top of this file.',
-  daily:'The <code>daily</code> tab isn\'t built yet. It wants these column headings in row 1:'+
-        '<ul><li><code>date</code> — 2026-09-08</li><li><code>start</code> — 9:00 (optional)</li>'+
-        '<li><code>subject</code> — English, Algebra 1, Break…</li>'+
-        '<li><code>detail</code> — what to do that day</li>'+
-        '<li><code>who</code> — adult / own / dad</li>'+
-        '<li><code>status</code> — blank / done / carried / skip</li>'+
-        '<li><code>type</code> — blank / break / note / evening / reading</li>'+
-        '<li><code>note</code> — your own line about how it went</li></ul>',
+  daily:'The <code>daily</code> tab isn\'t built yet. It is shaped like the plan tab, one step '+
+        'finer: subjects down the left, one column per school day across the top.'+
+        '<ul><li>a row starting <code>Date</code> — a date under each school day</li>'+
+        '<li>a row starting <code>Subject</code>, with <code>Time</code> and <code>Who</code> beside it</li>'+
+        '<li>then one row per subject, section dividers in between</li></ul>'+
+        'In a day\'s cell: <code>x</code> done · <code>&gt;</code> carried · <code>-</code> nothing · '+
+        'a leading <code>9:55</code> for that day\'s time · <code>@dad</code> for who · '+
+        '<code>//</code> before your note.',
   map:  'This is where subjects and credits from now through 12th grade will live. '+
         'Nothing is wired up yet — the tab and the shape of it come next.',
   reading:'Reading now, to read, and finished will live here. '+

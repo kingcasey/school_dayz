@@ -55,33 +55,58 @@ breaks in them render as separate lines.
 
 ## The `daily` tab
 
-Row 1 is the headings. Order doesn't matter, extra columns are ignored, and
-only `date` and `subject` have to exist as columns. One row per thing, per day.
-`daily-template.csv` is a filled-in week you can paste straight in.
+The same shape as the plan tab, one step finer: subjects down the left, **one
+column per school day** across the top, section dividers in between. Freeze
+A:C and scroll right. `daily-template.csv` is the whole school year — every
+date already filled in from the plan tab, week 2 worked through — ready to
+paste straight in.
 
-| column | required | meaning |
-|---|---|---|
-| `date` | yes | `2026-09-08` or `9/8/2026`. Blank is only allowed on `note`, `evening` and `reading` rows, where it means *every day*. |
-| `start` | no | `9:00`, `1:40`. Afternoon is assumed for 1–6 unless you write `am`. Blank = no time, sorts to the top. |
-| `subject` | yes | The bold line, and the left-edge colour. Matches the plan tab's subject names where it can. |
-| `detail` | no | The grey line under it — what to do that day. |
-| `who` | no | `adult`, `dad`, or `own` (the default). Ochre tag, plum tag, plain tag. |
-| `status` | no | blank, `done`, `carried`, or `skip`. See below. |
-| `type` | no | blank = a block. `break` = grey italic pause, no checkbox. `note` = banner at the top of the day. `evening` = the evening line. `reading` = the grey standing bar. |
-| `note` | no | Your own line about how it went. Renders in italic under the detail — it's on the page, not private. |
+```
+A: Subject | B: Time | C: Who | D…: one column per school day
+```
 
-**status**
+The page looks for a row starting **Date** with a date under each school day,
+and a row starting **Subject** with **Time** and **Who** beside it. Everything
+below that is one row per subject. A row with a name but nothing else is a
+section divider. Columns without a date are ignored, so you can leave gaps
+between weeks.
 
-- blank — a normal block, with an empty checkbox
-- `done` — pre-checked, struck through, dimmed, and locked, for everyone. This
-  is the teaching record.
-- `carried` — shows on its own day tagged *carried over*, and again on the next
-  day the sheet knows about, tagged *carried from Monday*. To move it further
-  than one day, change its `date`.
-- `skip` — the row doesn't render at all
+Columns A–C are the skeleton — the subject, its usual time, and who leads.
+Set them once. What changes daily goes in the day's cell:
+
+| in a cell | means |
+|---|---|
+| `x ` at the front | done — struck through, dimmed, locked for everyone |
+| `> ` at the front | carried on to the next day the sheet knows about |
+| `-` or empty | nothing that day |
+| `9:55 ` at the front | that day's time, overriding column B |
+| `@dad` `@adult` `@own` | that day's who, overriding column C |
+| `// …` at the end | your note about how it went |
+
+So `x 9:55 @dad Unit 1 practice set // she flew through it` is done, at 9:55,
+with Dad, with a note. Everything left over is the detail line. A cell holding
+only a time (`10:30`) sets the time and takes its text from the row name —
+which is how Break and Lunch move around during the week.
+
+`x-axis practice` is not mistaken for a done marker; the marker only counts
+when a space or the end of the cell follows it.
+
+**Rows named `Break`, `Lunch`, `Note`, `Evening` or `Reading`** are treated
+specially — the first two as grey pauses with no checkbox, the rest as the day
+note, the evening line, and the grey standing bar. `Reading` holds: set it in
+the cell where a book starts and it carries across until you change it.
+
+Row order doesn't matter — the page sorts each day by time. Columns holding
+nothing but a standing reading aren't treated as school days, so a year of
+pre-filled dates costs nothing.
 
 Her checkboxes are in memory only. They reset on reload and are never written
 anywhere — not to the Sheet, not to the browser.
+
+**No formatting reaches the page.** Published CSV is plain text and the
+published-HTML view is a JavaScript shell with no content in it, so
+strikethrough, colour and bold in the Sheet are invisible here. That is why
+done is `x` and not a struck-through cell.
 
 ## When a tab is missing or empty
 
@@ -94,9 +119,9 @@ the others.
 | tab not published / 404 / HTML back instead of CSV | Red banner in that view naming the problem. Today falls back to the week's plan. Other views unaffected. |
 | no connection, but this browser has seen it before | The last saved copy, with *saved copy* in the kicker and *No connection — showing the last saved copy* at the foot. |
 | tab published but completely empty | Dashed card: published, but empty. Not an error. |
-| headings missing or misspelled | Red banner naming the missing headings. |
-| a `date` that isn't a date | Red banner naming the row number and what it says. |
-| `daily` has rows, but none for today | Today shows the nearest day it does have, and says so. |
+| no `Date` row found | Red banner saying so. If it spots the old one-row-per-item layout it says that specifically. |
+| a `Date` row with no dates across it | Red banner saying so. |
+| `daily` has days, but none for today | Today shows the nearest day it does have, and says so. |
 | `daily` has rows for today but the `plan` tab is broken | Today works. Colours fall back to a built-in list. |
 
 The page re-checks the Sheet every 60 seconds and updates on its own. Google
