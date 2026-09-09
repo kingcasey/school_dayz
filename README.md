@@ -40,7 +40,7 @@ per tab. Both go at the top of `index.html`:
 
 ```js
 const PUB_ID = "2PACX-1vABC...";
-const GID = { plan: "0", daily: "123456", map: "", reading: "789012", wins: "" };
+const GID = { plan: "0", daily: "123456", map: "", reading: "789012", wins: "345678" };
 ```
 
 A tab left as `""` is simply not connected. Its view says so and the rest of
@@ -178,6 +178,33 @@ each book is coloured by its `Context`, using the same colours as the plan.
 
 A link in any cell becomes a tappable link, same as on the daily tab.
 
+## The `wins` tab
+
+One row per thing she did — a certification, a competition, a performance, a
+project, a milestone. Headings can sit in any order, and they're matched
+loosely, so `Date ` with a trailing space and `Notes/ Results` with a slash
+both land where you'd expect:
+
+| column | holds |
+|---|---|
+| `What` | the accomplishment. Required — the heading row is found by looking for it |
+| `Date` | when it happened. This is what buckets it into a year |
+| `Type` | Certification, Competition, Performance, Project, Milestone — the tag |
+| `Issuing/Awarding Body/Organization` | who gave it, ran it, or hosted it |
+| `Notes/Results` | the detail line — a score, a placing, an expiry |
+| `Evidence` | a share link, or the filename of the paperwork |
+
+**Grouped by year, newest first**, each year collapsible with its count. The
+current year opens itself; earlier years stay folded until asked for, and your
+folding is remembered on that device. A row with no date waits under **No date
+yet** at the bottom rather than being dropped.
+
+**Evidence works two ways.** Paste a Drive or Dropbox share link and the page
+shows *View evidence →*, tappable. Leave a bare filename and it shows quietly
+as *On file: …* — you know the paperwork exists, and the page doesn't pretend
+it can open something sitting in your own Drive. Swapping a filename for a
+share link later is the only change needed to make it tappable.
+
 ## When a tab is missing or empty
 
 Nothing ever shows a blank screen, and a problem with one tab never takes down
@@ -190,6 +217,7 @@ the others.
 | no connection, but this browser has seen it before | The last saved copy, with *saved copy* in the kicker and *No connection — showing the last saved copy* at the foot. |
 | tab published but completely empty | Dashed card: published, but empty. Not an error. |
 | `reading` has no `Title` column | Red banner naming the headings it wants. |
+| `wins` has no `What` column | Red banner naming the headings it wants. |
 | no `Date` row found | Red banner saying so. If it spots the old one-row-per-item layout it says that specifically. |
 | a `Date` row with no dates across it | Red banner saying so. |
 | `daily` has days, but none for today | Today shows the nearest day it does have, and says so. |

@@ -130,6 +130,8 @@
   .bwho{font-size:.88rem;color:var(--ink-soft);margin-top:.1rem;overflow-wrap:anywhere}
   .bwhen{font-size:.82rem;color:var(--ink-soft);margin-top:.25rem;
         font-variant-numeric:tabular-nums}
+  .eviden{font-size:.82rem;margin-top:.3rem;overflow-wrap:anywhere}
+  .eviden.onfile{color:var(--ink-soft);opacity:.8}
 
   .sect{margin:1.6rem 0 .1rem;padding-top:.5rem;font-size:.76rem;font-weight:600;
         letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
@@ -218,7 +220,7 @@ const GID = {
   daily:   "277283136",       // the new day-level "daily" tab  (see README)
   map:     "",                // Education map      — not built yet
   reading: "1478186643",      // the "reading" tab  (see README)
-  wins:    "",                // Accomplishments    — not built yet
+  wins:    "67138078",        // the "wins" tab     (see README)
 };
 
 /* --- knobs (rarely change) ---------------------------------------------- */
@@ -284,6 +286,7 @@ let dayIdx  = null;            // which day the Today view is showing
 let dayAuto = true;            // true while Today is on the day it picked itself
 const session = new Set();     // her ticks. In memory only. Never written anywhere.
 let readModel = null;          // the reading tab, sorted onto its three shelves
+let winsModel = null;          // the wins tab, bucketed by year
 
 /* Which shelves are open. Remembered per device, so Finished stays folded
    away for whoever likes it folded away. */
@@ -704,7 +707,7 @@ const READ_COL = [
 const SHELVES = [
   {id:"now",      title:"Reading now", empty:"Nothing on the go right now."},
   {id:"later",    title:"To read",     empty:"Nothing waiting — the queue is empty."},
-  {id:"finished", title:"Finished",    empty:"Nothing finished yet."},
+  {id:"finished", title:"Finished",    empty:"Nothing finished yet.", openByDefault:false},
 ];
 
 function buildReading(rows){
@@ -752,6 +755,74 @@ function buildReading(rows){
   shelf.now.sort((a,b)=> (b.started-a.started) || (a.order-b.order));
   shelf.finished.sort((a,b)=> (b.done-a.done) || (a.order-b.order));
   return shelf;
+}
+
+/* ==========================================================================
+   The wins tab. One row per thing she did — certifications, competitions,
+   performances, projects, milestones — grouped into the year it happened.
+   ========================================================================== */
+const WIN_COL = [
+  ["kind",     /^(type|kind|category)/],
+  ["date",     /^date/],
+  ["what",     /^(what|title|accomplishment|achievement|win|description)/],
+  ["body",     /(issu|award|organi|body|through|school|program)/],
+  ["notes",    /^(note|result|outcome|detail)/],
+  ["evidence", /^(evidence|proof|file|document|certificate|link)/],
+];
+
+function buildWins(rows){
+  if(!rows.length) throw new Error("The wins tab came back empty.");
+  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
+
+  // The heading row: the first with a What column on it. Headings are matched
+  // loosely — "Date " and "Notes/ Results" are the shape they really are.
+  let head=-1, col={};
+  for(let r=0;r<Math.min(rows.length,10) && head<0;r++){
+    const found={};
+    for(let c=0;c<rows[r].length;c++){
+      const h=cell(r,c).toLowerCase().replace(/\s+/g," ").trim();
+      if(!h) continue;
+      for(const [key,re] of WIN_COL) if(found[key]==null && re.test(h)) found[key]=c;
+    }
+    if(found.what!=null){ head=r; col=found; }
+  }
+  if(head<0) throw new Error(
+    'Could not find the heading row. One row near the top needs a column called '+
+    '"What", with "Date", "Type", the awarding body, notes and evidence beside it.');
+
+  const at=(r,key)=> col[key]==null ? "" : cell(r,col[key]);
+  const wins=[];
+  for(let r=head+1;r<rows.length;r++){
+    const what=at(r,"what");
+    if(!what || blank(what)) continue;
+    wins.push({
+      what:what,
+      kind:  at(r,"kind"),
+      body:  at(r,"body"),
+      notes: at(r,"notes"),
+      evidence: at(r,"evidence"),
+      date:  parseDate(at(r,"date")),
+      order: r,
+    });
+  }
+  if(!wins.length) throw new Error("The wins tab has its headings, but nothing under them yet.");
+
+  // Newest first, then bucketed by year. Anything undated waits at the end
+  // rather than being dropped on the floor.
+  wins.sort((a,b)=>{
+    if(a.date && b.date) return (b.date-a.date) || (a.order-b.order);
+    if(a.date) return -1;
+    if(b.date) return 1;
+    return a.order-b.order;
+  });
+  const groups=[], byYear={};
+  wins.forEach(w=>{
+    const y = w.date ? String(w.date.getFullYear()) : "undated";
+    if(!byYear[y]){ byYear[y]={id:y, title: y==="undated" ? "No date yet" : y, items:[]};
+                    groups.push(byYear[y]); }
+    byYear[y].items.push(w);
+  });
+  return {groups:groups, total:wins.length, newest:wins[0].date||null};
 }
 
 /* ==========================================================================
@@ -827,8 +898,13 @@ const NOT_CONNECTED = {
         'onto its shelf: started but not finished is <b>Reading now</b>, neither is '+
         '<b>To read</b>, finished is <b>Finished</b></li>'+
         '<li><code>Context</code> and <code>Type</code> — the two tags under a book</li></ul>',
-  wins: 'Competitions, performances, projects, milestones. '+
-        'Nothing is wired up yet — the tab and the shape of it come next.',
+  wins: 'The <code>wins</code> tab isn\'t connected yet. In the Sheet: '+
+        'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>wins</b> tab &rsaquo; '+
+        'CSV &rsaquo; Publish. One row per thing she did, with these headings:'+
+        '<ul><li><code>What</code> and <code>Date</code> — the date buckets it into a year</li>'+
+        '<li><code>Type</code> — certification, competition, performance, project, milestone</li>'+
+        '<li>the issuing or awarding body, and <code>Notes/Results</code></li>'+
+        '<li><code>Evidence</code> — a share link becomes tappable; a filename is noted as on file</li></ul>',
 };
 
 function setHead(kicker, title, dates){
@@ -1092,21 +1168,21 @@ function bookCard(b){
   return n;
 }
 
-function shelfBlock(spec, books){
+function shelfBlock(spec, items, makeCard){
   const d=document.createElement("details");
   d.className="shelf";
   // Open by default where there's something to see; Finished stays folded.
-  d.open = shelfOpen(spec.id, spec.id!=="finished" && books.length>0);
+  d.open = shelfOpen(spec.id, spec.openByDefault!==false && items.length>0);
   d.addEventListener("toggle",()=>rememberShelf(spec.id, d.open));
 
   const sum=document.createElement("summary");
   sum.appendChild(document.createTextNode(spec.title));
-  sum.appendChild(el("span","count", String(books.length)));
+  sum.appendChild(el("span","count", String(items.length)));
   d.appendChild(sum);
 
   const body=el("div","body");
-  if(!books.length) body.appendChild(el("p","quiet", spec.empty));
-  else books.forEach(b=>body.appendChild(bookCard(b)));
+  if(!items.length) body.appendChild(el("p","quiet", spec.empty));
+  else items.forEach(x=>body.appendChild(makeCard(x)));
   d.appendChild(body);
   return d;
 }
@@ -1142,7 +1218,94 @@ function renderReading(host){
   const n=readModel.now.length, l=readModel.later.length, f=readModel.finished.length;
   setHead("B"+(s.cached?" · saved copy":""), "Reading list",
           n+" on the go · "+l+" waiting · "+f+" finished");
-  SHELVES.forEach(spec=>host.appendChild(shelfBlock(spec, readModel[spec.id])));
+  SHELVES.forEach(spec=>host.appendChild(shelfBlock(spec, readModel[spec.id], bookCard)));
+}
+
+/* --- Accomplishments ----------------------------------------------------- */
+function winCard(w){
+  const n=el("div","book");
+  const card=el("div","card");
+  card.style.setProperty("--edge", edgeFor(w.kind||w.what));
+
+  card.appendChild(elLinked("div","btitle", w.what));
+  if(w.body) card.appendChild(elLinked("div","bwho", w.body));
+
+  if(w.date) card.appendChild(el("div","bwhen",
+    MONTH[w.date.getMonth()]+" "+w.date.getDate()+", "+w.date.getFullYear()));
+
+  if(w.notes) card.appendChild(elLinked("div","memo", w.notes));
+
+  // Evidence: a pasted share link is worth tapping. A bare filename is worth
+  // knowing about, but the page can't open it, so it doesn't pretend to.
+  if(w.evidence){
+    URL_RE.lastIndex=0;
+    const hit=URL_RE.exec(w.evidence);
+    if(hit){
+      const line=el("div","eviden");
+      const a=document.createElement("a");
+      a.className="link";
+      a.href = /^https?:\/\//i.test(hit[0]) ? hit[0] : "https://"+hit[0];
+      a.target="_blank"; a.rel="noopener noreferrer";
+      a.textContent="View evidence \u2192";
+      line.appendChild(a);
+      card.appendChild(line);
+    } else {
+      card.appendChild(el("div","eviden onfile","On file: "+w.evidence));
+    }
+  }
+
+  if(w.kind){
+    const tags=el("div","tags");
+    tags.appendChild(el("span","tag", w.kind));
+    card.appendChild(tags);
+  }
+
+  n.appendChild(card);
+  return n;
+}
+
+function renderWins(host){
+  const s=sheet.wins||{state:"unset"};
+  const kick="B"+(s.cached?" · saved copy":"");
+  setHead(kick, "Accomplishments", "");
+  stepper([]);
+
+  if(s.state==="unset"){
+    host.appendChild(emptyCard("The wins tab isn't connected yet.","<p>"+NOT_CONNECTED.wins+"</p>"));
+    return;
+  }
+  if(s.state==="error"){
+    host.appendChild(errorCard("Can't reach the accomplishments right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    return;
+  }
+
+  let model;
+  try{ model=winsModel=buildWins(s.rows); }
+  catch(err){
+    host.appendChild(s.rows && s.rows.length>1
+      ? errorCard("The wins tab can't be read.",
+          "It's reachable, but the format isn't what this page expects. Here's the problem:",
+          String(err.message||err))
+      : emptyCard("The wins tab is published, but empty.",
+          "<p>"+NOT_CONNECTED.wins+"</p>"+
+          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
+    return;
+  }
+
+  setHead(kick, "Accomplishments",
+          model.total+(model.total===1?" recorded":" recorded")+
+          (model.newest?" · most recent "+shortDate(model.newest):""));
+
+  // This year opens itself; the years behind it stay folded until asked for.
+  const thisYear=String(today().getFullYear());
+  model.groups.forEach(g=>{
+    host.appendChild(shelfBlock(
+      {id:"win-"+g.id, title:g.title, empty:"Nothing recorded.",
+       openByDefault: g.id===thisYear || model.groups.length===1},
+      g.items, winCard));
+  });
 }
 
 function renderStub(host, view){
@@ -1186,6 +1349,7 @@ function render(){
   if(view.id==="today")        renderToday(host);
   else if(view.id==="plan")    renderPlan(host);
   else if(view.id==="reading") renderReading(host);
+  else if(view.id==="wins")    renderWins(host);
   else                         renderStub(host, view);
 
   const f=document.getElementById("foot");
@@ -1198,7 +1362,7 @@ function render(){
 async function refresh(){
   // The plan is loaded whatever the view: Today borrows its colours, and falls
   // back to it when the daily tab has nothing to say.
-  await Promise.all([load("plan"), load("daily"), load("reading")]);
+  await Promise.all([load("plan"), load("daily"), load("reading"), load("wins")]);
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
     try{ planModel=buildPlan(sheet.plan.rows); }
