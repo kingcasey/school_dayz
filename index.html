@@ -228,12 +228,14 @@ const POLL_MS = 60000;                 // how often to check the sheet for chang
 const CACHE   = "schooldayz.v2.";      // offline copies live here (this browser)
 
 /* --- the five views, in tab order --------------------------------------- */
+/* Map is last while it's still a stub — the tabs she taps every day come
+   first, and nothing else depends on this order. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"daily"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
-  {id:"map",     tab:"Map",     title:"Education map",   needs:"map"},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
+  {id:"map",     tab:"Map",     title:"Education map",   needs:"map"},
 ];
 
 /* --- colour of the left edge -------------------------------------------

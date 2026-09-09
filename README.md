@@ -8,13 +8,14 @@ thing that ever gets edited.
 |---|---|---|
 | **Today** (opens here) | `daily` tab | built |
 | **Plan** — the week at a glance | `plan` tab | built |
-| **Map** — subjects and credits to 12th grade | `map` tab | stub |
-| **Reading** — reading now / to read / finished | `reading` tab | stub |
-| **Wins** — accomplishments | `wins` tab | stub |
+| **Reading** — reading now / to read / finished | `reading` tab | built |
+| **Wins** — accomplishments, by year | `wins` tab | built |
+| **Map** — subjects and credits to 12th grade | `map` tab | stub, and last in the tabs until it isn't |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm, no accounts for
-anyone viewing it. Views are linkable: `#today`, `#plan`, `#map`, `#reading`,
-`#wins`.
+anyone viewing it. Views are linkable: `#today`, `#plan`, `#reading`, `#wins`,
+`#map` — the hashes are fixed, so tab order can change without breaking a
+bookmark.
 
 ## Where it runs
 
