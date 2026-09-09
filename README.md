@@ -92,6 +92,7 @@ Set them once. What changes daily goes in the day's cell:
 | `9:55 ` at the front | that day's time, overriding column B |
 | `@dad` `@adult` `@own` | that day's who, overriding column C |
 | `// …` at the end | your note about how it went |
+| a pasted link | shown as a tappable link |
 
 So `x 9:55 @dad Unit 1 practice set // she flew through it` is done, at 9:55,
 with Dad, with a note. Everything left over is the detail line. A cell holding
@@ -100,6 +101,12 @@ which is how Break and Lunch move around during the week.
 
 `x-axis practice` is not mistaken for a done marker; the marker only counts
 when a space or the end of the cell follows it.
+
+Paste a meeting link straight into the cell — `Robotics — 6:30pm
+https://meet.google.com/abc-defg-hij` — and the page turns it into a link she
+can tap, protocol trimmed off the label so it stays short on a phone. The `//`
+in `https://` is not read as a note marker, so a link and a note can sit in the
+same cell.
 
 **Rows named `Break`, `Lunch`, `Note` or `Evening`** are treated specially —
 the first two as grey pauses with no checkbox, the other two as the day's

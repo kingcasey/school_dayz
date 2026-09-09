@@ -75,8 +75,10 @@
   .card{border-left:5px solid var(--edge,var(--rule));padding-left:.8rem}
   .row{display:flex;align-items:flex-start;gap:.6rem}
   .name{font-size:1.06rem;font-weight:600;letter-spacing:-.012em;flex:1}
-  .what{font-size:.9rem;color:var(--ink-soft);margin-top:.15rem;white-space:pre-line}
-  .memo{font-size:.85rem;color:var(--ink-soft);font-style:italic;margin-top:.25rem}
+  .what{font-size:.9rem;color:var(--ink-soft);margin-top:.15rem;white-space:pre-line;
+        overflow-wrap:anywhere}
+  .memo{font-size:.85rem;color:var(--ink-soft);font-style:italic;margin-top:.25rem;
+        overflow-wrap:anywhere}
   .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
   .who{display:inline-block;font-size:.76rem;font-weight:600;
        padding:.13rem .45rem;border-radius:.15rem}
@@ -102,7 +104,13 @@
 
   .evening{margin-top:1.2rem;padding-top:.9rem;border-top:1.5px solid var(--ink)}
   .evening h2{font-size:.9rem;font-weight:600;margin-bottom:.5rem}
-  .evening p{font-size:.9rem;color:var(--ink-soft)}
+  .evening p{font-size:.9rem;color:var(--ink-soft);overflow-wrap:anywhere}
+
+  /* A pasted meeting link. Tappable, wraps rather than running off the screen. */
+  .link{color:var(--plum);text-decoration:underline;text-underline-offset:2px;
+        overflow-wrap:anywhere}
+  .link:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .evening .link{font-weight:600;padding:.15rem 0;display:inline-block}
 
   .sect{margin:1.6rem 0 .1rem;padding-top:.5rem;font-size:.76rem;font-weight:600;
         letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
@@ -267,6 +275,35 @@ function el(tag, cls, text){
   if(text!=null) n.textContent=text;
   return n;
 }
+
+/* A URL pasted into a cell becomes a tappable link. Everything else stays text,
+   so nothing here can inject markup — the pieces go in as text nodes. */
+const URL_RE=/(?:https?:\/\/|www\.)[^\s<>"']+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"']*/gi;
+
+function withLinks(node, text){
+  const s=String(text==null?"":text);
+  let last=0, m; URL_RE.lastIndex=0;
+  while((m=URL_RE.exec(s))){
+    let raw=m[0], trail="";
+    const t=raw.match(/[.,;:!?)]+$/);        // sentence punctuation, not part of the URL
+    if(t){ trail=t[0]; raw=raw.slice(0,-trail.length); }
+    if(!raw) continue;
+    if(m.index>last) node.appendChild(document.createTextNode(s.slice(last,m.index)));
+    const a=document.createElement("a");
+    a.className="link";
+    a.href = /^https?:\/\//i.test(raw) ? raw : "https://"+raw;
+    a.target="_blank"; a.rel="noopener noreferrer";
+    a.textContent = raw.replace(/^https?:\/\//i,"").replace(/\/$/,"");
+    node.appendChild(a);
+    if(trail) node.appendChild(document.createTextNode(trail));
+    last=m.index+m[0].length;
+  }
+  if(!last){ node.textContent=s; return node; }
+  if(last<s.length) node.appendChild(document.createTextNode(s.slice(last)));
+  return node;
+}
+
+function elLinked(tag, cls, text){ return withLinks(el(tag,cls), text); }
 
 function blank(s){
   s=String(s==null?"":s).trim();
@@ -478,8 +515,11 @@ function readCell(text, rowTime, rowWho){
   m=s.match(/@(adult|own|dad|mom|me)\b/i);
   if(m){ who=m[1]; hasWho=true; s=(s.slice(0,m.index)+s.slice(m.index+m[0].length)).replace(/\s{2,}/g," ").trim(); }
 
-  let note="";
-  const n=s.indexOf("//");
+  let note="", n=-1;
+  for(let i=s.indexOf("//"); i>=0; i=s.indexOf("//", i+2)){
+    if(i>0 && s[i-1]===":") continue;        // the // in https:// isn't a note marker
+    n=i; break;
+  }
   if(n>=0){ note=s.slice(n+2).trim(); s=s.slice(0,n).trim(); }
 
   return {status:status, start:start, who:who, hasWho:hasWho, detail:s, note:note};
@@ -678,7 +718,7 @@ const NOT_CONNECTED = {
         '<li>then one row per subject, section dividers in between</li></ul>'+
         'In a day\'s cell: <code>x</code> done · <code>&gt;</code> carried · <code>-</code> nothing · '+
         'a leading <code>9:55</code> for that day\'s time · <code>@dad</code> for who · '+
-        '<code>//</code> before your note.',
+        '<code>//</code> before your note. A pasted link becomes a tappable one.',
   map:  'This is where subjects and credits from now through 12th grade will live. '+
         'Nothing is wired up yet — the tab and the shape of it come next.',
   reading:'Reading now, to read, and finished will live here. '+
@@ -749,8 +789,8 @@ function blockRow(it, showTime){
   line.append(box,nm);
   card.appendChild(line);
 
-  if(it.detail) card.appendChild(el("div","what",it.detail));
-  if(it.note)   card.appendChild(el("div","memo",it.note));
+  if(it.detail) card.appendChild(elLinked("div","what",it.detail));
+  if(it.note)   card.appendChild(elLinked("div","memo",it.note));
 
   const tags=el("div","tags");
   if(it.carriedFrom) tags.appendChild(el("span","tag","carried from "+it.carriedFrom));
@@ -817,7 +857,7 @@ function renderToday(host){
 
   day.notes.forEach(t=>{
     const n=el("div","standing");
-    n.innerHTML="<b>"+esc(t)+"</b>";
+    withLinks(n.appendChild(el("b")), t);
     host.appendChild(n);
   });
 
@@ -832,7 +872,7 @@ function renderToday(host){
   if(day.evenings.length){
     const ev=el("div","evening");
     ev.appendChild(el("h2",null,"This evening"));
-    day.evenings.forEach(t=>ev.appendChild(el("p",null,t)));
+    day.evenings.forEach(t=>ev.appendChild(elLinked("p",null,t)));
     host.appendChild(ev);
   }
 }
@@ -859,7 +899,7 @@ function planWeekBody(host, wi){
       const nm=el("div","pname"); nm.textContent=r.name;
       if(r.source){ const sp=el("span","psrc",r.source); nm.appendChild(sp); }
       card.appendChild(nm);
-      card.appendChild(el("div","what", r.cells[wi]));
+      card.appendChild(elLinked("div","what", r.cells[wi]));
       prow.appendChild(card);
       host.appendChild(prow);
     });
