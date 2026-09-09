@@ -112,6 +112,25 @@
   .link:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   .evening .link{font-weight:600;padding:.15rem 0;display:inline-block}
 
+  /* Reading: one collapsible shelf per state. */
+  .shelf{margin:.9rem 0;border-bottom:1px solid var(--rule)}
+  .shelf summary{cursor:pointer;list-style:none;padding:.7rem 0;display:flex;
+        align-items:center;gap:.5rem;font-size:.76rem;font-weight:600;
+        letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+  .shelf summary::-webkit-details-marker{display:none}
+  .shelf summary::after{content:"+";margin-left:auto;font-size:1.25rem;font-weight:400;
+        line-height:1;letter-spacing:0}
+  .shelf[open] summary::after{content:"–"}
+  .shelf summary:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .count{font-size:.76rem;font-weight:600;letter-spacing:0;color:var(--ink-soft);
+        background:var(--cream-deep);border-radius:.15rem;padding:.05rem .4rem}
+  .shelf .body{padding-bottom:.5rem}
+  .book{padding:.7rem 0;border-top:1px solid var(--rule)}
+  .btitle{font-size:1.02rem;font-weight:600;letter-spacing:-.012em;overflow-wrap:anywhere}
+  .bwho{font-size:.88rem;color:var(--ink-soft);margin-top:.1rem;overflow-wrap:anywhere}
+  .bwhen{font-size:.82rem;color:var(--ink-soft);margin-top:.25rem;
+        font-variant-numeric:tabular-nums}
+
   .sect{margin:1.6rem 0 .1rem;padding-top:.5rem;font-size:.76rem;font-weight:600;
         letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
         border-top:1.5px solid var(--ink)}
@@ -198,7 +217,7 @@ const GID = {
   plan:    "2064533394",      // the existing week-level "plan" tab
   daily:   "277283136",       // the new day-level "daily" tab  (see README)
   map:     "",                // Education map      — not built yet
-  reading: "",                // Reading list       — not built yet
+  reading: "1478186643",      // the "reading" tab  (see README)
   wins:    "",                // Accomplishments    — not built yet
 };
 
@@ -264,6 +283,18 @@ let weekIdx = null;            // which week the Plan view is showing
 let dayIdx  = null;            // which day the Today view is showing
 let dayAuto = true;            // true while Today is on the day it picked itself
 const session = new Set();     // her ticks. In memory only. Never written anywhere.
+let readModel = null;          // the reading tab, sorted onto its three shelves
+
+/* Which shelves are open. Remembered per device, so Finished stays folded
+   away for whoever likes it folded away. */
+const OPEN_KEY="school.shelf.";
+function shelfOpen(id, fallback){
+  try{ const v=localStorage.getItem(OPEN_KEY+id); if(v!=null) return v==="1"; }catch(_){}
+  return fallback;
+}
+function rememberShelf(id, open){
+  try{ localStorage.setItem(OPEN_KEY+id, open?"1":"0"); }catch(_){}
+}
 
 /* --- small helpers ------------------------------------------------------ */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,
@@ -657,6 +688,73 @@ function dailyDayIndex(){
 }
 
 /* ==========================================================================
+   The reading tab. One row per book, and no state column to keep in step —
+   the two date columns already say where a book sits: started but not
+   finished is on the go, neither is waiting, finished is done.
+   ========================================================================== */
+const READ_COL = [
+  ["title",   /^(title|book|what)/],
+  ["author",  /^(author|by|source|author\/source)/],
+  ["started", /^(started|start|begun|began)/],
+  ["done",    /^(finished|done|completed|ended)/],
+  ["context", /^(context|subject|for|area)/],
+  ["kind",    /^(type|kind|format)/],
+];
+
+const SHELVES = [
+  {id:"now",      title:"Reading now", empty:"Nothing on the go right now."},
+  {id:"later",    title:"To read",     empty:"Nothing waiting — the queue is empty."},
+  {id:"finished", title:"Finished",    empty:"Nothing finished yet."},
+];
+
+function buildReading(rows){
+  if(!rows.length) throw new Error("The reading tab came back empty.");
+  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
+
+  // The heading row: the first one with a Title column on it.
+  let head=-1, col={};
+  for(let r=0;r<Math.min(rows.length,10) && head<0;r++){
+    const found={};
+    for(let c=0;c<rows[r].length;c++){
+      const h=cell(r,c).toLowerCase().replace(/\s+/g," ");
+      if(!h) continue;
+      for(const [key,re] of READ_COL) if(found[key]==null && re.test(h)) found[key]=c;
+    }
+    if(found.title!=null){ head=r; col=found; }
+  }
+  if(head<0) throw new Error(
+    'Could not find the heading row. One row near the top needs a column called '+
+    '"Title", with "Author/Source", "Started", "Finished", "Context" and "Type" beside it.');
+
+  const at=(r,key)=> col[key]==null ? "" : cell(r,col[key]);
+  const shelf={now:[], later:[], finished:[]};
+  for(let r=head+1;r<rows.length;r++){
+    const title=at(r,"title");
+    if(!title || blank(title)) continue;
+    const started=parseDate(at(r,"started")), done=parseDate(at(r,"done"));
+    const b={
+      title:  title,
+      author: at(r,"author"),
+      context:at(r,"context"),
+      kind:   at(r,"kind"),
+      started:started,
+      done:   done,
+      order:  r,
+    };
+    if(done) shelf.finished.push(b);
+    else if(started) shelf.now.push(b);
+    else shelf.later.push(b);
+  }
+  if(!shelf.now.length && !shelf.later.length && !shelf.finished.length)
+    throw new Error("The reading tab has its headings, but no books under them yet.");
+
+  // Newest first where there's a date to go on; the queue keeps her order.
+  shelf.now.sort((a,b)=> (b.started-a.started) || (a.order-b.order));
+  shelf.finished.sort((a,b)=> (b.done-a.done) || (a.order-b.order));
+  return shelf;
+}
+
+/* ==========================================================================
    Loading. One published CSV per tab, cached, polled.
    ========================================================================== */
 function urlFor(name){
@@ -721,8 +819,14 @@ const NOT_CONNECTED = {
         '<code>//</code> before your note. A pasted link becomes a tappable one.',
   map:  'This is where subjects and credits from now through 12th grade will live. '+
         'Nothing is wired up yet — the tab and the shape of it come next.',
-  reading:'Reading now, to read, and finished will live here. '+
-        'Nothing is wired up yet — the tab and the shape of it come next.',
+  reading:'The <code>reading</code> tab isn\'t connected yet. In the Sheet: '+
+        'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>reading</b> tab &rsaquo; '+
+        'CSV &rsaquo; Publish. One row per book, with these headings:'+
+        '<ul><li><code>Title</code> and <code>Author/Source</code></li>'+
+        '<li><code>Started</code> and <code>Finished</code> — the dates are what sort a book '+
+        'onto its shelf: started but not finished is <b>Reading now</b>, neither is '+
+        '<b>To read</b>, finished is <b>Finished</b></li>'+
+        '<li><code>Context</code> and <code>Type</code> — the two tags under a book</li></ul>',
   wins: 'Competitions, performances, projects, milestones. '+
         'Nothing is wired up yet — the tab and the shape of it come next.',
 };
@@ -964,6 +1068,83 @@ function renderPlan(host){
 }
 
 /* --- the three that aren't built yet ------------------------------------ */
+/* --- Reading list ------------------------------------------------------- */
+function bookCard(b){
+  const n=el("div","book");
+  const card=el("div","card");
+  card.style.setProperty("--edge", edgeFor(b.context||b.kind));
+
+  card.appendChild(elLinked("div","btitle", b.title));
+  if(b.author) card.appendChild(elLinked("div","bwho", b.author));
+
+  const when=[];
+  if(b.done)         when.push("Finished "+shortDate(b.done));
+  else if(b.started) when.push("Started "+shortDate(b.started));
+  if(b.done && b.started) when.push("started "+shortDate(b.started));
+  if(when.length) card.appendChild(el("div","bwhen", when.join(" · ")));
+
+  const tags=el("div","tags");
+  if(b.context) tags.appendChild(el("span","tag", b.context));
+  if(b.kind)    tags.appendChild(el("span","who own", b.kind));
+  if(tags.children.length) card.appendChild(tags);
+
+  n.appendChild(card);
+  return n;
+}
+
+function shelfBlock(spec, books){
+  const d=document.createElement("details");
+  d.className="shelf";
+  // Open by default where there's something to see; Finished stays folded.
+  d.open = shelfOpen(spec.id, spec.id!=="finished" && books.length>0);
+  d.addEventListener("toggle",()=>rememberShelf(spec.id, d.open));
+
+  const sum=document.createElement("summary");
+  sum.appendChild(document.createTextNode(spec.title));
+  sum.appendChild(el("span","count", String(books.length)));
+  d.appendChild(sum);
+
+  const body=el("div","body");
+  if(!books.length) body.appendChild(el("p","quiet", spec.empty));
+  else books.forEach(b=>body.appendChild(bookCard(b)));
+  d.appendChild(body);
+  return d;
+}
+
+function renderReading(host){
+  const s=sheet.reading||{state:"unset"};
+  setHead("B"+(s.cached?" · saved copy":""), "Reading list", "");
+  stepper([]);
+
+  if(s.state==="unset"){
+    host.appendChild(emptyCard("The reading tab isn't connected yet.","<p>"+NOT_CONNECTED.reading+"</p>"));
+    return;
+  }
+  if(s.state==="error"){
+    host.appendChild(errorCard("Can't reach the reading list right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    return;
+  }
+
+  try{ readModel=buildReading(s.rows); }
+  catch(err){
+    host.appendChild(s.rows && s.rows.length>1
+      ? errorCard("The reading tab can't be read.",
+          "It's reachable, but the format isn't what this page expects. Here's the problem:",
+          String(err.message||err))
+      : emptyCard("The reading tab is published, but empty.",
+          "<p>"+NOT_CONNECTED.reading+"</p>"+
+          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
+    return;
+  }
+
+  const n=readModel.now.length, l=readModel.later.length, f=readModel.finished.length;
+  setHead("B"+(s.cached?" · saved copy":""), "Reading list",
+          n+" on the go · "+l+" waiting · "+f+" finished");
+  SHELVES.forEach(spec=>host.appendChild(shelfBlock(spec, readModel[spec.id])));
+}
+
 function renderStub(host, view){
   setHead("B", view.title, "");
   stepper([]);
@@ -1002,9 +1183,10 @@ function render(){
   const host=document.getElementById("view");
   host.innerHTML="";
 
-  if(view.id==="today")      renderToday(host);
-  else if(view.id==="plan")  renderPlan(host);
-  else                       renderStub(host, view);
+  if(view.id==="today")        renderToday(host);
+  else if(view.id==="plan")    renderPlan(host);
+  else if(view.id==="reading") renderReading(host);
+  else                         renderStub(host, view);
 
   const f=document.getElementById("foot");
   const s=sheet[view.needs];
@@ -1016,7 +1198,7 @@ function render(){
 async function refresh(){
   // The plan is loaded whatever the view: Today borrows its colours, and falls
   // back to it when the daily tab has nothing to say.
-  await Promise.all([load("plan"), load("daily")]);
+  await Promise.all([load("plan"), load("daily"), load("reading")]);
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
     try{ planModel=buildPlan(sheet.plan.rows); }

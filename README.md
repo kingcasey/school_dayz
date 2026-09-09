@@ -40,7 +40,7 @@ per tab. Both go at the top of `index.html`:
 
 ```js
 const PUB_ID = "2PACX-1vABC...";
-const GID = { plan: "0", daily: "123456", map: "", reading: "", wins: "" };
+const GID = { plan: "0", daily: "123456", map: "", reading: "789012", wins: "" };
 ```
 
 A tab left as `""` is simply not connected. Its view says so and the rest of
@@ -143,6 +143,41 @@ published-HTML view is a JavaScript shell with no content in it, so
 strikethrough, colour and bold in the Sheet are invisible here. That is why
 done is `x` and not a struck-through cell.
 
+## The `reading` tab
+
+One row per book, with a heading row on top. The headings can sit in any
+order, and extra columns are ignored:
+
+| column | holds |
+|---|---|
+| `Title` | the book. Required — the heading row is found by looking for it |
+| `Author/Source` | the author, or a link for an article or a podcast |
+| `Started` | the date she opened it |
+| `Finished` | the date she closed it |
+| `Context` | the subject it counts toward — the outlined tag |
+| `Type` | Book, Podcast, Article — the filled tag |
+
+**The two date columns are the shelf.** There is no status column to keep in
+step with reality:
+
+| Started | Finished | shelf |
+|---|---|---|
+| a date | empty | **Reading now** |
+| empty | empty | **To read** |
+| — | a date | **Finished** |
+
+So starting a book is typing a date in one cell, and finishing it is typing a
+date in another. Each shelf is collapsible, with its count in the heading.
+Reading now and To read open by default, Finished stays folded; whatever you
+fold or unfold is remembered on that device. Reading now and Finished sort
+newest first, To read keeps the Sheet's order — so it's a queue you arrange by
+dragging rows.
+
+A shelf with nothing on it still shows, folded, with a `0`. The left edge of
+each book is coloured by its `Context`, using the same colours as the plan.
+
+A link in any cell becomes a tappable link, same as on the daily tab.
+
 ## When a tab is missing or empty
 
 Nothing ever shows a blank screen, and a problem with one tab never takes down
@@ -154,6 +189,7 @@ the others.
 | tab not published / 404 / HTML back instead of CSV | Red banner in that view naming the problem. Today falls back to the week's plan. Other views unaffected. |
 | no connection, but this browser has seen it before | The last saved copy, with *saved copy* in the kicker and *No connection — showing the last saved copy* at the foot. |
 | tab published but completely empty | Dashed card: published, but empty. Not an error. |
+| `reading` has no `Title` column | Red banner naming the headings it wants. |
 | no `Date` row found | Red banner saying so. If it spots the old one-row-per-item layout it says that specifically. |
 | a `Date` row with no dates across it | Red banner saying so. |
 | `daily` has days, but none for today | Today shows the nearest day it does have, and says so. |
