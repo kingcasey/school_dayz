@@ -221,7 +221,7 @@ the others.
 | `wins` has no `What` column | Red banner naming the headings it wants. |
 | no `Date` row found | Red banner saying so. If it spots the old one-row-per-item layout it says that specifically. |
 | a `Date` row with no dates across it | Red banner saying so. |
-| `daily` has days, but none for today | Today shows the nearest day it does have, and says so. |
+| `daily` has days, but none for today | Today shows the nearest day it does have, and says so. The **Today** button returns to that day, not to an empty one. |
 | `daily` has rows for today but the `plan` tab is broken | Today works. Colours fall back to a built-in list. |
 
 The page re-checks the Sheet every 60 seconds and updates on its own. Google

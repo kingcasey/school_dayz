@@ -1027,8 +1027,16 @@ function renderToday(host){
 
   setHead("B"+(s.cached?" · saved copy":""), isToday?"Today":WEEKDAY[day.date.getDay()],
           longDate(day.date));
+  // The way home. Dimmed once you're already there, so it says where you are
+  // as much as it does anything.
+  const home=dailyDayIndex();
   stepper([
     makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;render();}),
+    makeStep("Today",
+             isToday        ? "You're on today"
+             : dayIdx===home ? "Showing the nearest day the sheet has to today"
+             :                 "Jump back to today",
+             dayIdx===home, ()=>{dayIdx=home;dayAuto=true;render();}),
     makeStep("Next day ›","Show the next day", dayIdx>=dailyModel.days.length-1, ()=>{dayIdx++;dayAuto=false;render();}),
   ]);
 
