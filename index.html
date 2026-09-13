@@ -561,6 +561,29 @@ function readCell(text, rowTime, rowWho){
   return {status:status, start:start, who:who, hasWho:hasWho, detail:s, note:note};
 }
 
+/* An Every cell: weekdays at the front, then an ordinary cell.
+   "Sun 3:00pm Lesson https://zoom.us/j/…" -> {days:[0], rest:"3:00pm Lesson …"} */
+function everyDay(word){
+  const w=word.toLowerCase().replace(/s$/,"");         // Sundays -> sunday
+  for(let d=0;d<7;d++){
+    const full=WEEKDAY[d].toLowerCase();
+    if(w===full || (w.length>=3 && full.startsWith(w) && w.length<=4)) return d;  // sun, tues, thur
+  }
+  return -1;
+}
+function readEvery(text){
+  let s=String(text==null?"":text).trim();
+  const days=[];
+  let m;
+  while((m=s.match(/^([a-z]+)\.?(\s*[,\/&]\s*|\s+and\s+|\s+|$)/i))){
+    const d=everyDay(m[1]);
+    if(d<0) break;
+    if(days.indexOf(d)<0) days.push(d);
+    s=s.slice(m[0].length);
+  }
+  return days.length ? {days:days, rest:s.trim()} : null;
+}
+
 function buildDaily(rows){
   if(!rows.length) throw new Error("The daily tab came back empty.");
   const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
@@ -602,14 +625,29 @@ function buildDaily(rows){
   // The heading row: "Subject" in column A, with Time and Who beside it.
   let headRow=-1;
   for(let r=0;r<look;r++) if(first(r)==="subject"){ headRow=r; break; }
-  let timeCol=-1, whoCol=-1;
+  let timeCol=-1, whoCol=-1, everyCol=-1;
   const firstDayCol=days[0].col;
   if(headRow>=0){
     for(let c=1;c<firstDayCol;c++){
       const h=cell(headRow,c).toLowerCase();
       if(h==="time" && timeCol<0) timeCol=c;
       if(h==="who"  && whoCol<0)  whoCol=c;
+      if(/^(every|weekly|each)/.test(h) && everyCol<0) everyCol=c;
     }
+  }
+
+  // Days the Every column adds that have no column of their own — Sundays,
+  // mostly. Only inside the span the date row covers.
+  const extra={};
+  const spanStart=new Date(Math.min(...days.map(d=>d.date)));
+  const spanEnd  =new Date(Math.max(...days.map(d=>d.date)));
+  const byIso={};
+  days.forEach(d=>{ byIso[iso(d.date)]=d; });
+  function standingDates(weekdays){
+    const out=[];
+    for(let d=spanStart; d<=spanEnd; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1))
+      if(weekdays.indexOf(d.getDay())>=0) out.push(d);
+    return out;
   }
   if(timeCol<0 && firstDayCol>1) timeCol=1;
   if(whoCol<0  && firstDayCol>2) whoCol=2;
@@ -623,7 +661,8 @@ function buildDaily(rows){
     const rowTime = timeCol>=0 ? cell(r,timeCol) : "";
     const rowWho  = whoCol>=0  ? cell(r,whoCol)  : "";
     const cells=days.map(d=>cell(r,d.col));
-    if(!rowTime && !rowWho && !cells.some(v=>!blank(v))){
+    const every = everyCol>=0 ? readEvery(cell(r,everyCol)) : null;
+    if(!rowTime && !rowWho && !every && !cells.some(v=>!blank(v))){
       // Nothing on this row anywhere in the year. Either a section divider or a
       // subject not in use yet — and only a name we recognise as a section is
       // allowed to change the section for the rows beneath it.
@@ -641,9 +680,7 @@ function buildDaily(rows){
     const special=DAY_SPECIAL.test(kind);
     const isPause = kind==="break" || kind==="lunch" || kind==="recess";
 
-    days.forEach((day,i)=>{
-      const p=readCell(cells[i], rowTime, rowWho||secWho);
-      if(!p) return;
+    const place=(day,p)=>{
       if(kind==="note"||kind==="notes"){ if(p.detail) day.notes.push(p.detail); return; }
       if(kind==="evening"||kind==="evenings"){ if(p.detail) day.evenings.push(p.detail); return; }
       day.items.push({
@@ -660,7 +697,25 @@ function buildDaily(rows){
         status: special && !isPause ? "" : p.status,
         pause:  isPause,
       });
+    };
+    days.forEach((day,i)=>{
+      const p=readCell(cells[i], rowTime, rowWho||secWho);
+      if(p) place(day,p);
     });
+
+    // The Every column: the same thing on the same weekday, all year. A cell
+    // of its own on a dated day wins, so one week can say something different.
+    if(every){
+      // Just "Sun" is enough — the row's name, time and who say the rest.
+      const p=readCell(every.rest, rowTime, rowWho||secWho) ||
+        {start:rowTime, who:rowWho||secWho, hasWho:!!(rowWho||secWho), detail:"", note:""};
+      p.status="";                           // nothing to be done, or carried, ahead of time
+      standingDates(every.days).forEach(d=>{
+        const k=iso(d), dated=byIso[k];
+        if(dated){ if(blank(cells[days.indexOf(dated)])) place(dated,p); return; }
+        place(extra[k] || (extra[k]={date:d, items:[], notes:[], evenings:[], carried:[]}), p);
+      });
+    }
   }
   if(!sawSubject) throw new Error("The daily tab has a date row but no subject rows under it.");
 
@@ -677,8 +732,11 @@ function buildDaily(rows){
     });
   });
 
+  // Every-column days join after carrying, so a Friday > still lands on Monday.
+  const all=days.concat(Object.keys(extra).map(k=>extra[k])).sort((a,b)=>a.date-b.date);
+
   // A date column with nothing under it isn't a school day.
-  const live=days.filter(d=>d.items.length||d.notes.length||d.evenings.length||d.carried.length);
+  const live=all.filter(d=>d.items.length||d.notes.length||d.evenings.length||d.carried.length);
   if(!live.length) throw new Error("The daily tab has dates and subjects, but no days filled in yet.");
   return {days:live};
 }

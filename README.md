@@ -73,7 +73,7 @@ date already filled in from the plan tab, week 2 worked through — ready to
 paste straight in.
 
 ```
-A: Subject | B: Time | C: Who | D…: one column per school day
+A: Subject | B: Time | C: Who | (Every, optional) | then one column per school day
 ```
 
 The page looks for a row starting **Date** with a date under each school day,
@@ -108,6 +108,24 @@ https://meet.google.com/abc-defg-hij` — and the page turns it into a link she
 can tap, protocol trimmed off the label so it stays short on a phone. The `//`
 in `https://` is not read as a note marker, so a link and a note can sit in the
 same cell.
+
+**Things that happen every week go in an `Every` column** — an optional
+column headed `Every`, between `Who` and the first date. Freeze A:D instead of
+A:C. A cell there starts with the weekday and is otherwise an ordinary cell:
+
+```
+Trombone | | own | Sun 3:00pm @adult Lesson on Zoom https://zoom.us/j/…
+```
+
+That puts a Trombone lesson, at 3:00pm, with its link, on every Sunday from
+the first date in the sheet to the last — Sundays included even though they
+have no column of their own. `Mon/Wed`, `Tues & Thu` and `Sundays` all work.
+Type it once; changing the link is changing one cell. The row's own day cells
+carry on as normal, so the Trombone row can hold daily practice and the
+Sunday lesson at once. If a dated day has its own cell for that row, the cell
+wins, which is how one week says something different. Every-column items can't
+be marked `x` or `>` ahead of time, and a Friday `>` still carries to Monday,
+not to Sunday.
 
 **Rows named `Break`, `Lunch`, `Note` or `Evening`** are treated specially —
 the first two as grey pauses with no checkbox, the other two as the day's
