@@ -1,8 +1,9 @@
 # School
 
-One phone-first page, five views, no build step. Every view reads a tab of the
-same Google Sheet, published to the web as CSV, so the Sheet stays the only
-thing that ever gets edited.
+One phone-first page, six views, no build step. Every view but one reads a
+tab of the same Google Sheet, published to the web as CSV, so the Sheet stays
+the only thing that ever gets edited. The exception is CNN 10, which is written
+to, and so keeps its words in Supabase behind a sign-in.
 
 | view | reads | state |
 |---|---|---|
@@ -10,11 +11,13 @@ thing that ever gets edited.
 | **Plan** — the week at a glance | `plan` tab | built |
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
+| **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
 | **Map** — subjects and credits to 12th grade | `map` tab | stub, and last in the tabs until it isn't |
 
-Plain HTML/CSS/JS in `index.html`. No framework, no npm, no accounts for
-anyone viewing it. Views are linkable: `#today`, `#plan`, `#reading`, `#wins`,
-`#map` — the hashes are fixed, so tab order can change without breaking a
+Plain HTML/CSS/JS in `index.html`. No framework, no npm, and no accounts for
+anyone viewing it — except `#cnn10`, which asks for the family sign-in and
+nothing else does. Views are linkable: `#today`, `#plan`, `#reading`, `#wins`,
+`#cnn10`, `#map` — the hashes are fixed, so tab order can change without breaking a
 bookmark.
 
 ## Where it runs
@@ -94,6 +97,7 @@ Set them once. What changes daily goes in the day's cell:
 | `@dad` `@adult` `@own` | that day's who, overriding column C |
 | `// …` at the end | your note about how it went |
 | a pasted link | shown as a tappable link |
+| `#cnn10` (or `#reading`, `#wins`, …) | a link to that tab, on the same page — `Write today's line #cnn10` shows *CNN 10 →* |
 
 So `x 9:55 @dad Unit 1 practice set // she flew through it` is done, at 9:55,
 with Dad, with a note. Everything left over is the detail line. A cell holding
@@ -224,6 +228,87 @@ as *On file: …* — you know the paperwork exists, and the page doesn't preten
 it can open something sitting in your own Drive. Swapping a filename for a
 share link later is the only change needed to make it tappable.
 
+## CNN 10
+
+She watches CNN 10 every weekday morning. The view has three parts, top to
+bottom:
+
+- **Today's line** — the date, one story, why it stuck. Ungraded, a minute's
+  work. One line per date: saving a date that already has a line updates it,
+  and the button says *Update today's line* so there's no wondering whether it
+  saved twice. Its job is that on report day there are five stories to choose
+  from.
+- **This week's report**, folded away — one story from the week's lines, in
+  four steps: slug the story · five W's and an H · fact versus framing · so
+  what. The week's lines are listed inside it. *Your take* counts sentences and
+  turns navy at three. Name, slug, *What happened?* and *Your take* are needed
+  before it can be turned in. A half-written report is kept on the device as
+  she types, so a reload or a closed tab doesn't lose it.
+- **Turned in** — every report, newest first, by school year. *Turned in* until
+  it has feedback, then *Graded*, with the feedback and score on the card.
+
+**A turned-in report can't be changed from the page.** There is no update
+policy for reports. Grading happens in the Supabase dashboard: fill in `score`,
+`feedback` and `graded_at` on the row, and the card flips to *Graded* within a
+minute. Choosing a report as a portfolio piece is setting `selected_at` in the
+same pass.
+
+**Printing prints reports, as documents** — the answers without the form
+around them, one report to a page. Open a report's answers and print, and only
+that report prints; print with none open and they all do.
+
+### Setting it up
+
+1. Make a Supabase project. In its SQL editor, run `supabase/cnn10.sql`.
+2. Under **Authentication**, switch **off** new sign-ups. The publishable key sits in
+   `index.html` in a public repo, so with sign-ups on, anyone could make an
+   account and read her work.
+3. Add the one family account, by email and password.
+4. Paste the project URL and the publishable key (Project Settings › API Keys)
+   into the top of `index.html`, inside the quotes:
+
+```js
+const SB_URL = "https://xxxx.supabase.co";
+const SB_KEY = "sb_publishable_...";   // never the secret key
+```
+
+Signing in once keeps that browser signed in. *Sign out* is at the foot of the
+view, and signing out clears the saved copy from the device (a half-written
+report stays — it's hers).
+
+### Filing into the vault
+
+Supabase holds every report. The homeschool vault holds only the few chosen as
+work samples, filed by `scripts/vault-sync.mjs` — a local script, because the
+deployed page can't reach a folder on the Mac.
+
+```bash
+cd scripts && npm install
+```
+
+Then put `SB_URL` and `SB_SERVICE_KEY` (the secret key, `sb_secret_...`) in
+`scripts/.env`, which git ignores, and run it by hand or from cron:
+
+```bash
+node --env-file=scripts/.env scripts/vault-sync.mjs
+```
+
+It files a report only once `selected_at` is set, and never twice:
+
+- her answers, verbatim, to `Work Samples/` as
+  `YYYY-MM-DD - Social Studies - CNN 10 - <slug>.md`, dated by the episode's
+  air date — so a report needs an air date before it can be filed
+- once there's feedback, a separate note in `Feedback/`, filled into the
+  vault's own `_Templates/Assignment Feedback.md`. Start a line of feedback
+  with *What's working:*, *What to correct:*, *Next step:* or *Parent notes:*
+  and it lands under that heading; anything unlabelled goes under Parent
+  notes, with the score
+
+`vault_path` and `feedback_path` record what's been filed. It never edits a
+filed work sample, never writes to `Log/`, `Student Log/` or the reading list,
+never makes a folder and never deletes anything. It prints one line saying what
+it filed, for the day's log.
+
 ## When a tab is missing or empty
 
 Nothing ever shows a blank screen, and a problem with one tab never takes down
@@ -241,6 +326,10 @@ the others.
 | a `Date` row with no dates across it | Red banner saying so. |
 | `daily` has days, but none for today | Today shows the nearest day it does have, and says so. The **Today** button returns to that day, not to an empty one. |
 | `daily` has rows for today but the `plan` tab is broken | Today works. Colours fall back to a built-in list. |
+| `SB_URL` left as `""` | CNN 10 shows a calm dashed card saying what to fill in. Every other view carries on. |
+| signed out | CNN 10 shows a small sign-in card and no report data. No other view ever asks. |
+| Supabase unreachable, no saved copy | Red banner inside CNN 10 only. |
+| Supabase unreachable, signed in here before | The last saved copy, with *saved copy* in the kicker. Saving says it didn't, and why. |
 
-The page re-checks the Sheet every 60 seconds and updates on its own. Google
+The page re-checks the Sheet, and Supabase, every 60 seconds and updates on its own. Google
 caches published CSVs for a few minutes, so an edit takes a moment to show up.

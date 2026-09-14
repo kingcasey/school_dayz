@@ -1,0 +1,9 @@
+{
+  "name": "school-dayz-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Local scripts for this Mac only. The page itself has no build step and never uses this.",
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0"
+  }
+}

@@ -157,10 +157,96 @@
 
   .foot{margin-top:1.6rem;font-size:.8rem;color:var(--ink-soft)}
 
+  /* CNN 10: the one view that takes writing. Inputs sit on the cream and are
+     ruled like everything else, so a form doesn't look borrowed from elsewhere. */
+  .field{margin-top:.9rem}
+  .field>label{display:block;font-size:.92rem;font-weight:600;color:var(--ink);
+        letter-spacing:-.01em}
+  .hint{display:block;font-size:.82rem;font-weight:400;color:var(--ink-soft);margin-top:.1rem}
+  .input{display:block;width:100%;margin-top:.35rem;font-family:inherit;font-size:1rem;
+        color:var(--ink);background:transparent;border:1.5px solid var(--rule);
+        border-radius:.2rem;padding:.5rem .6rem;line-height:1.35;min-height:2.6rem}
+  .input:focus{border-color:var(--navy)}
+  .input:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  textarea.input{resize:vertical}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .step{margin-top:1.3rem;font-size:.76rem;font-weight:600;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--ink-soft)}
+  .go{font-family:inherit;font-size:.92rem;font-weight:600;color:var(--cream);
+        background:var(--navy);border:1.5px solid var(--navy);border-radius:.2rem;
+        padding:.6rem .95rem;cursor:pointer}
+  .go:disabled{opacity:.5;cursor:default}
+  .go:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .actions{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem .8rem;margin-top:1rem}
+  .said{font-size:.85rem;color:var(--ink-soft)}
+  .said.needs{color:var(--plum);font-weight:600}
+  .sentences{font-size:.8rem;font-weight:600;color:var(--ink-soft);margin-top:.3rem;
+        font-variant-numeric:tabular-nums}
+  .sentences.enough{color:var(--navy)}
+  .helper summary .said{margin-left:auto;margin-right:.7rem;font-weight:400;font-size:.82rem}
+  .helper .body .field>label{color:var(--ink)}
+  .weeklines{list-style:none;margin-top:.4rem}
+  .weeklines li{padding:.4rem 0;border-top:1px solid var(--rule);font-size:.9rem;
+        color:var(--ink);overflow-wrap:anywhere}
+  .weeklines .bwhen{display:inline;margin-right:.45rem}
+
+  .signin{margin:1.4rem 0;padding:1rem .95rem 1.1rem;border:1.5px solid var(--ink);
+        border-radius:.2rem}
+  .signin b{display:block;font-size:.98rem;font-weight:600}
+  .signin p{font-size:.9rem;color:var(--ink-soft);margin-top:.3rem}
+
+  .tag.graded{background:var(--navy);border-color:var(--navy);color:var(--cream)}
+  .tag.turned{border-color:var(--navy);color:var(--navy)}
+  .answers{margin-top:.45rem}
+  /* Cards sit inside a shelf, so these have to outrank the shelf's own summary. */
+  .shelf .answers>summary,.answers>summary{cursor:pointer;list-style:none;display:inline-flex;
+        gap:.35rem;font-size:.85rem;font-weight:600;color:var(--navy);padding:.2rem 0;
+        letter-spacing:0;text-transform:none}
+  .answers>summary::-webkit-details-marker{display:none}
+  .shelf .answers>summary::after,.answers>summary::after{content:"+";margin-left:0;
+        font-size:inherit;font-weight:400}
+  .shelf .answers[open]>summary::after,.answers[open]>summary::after{content:"–"}
+  .answers summary:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .qa{margin-top:.65rem}
+  .q{font-size:.8rem;font-weight:600;color:var(--ink-soft)}
+  .a{font-size:.94rem;white-space:pre-line;overflow-wrap:anywhere;margin-top:.1rem}
+  .a.none{color:var(--ink-soft)}
+  .fb{margin-top:.75rem;padding:.7rem .8rem;background:var(--cream-deep);border-radius:.2rem}
+  .fbhead{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;
+        font-size:.76rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+        color:var(--ink-soft)}
+  .score{font-size:.95rem;letter-spacing:0;text-transform:none;color:var(--ink)}
+  .rkick{display:none}
+  .signout{font-family:inherit;font-size:.8rem;color:var(--ink-soft);background:none;
+        border:0;padding:.2rem 0;cursor:pointer;text-decoration:underline;
+        text-underline-offset:2px}
+  .signout:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+
   @media print{
     nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot{display:none}
     body{background:#fff}
     .block,.prow{page-break-inside:avoid}
+
+    /* A printed report is a document: the answers, not the inputs. */
+    .cnnform,.signin,.cnnfoot,.cnn .sect,.cnn .quiet,.cnn .empty,
+    .cnn .shelf>summary,.shelf .answers>summary,.answers>summary,.report .tags{display:none}
+    body.cnn-printing header{display:none}
+    body.cnn-printing,.cnn .shelf .body{padding-bottom:0}
+    body.cnn-printing .report:not(.printing){display:none}
+    .cnn .shelf{border:0;margin:0}
+    .report{border:0;padding:0}
+    .report.pbreak{break-before:page}
+    .report .card{border-left:0;padding-left:0}
+    .rkick{display:block;font-size:.8rem;font-weight:600;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--ink-soft)}
+    .report .btitle{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;
+        line-height:1.05;margin-top:.2rem}
+    .report .card>.bwhen{font-size:.9rem;padding-bottom:.7rem;border-bottom:1.5px solid var(--ink)}
+    .qa{margin-top:1rem;break-inside:avoid}
+    .q{color:var(--ink)}
+    .a{font-size:1rem;line-height:1.5}
+    .fb{background:none;border-radius:0;border-top:1px solid var(--rule);
+        padding:.8rem 0 0;margin-top:1.4rem;break-inside:avoid}
   }
   @media (prefers-reduced-motion:no-preference){
     .day{animation:in .18s ease-out}
@@ -223,18 +309,27 @@ const GID = {
   wins:    "67138078",        // the "wins" tab     (see README)
 };
 
+/* --- CNN 10 (Supabase) --------------------------------------------------
+   Reports and the daily log are the one thing on this page that gets
+   written rather than read. Everything else still comes from the Sheet.   */
+const SB_URL = "https://lyaxyzmdcyrqixdwyysm.supabase.co";
+const SB_KEY = "sb_publishable_gD0RfeX7kIcbS_7e4BRbMA_lPWEB6yR";   // publishable key — never the secret key
+
 /* --- knobs (rarely change) ---------------------------------------------- */
 const POLL_MS = 60000;                 // how often to check the sheet for changes
 const CACHE   = "schooldayz.v2.";      // offline copies live here (this browser)
+const SB_LIB  = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 
-/* --- the five views, in tab order --------------------------------------- */
+/* --- the six views, in tab order ---------------------------------------- */
 /* Map is last while it's still a stub — the tabs she taps every day come
-   first, and nothing else depends on this order. */
+   first, and nothing else depends on this order. CNN 10 reads Supabase
+   rather than a sheet tab, which is what needs:null says. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"daily"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
+  {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
   {id:"map",     tab:"Map",     title:"Education map",   needs:"map"},
 ];
 
@@ -316,6 +411,27 @@ function el(tag, cls, text){
    so nothing here can inject markup — the pieces go in as text nodes. */
 const URL_RE=/(?:https?:\/\/|www\.)[^\s<>"']+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"']*/gi;
 
+/* A view's own hash in a cell — "#cnn10" — becomes a link to that tab, on this
+   page rather than in a new one, so an assignment can point at where the work
+   is done. It reads as the tab's name, never as a web address. */
+const VIEW_RE=new RegExp("(^|[\\s(])#("+VIEWS.map(v=>v.id).join("|")+")\\b","g");
+
+function withViewLinks(node, s){
+  let last=0, m; VIEW_RE.lastIndex=0;
+  while((m=VIEW_RE.exec(s))){
+    const at=m.index+m[1].length, view=VIEWS.find(v=>v.id===m[2]);
+    if(at>last) node.appendChild(document.createTextNode(s.slice(last,at)));
+    const a=document.createElement("a");
+    a.className="link";
+    a.href="#"+view.id;
+    a.textContent=view.tab+" →";
+    a.addEventListener("click",()=>window.scrollTo({top:0,behavior:"instant"}));
+    node.appendChild(a);
+    last=at+1+view.id.length;
+  }
+  if(last<s.length) node.appendChild(document.createTextNode(s.slice(last)));
+}
+
 function withLinks(node, text){
   const s=String(text==null?"":text);
   let last=0, m; URL_RE.lastIndex=0;
@@ -324,7 +440,7 @@ function withLinks(node, text){
     const t=raw.match(/[.,;:!?)]+$/);        // sentence punctuation, not part of the URL
     if(t){ trail=t[0]; raw=raw.slice(0,-trail.length); }
     if(!raw) continue;
-    if(m.index>last) node.appendChild(document.createTextNode(s.slice(last,m.index)));
+    if(m.index>last) withViewLinks(node, s.slice(last,m.index));
     const a=document.createElement("a");
     a.className="link";
     a.href = /^https?:\/\//i.test(raw) ? raw : "https://"+raw;
@@ -334,8 +450,8 @@ function withLinks(node, text){
     if(trail) node.appendChild(document.createTextNode(trail));
     last=m.index+m[0].length;
   }
-  if(!last){ node.textContent=s; return node; }
-  if(last<s.length) node.appendChild(document.createTextNode(s.slice(last)));
+  if(!last && !VIEW_RE.test(s)){ node.textContent=s; return node; }
+  if(last<s.length) withViewLinks(node, s.slice(last));
   return node;
 }
 
@@ -965,6 +1081,13 @@ const NOT_CONNECTED = {
         '<li><code>Type</code> — certification, competition, performance, project, milestone</li>'+
         '<li>the issuing or awarding body, and <code>Notes/Results</code></li>'+
         '<li><code>Evidence</code> — a share link becomes tappable; a filename is noted as on file</li></ul>',
+  cnn10:'The daily line and the weekly reports are saved to Supabase rather than the Sheet, '+
+        'because this is the one view that gets written to.'+
+        '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code> in its SQL editor</li>'+
+        '<li>under Authentication, switch off new sign-ups first, then add the one family '+
+        'account by email and password</li>'+
+        '<li>paste the project URL into <code>SB_URL</code> and the publishable key into '+
+        '<code>SB_KEY</code> at the top of this file</li></ul>',
 };
 
 function setHead(kicker, title, dates){
@@ -1376,6 +1499,666 @@ function renderWins(host){
   });
 }
 
+/* ==========================================================================
+   CNN 10 — current events. A line a day about the episode, and one written
+   report a week on a story she picks from those lines.
+
+   This is the page's first write, and the only view behind a sign-in: it
+   holds her written work and the feedback on it. Nothing here touches the
+   Sheet, and nothing that goes wrong here reaches the other views.
+
+   Reports are never edited once turned in — there is no update policy for
+   them. Grading, and choosing which reports become portfolio pieces, happen
+   in the Supabase dashboard; scripts/vault-sync.mjs files the chosen ones.
+   ========================================================================== */
+const CNN_KEY   = CACHE+"cnn10";         // the last good read of both tables
+const DRAFT_KEY = CACHE+"cnn10draft";    // her half-written report
+
+/* state: unset · loading · signedout · error · ok */
+const cnn = {state: SB_URL&&SB_KEY ? "loading" : "unset",
+             reports:[], log:[], cached:false, error:null};
+let sb=null, sbImport=null, cnnBusy=null;
+
+/* The questions, in order, grouped by the four steps of the report. The same
+   list draws the form and the answers on a turned-in card, so the two can't
+   drift apart. */
+const REPORT_STEPS = [
+  {title:"Slug the story", fields:[
+    {key:"slug", label:"Story slug", hint:"name the segment in six words or fewer", need:"a story slug"},
+  ]},
+  {title:"Five W's and an H", fields:[
+    {key:"who",    label:"Who is involved?"},
+    {key:"what",   label:"What happened?", area:3, need:"what happened"},
+    {key:"where_", label:"Where did it take place?"},
+    {key:"when_",  label:"When did it happen?"},
+    {key:"why",    label:"Why did it happen?", hint:"the cause, not the event", area:3},
+    {key:"how",    label:"How does it affect people beyond the people in the story?", area:3},
+  ]},
+  {title:"Fact versus framing", fields:[
+    {key:"fact",    label:"One solid fact", hint:"something you could look up and confirm", area:2},
+    {key:"framing", label:"One piece of framing you noticed",
+     hint:"loaded words, an emotional shot, a quote chosen to make you feel a certain way, "+
+          "or a side that never got to speak", area:3},
+  ]},
+  {title:"So what", fields:[
+    {key:"matters", label:"Why should anyone outside that story care?", area:3},
+    {key:"voice",   label:"Your take",
+     hint:"three to four sentences: your reaction, a question you're left with, or what you'd do about it",
+     area:5, need:"your take"},
+  ]},
+];
+const REPORT_TOP = [
+  {key:"student_name", label:"Your name", need:"your name"},
+  {key:"air_date",     label:"Air date of episode", date:true},
+  {key:"week_of",      label:"Week of", date:true},
+];
+
+function isoOf(v){ const d=parseDate(v); return d?iso(d):""; }
+function mondayOf(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()-((d.getDay()+6)%7)); }
+function longDay(d){ return MONTH[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear(); }
+function plural(n, one, many){ return n+" "+(n===1?one:many); }
+
+function sentenceCount(t){
+  t=String(t==null?"":t).trim();
+  if(!t) return 0;
+  const m=t.match(/[^.!?]+[.!?]+/g);
+  return m ? m.length : 1;
+}
+
+/* A school year runs August to July, so a May report sits with the September
+   that started its year, not with the September after it. */
+function schoolYear(d){ return d.getMonth()>=7 ? d.getFullYear() : d.getFullYear()-1; }
+function reportDate(r){ return parseDate(r.air_date) || parseDate(r.week_of) || new Date(r.created_at); }
+
+function plainError(err){
+  const m=String(err && (err.message||err.error_description) || err || "");
+  if(/fetch|network|load failed|offline|import/i.test(m)) return "there's no connection right now";
+  return m || "something went wrong";
+}
+
+/* --- loading ------------------------------------------------------------ */
+function client(){
+  if(sb) return Promise.resolve(sb);
+  if(!sbImport){
+    sbImport=import(SB_LIB).then(mod=>{
+      // One sign-in per browser: the session is kept and quietly refreshed.
+      sb=mod.createClient(SB_URL, SB_KEY, {auth:{
+        persistSession:true, autoRefreshToken:true, storageKey:CACHE+"cnn10auth"}});
+      sb.auth.onAuthStateChange(event=>{
+        // A refresh token that stops working lands here too. Deferred, because
+        // the auth client can't be called back into from inside this callback.
+        if(event==="SIGNED_OUT") setTimeout(()=>{ forgetCnn(); if(currentView==="cnn10") render(); });
+      });
+      return sb;
+    }).catch(err=>{ sbImport=null; throw err; });
+  }
+  return sbImport;
+}
+
+function saveCnn(){
+  try{ localStorage.setItem(CNN_KEY, JSON.stringify({reports:cnn.reports, log:cnn.log})); }catch(_){}
+}
+function savedCnn(){
+  try{ const v=JSON.parse(localStorage.getItem(CNN_KEY)||"null"); if(v && v.reports) return v; }catch(_){}
+  return null;
+}
+/* Signed out means none of it stays behind on the device — except her draft,
+   which is hers and not yet anyone's record. */
+function forgetCnn(){
+  cnn.state="signedout"; cnn.reports=[]; cnn.log=[]; cnn.cached=false; cnn.error=null;
+  try{ localStorage.removeItem(CNN_KEY); }catch(_){}
+}
+
+/* Never throws, so refresh() can wait on it beside the sheet tabs. */
+function loadCnn10(){
+  if(!SB_URL || !SB_KEY){ cnn.state="unset"; return Promise.resolve(cnn); }
+  if(!cnnBusy){
+    cnnBusy=readCnn10().catch(fellOver).then(()=>{ cnnBusy=null; return cnn; });
+  }
+  return cnnBusy;
+}
+
+/* A saved copy beats an empty screen, same as the sheet tabs. It only exists
+   while someone is signed in on this device — signing out clears it. */
+function fellOver(err){
+  cnn.error=err;
+  const saved = cnn.state==="ok" ? cnn : savedCnn();
+  if(saved){
+    cnn.reports=saved.reports; cnn.log=saved.log||[];
+    cnn.state="ok"; cnn.cached=true;
+  } else cnn.state="error";
+}
+
+async function readCnn10(){
+  const c=await client();
+  const {data, error}=await c.auth.getSession();
+  if(error) throw error;
+  if(!data.session){ forgetCnn(); return; }
+
+  const [r, l]=await Promise.all([
+    c.from("cnn10_reports").select("*").order("created_at",{ascending:false}),
+    c.from("cnn10_daily_log").select("*").order("log_date",{ascending:false}),
+  ]);
+  if(r.error) throw r.error;
+  if(l.error) throw l.error;
+  cnn.reports=r.data||[]; cnn.log=l.data||[];
+  cnn.state="ok"; cnn.cached=false; cnn.error=null;
+  saveCnn();
+}
+
+/* --- her draft ------------------------------------------------------------
+   The daily-tab checkboxes are memory-only on purpose. A half-written report
+   is different: it's work she'd be upset to lose, so it's kept on the device
+   until it's turned in.                                                     */
+let draft=null, draftTimer=null;
+function getDraft(){
+  if(draft) return draft;
+  try{ draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null"); }catch(_){}
+  if(!draft || typeof draft!=="object") draft={};
+  return draft;
+}
+/* Her name and the week carry over from report to report, so they alone
+   don't make a draft worth mentioning. */
+function draftHasWork(){
+  const d=getDraft();
+  return Object.keys(d).some(k=>!/^(student_name|week_of|weekTouched)$/.test(k) && !blank(d[k]));
+}
+function writeDraft(){
+  clearTimeout(draftTimer); draftTimer=null;
+  const d=getDraft();
+  try{
+    if(Object.keys(d).some(k=>d[k]===true || !blank(d[k]))) localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    else localStorage.removeItem(DRAFT_KEY);
+  }catch(_){}
+}
+function draftChanged(){
+  clearTimeout(draftTimer);
+  draftTimer=setTimeout(()=>{ writeDraft(); showDraftNote(); }, 900);
+}
+function clearDraft(){
+  clearTimeout(draftTimer); draftTimer=null; draft={};
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(_){}
+}
+// Closing the tab mid-sentence shouldn't cost the last second of typing.
+window.addEventListener("pagehide", ()=>{ if(draftTimer) writeDraft(); });
+
+function showDraftNote(){
+  const n=document.getElementById("cnn-draftnote");
+  if(n) n.textContent = draftHasWork() ? "draft saved" : "";
+}
+
+/* --- the parts of the view ---------------------------------------------- */
+function field(spec, value, onInput){
+  const wrap=el("div","field");
+  const id="cnn-"+spec.key;
+  const lab=el("label",null,spec.label);
+  lab.setAttribute("for",id);
+  if(spec.hint) lab.appendChild(el("span","hint",spec.hint));
+  wrap.appendChild(lab);
+
+  let input;
+  if(spec.area){ input=document.createElement("textarea"); input.rows=spec.area; }
+  else { input=document.createElement("input"); input.type=spec.date?"date":"text"; }
+  input.className="input"; input.id=id;
+  if(spec.auto) input.autocomplete=spec.auto;
+  input.value=value||"";
+  input.addEventListener("input",()=>onInput(input.value, input));
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function busyButton(btn, said, busyText){
+  btn.disabled=true; said.className="said"; said.textContent=busyText;
+}
+
+function signInCard(){
+  const box=el("form","signin");
+  box.appendChild(el("b",null,"Sign in to see current events"));
+  box.appendChild(el("p",null,
+    "Her reports and the feedback on them are private. Signing in once keeps this device signed in."));
+
+  const email=field({key:"email", label:"Email", auto:"username"}, "", ()=>{});
+  const pass =field({key:"password", label:"Password", auto:"current-password"}, "", ()=>{});
+  email.querySelector("input").type="email";
+  pass.querySelector("input").type="password";
+  box.append(email, pass);
+
+  const act=el("div","actions");
+  const go=el("button","go","Sign in"); go.type="submit";
+  const said=el("span","said");
+  said.setAttribute("aria-live","polite");
+  act.append(go, said);
+  box.appendChild(act);
+
+  box.addEventListener("submit", async ev=>{
+    ev.preventDefault();
+    const e=email.querySelector("input"), p=pass.querySelector("input");
+    if(!e.value.trim() || !p.value){
+      said.className="said needs";
+      said.textContent="Still needs "+(!e.value.trim()?"the email.":"the password.");
+      (!e.value.trim()?e:p).focus();
+      return;
+    }
+    busyButton(go, said, "Signing in…");
+    try{
+      const c=await client();
+      const {error}=await c.auth.signInWithPassword({email:e.value.trim(), password:p.value});
+      if(error) throw error;
+      cnn.state="loading";
+      await loadCnn10();
+      render();
+    }catch(err){
+      go.disabled=false;
+      said.className="said needs";
+      said.textContent = /invalid|credentials/i.test(String(err && err.message))
+        ? "That email and password don't match."
+        : "Couldn't sign in — "+plainError(err)+".";
+    }
+  });
+  return box;
+}
+
+/* Today's line: at the top, because it's the thing done every day. */
+const dayLine={date:null, dateAuto:true};
+function dailyForm(){
+  const box=el("div","cnnform");
+  box.appendChild(el("h2","sect","Today's line"));
+
+  if(dayLine.dateAuto) dayLine.date=iso(today());
+  const date =field({key:"log_date", label:"Date", date:true}, dayLine.date, v=>{
+    dayLine.dateAuto = v===iso(today());
+    dayLine.date=v || iso(today());
+    fill(); sync();
+  });
+  const story=field({key:"story", label:"One story from today's episode"}, "", ()=>{ said.textContent=""; });
+  const why  =field({key:"stuck", label:"Why it stuck"}, "", ()=>{ said.textContent=""; });
+  box.append(date, story, why);
+
+  const act=el("div","actions");
+  const go=el("button","go");
+  const said=el("span","said");
+  said.setAttribute("aria-live","polite");
+  act.append(go, said);
+  box.appendChild(act);
+
+  const dIn=date.querySelector("input"), sIn=story.querySelector("input"), wIn=why.querySelector("input");
+  const row=()=>cnn.log.find(x=>x.log_date===dayLine.date);
+
+  // A day that already has a line opens with it, so there's never a question
+  // of whether it saved, or saved twice.
+  function fill(){
+    const r=row();
+    if(r){ sIn.value=r.story||""; wIn.value=r.why||""; }
+    said.textContent="";
+  }
+  function sync(){
+    if(dayLine.dateAuto && dIn.value!==iso(today())){   // left open past midnight
+      dayLine.date=dIn.value=iso(today()); fill();
+    }
+    const d=parseDate(dayLine.date), isToday=dayLine.date===iso(today());
+    const which = isToday ? "today's line" : "the line for "+(d?shortDate(d):dayLine.date);
+    go.textContent=(row()?"Update ":"Save ")+which;
+  }
+
+  go.addEventListener("click", async ()=>{
+    if(!sIn.value.trim()){
+      said.className="said needs"; said.textContent="Still needs the story."; sIn.focus(); return;
+    }
+    const was=!!row();
+    busyButton(go, said, "Saving…");
+    try{
+      const c=await client();
+      const {data, error}=await c.from("cnn10_daily_log")
+        .upsert({log_date:dayLine.date, story:sIn.value.trim(), why:wIn.value.trim()||null},
+                {onConflict:"log_date"})
+        .select().single();
+      if(error) throw error;
+      cnn.log=cnn.log.filter(x=>x.log_date!==data.log_date).concat([data])
+        .sort((a,b)=>a.log_date<b.log_date?1:-1);
+      saveCnn();
+      go.disabled=false;
+      render();
+      said.className="said";
+      said.textContent=(was?"Updated":"Saved")+" · "+
+        new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    }catch(err){
+      go.disabled=false;
+      said.className="said needs";
+      said.textContent="Didn't save — "+plainError(err)+". Try again in a moment.";
+    }
+  });
+
+  fill(); sync();
+  box._sync=sync;
+  return box;
+}
+
+/* This week's report: folded, because it's once a week and shouldn't push
+   the daily line off a phone screen. */
+let reportOpen=false;
+function reportForm(){
+  const d=getDraft();
+  const det=document.createElement("details");
+  det.className="helper cnnform";
+  det.open=reportOpen;
+  det.addEventListener("toggle",()=>{ reportOpen=det.open; });
+
+  const sum=document.createElement("summary");
+  sum.appendChild(document.createTextNode("This week's report"));
+  const note=el("span","said"); note.id="cnn-draftnote";
+  sum.appendChild(note);
+  det.appendChild(sum);
+
+  const body=el("div","body");
+  det.appendChild(body);
+  const inputs={};
+  const set=(key)=>(v)=>{ getDraft()[key]=v; draftChanged(); said.textContent=""; };
+
+  // Week of follows the air date until she sets it herself.
+  const weekDefault=()=>iso(mondayOf(parseDate(getDraft().air_date)||today()));
+  const top=REPORT_TOP.map(spec=>{
+    const f=field(spec, spec.key==="week_of" ? (d.week_of||weekDefault()) : d[spec.key], (v,input)=>{
+      const dr=getDraft();
+      dr[spec.key]=v;
+      if(spec.key==="week_of") dr.weekTouched=true;
+      if(spec.key==="air_date" && !dr.weekTouched) inputs.week_of.value=weekDefault();
+      draftChanged(); said.textContent=""; weekLines();
+    });
+    inputs[spec.key]=f.querySelector(".input");
+    return f;
+  });
+  inputs.student_name.autocomplete="given-name";
+  body.appendChild(top[0]);
+  const pair=el("div","pair"); pair.append(top[1], top[2]);
+  body.appendChild(pair);
+
+  // The week's daily lines, so choosing a story is choosing from a list.
+  const lines=el("div");
+  body.appendChild(lines);
+  function weekLines(){
+    lines.innerHTML="";
+    const mon=parseDate(inputs.week_of.value); if(!mon) return;
+    const from=iso(mon), to=iso(new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6));
+    const week=cnn.log.filter(x=>x.log_date>=from && x.log_date<=to)
+      .sort((a,b)=>a.log_date<b.log_date?-1:1);
+    if(!week.length) return;
+    lines.appendChild(el("div","step","Your lines that week"));
+    const ul=el("ul","weeklines");
+    week.forEach(x=>{
+      const li=el("li");
+      li.appendChild(el("span","bwhen", WEEKDAY[parseDate(x.log_date).getDay()].slice(0,3)));
+      li.appendChild(document.createTextNode(x.story));
+      ul.appendChild(li);
+    });
+    lines.appendChild(ul);
+  }
+
+  let count=null;
+  REPORT_STEPS.forEach((st,i)=>{
+    body.appendChild(el("div","step",(i+1)+" · "+st.title));
+    st.fields.forEach(spec=>{
+      const f=field(spec, d[spec.key], v=>{ set(spec.key)(v); if(count) countSentences(); });
+      inputs[spec.key]=f.querySelector(".input");
+      body.appendChild(f);
+    });
+  });
+
+  // Under her take: how many sentences so far. Navy at three, which is the ask.
+  count=el("div","sentences");
+  count.setAttribute("aria-live","polite");
+  inputs.voice.parentNode.appendChild(count);
+  function countSentences(){
+    const n=sentenceCount(inputs.voice.value);
+    count.textContent=plural(n,"sentence","sentences");
+    count.classList.toggle("enough", n>=3);
+  }
+
+  const act=el("div","actions");
+  const go=el("button","go","Turn in report");
+  const said=el("span","said");
+  said.setAttribute("aria-live","polite");
+  act.append(go, said);
+  body.appendChild(act);
+
+  go.addEventListener("click", async ()=>{
+    const val=k=>String(inputs[k].value||"").trim();
+    const specs=REPORT_TOP.concat(...REPORT_STEPS.map(s=>s.fields));
+    const missing=specs.filter(s=>s.need && !val(s.key));
+    if(missing.length){
+      const names=missing.map(s=>s.need);
+      said.className="said needs";
+      said.textContent="Still needs "+(names.length>1
+        ? names.slice(0,-1).join(", ")+" and "+names[names.length-1] : names[0])+".";
+      inputs[missing[0].key].focus();
+      return;
+    }
+    const row={};
+    specs.forEach(s=>{ row[s.key]=val(s.key)||null; });
+    row.air_date=isoOf(row.air_date)||null;
+    row.week_of =isoOf(row.week_of)||null;
+
+    busyButton(go, said, "Turning in…");
+    try{
+      const c=await client();
+      const {data, error}=await c.from("cnn10_reports").insert(row).select().single();
+      if(error) throw error;
+      cnn.reports=[data].concat(cnn.reports.filter(x=>x.id!==data.id));
+      saveCnn();
+      clearDraft();
+      specs.forEach(s=>{ inputs[s.key].value = s.key==="student_name" ? row.student_name : ""; });
+      getDraft().student_name=row.student_name;       // her name carries to next week
+      writeDraft();
+      inputs.week_of.value=weekDefault();
+      countSentences(); showDraftNote(); weekLines();
+      go.disabled=false;
+      render();
+      said.className="said";
+      said.textContent="Turned in. It's under Turned in, below.";
+    }catch(err){
+      go.disabled=false;
+      said.className="said needs";
+      said.textContent="Didn't turn in — "+plainError(err)+". Your draft is kept on this device.";
+    }
+  });
+
+  countSentences(); showDraftNote(); weekLines();
+  det._sync=weekLines;
+  return det;
+}
+
+/* One turned-in report. The mode is there for the portfolio view that comes
+   later: "full" is the family's view, with its status and feedback; a
+   "portfolio" card is her work alone, answers open, the way the vault keeps
+   work samples apart from commentary on them. */
+const answersOpen=new Set();
+function reportCard(r, mode){
+  const full = mode!=="portfolio";
+  const n=el("div","book report");
+  const card=el("div","card");
+  card.style.setProperty("--edge", EDGE_FALLBACK.cnn10);
+
+  card.appendChild(el("div","rkick","CNN 10 · Current events report"));
+  card.appendChild(el("div","btitle", r.slug));
+
+  const meta=[];
+  if(r.student_name) meta.push(r.student_name);
+  const aired=parseDate(r.air_date), week=parseDate(r.week_of);
+  if(aired) meta.push("aired "+longDay(aired));
+  if(week)  meta.push("week of "+shortDate(week));
+  if(meta.length) card.appendChild(el("div","bwhen", meta.join(" · ")));
+
+  const graded = !blank(r.feedback) || !blank(r.score) || !!r.graded_at;
+  if(full){
+    const tags=el("div","tags");
+    tags.appendChild(el("span", graded?"tag graded":"tag turned", graded?"Graded":"Turned in"));
+    card.appendChild(tags);
+  }
+
+  let answers;
+  if(full){
+    answers=document.createElement("details");
+    answers.className="answers";
+    answers.open=answersOpen.has(r.id);
+    answers.addEventListener("toggle",()=>{
+      if(answers.open) answersOpen.add(r.id); else answersOpen.delete(r.id);
+    });
+    answers.appendChild(el("summary",null,"Answers"));
+  } else answers=el("div","answers");
+  REPORT_STEPS.forEach(st=>st.fields.forEach(spec=>{
+    if(spec.key==="slug") return;                     // it's the title already
+    const qa=el("div","qa");
+    qa.appendChild(el("div","q",spec.label));
+    qa.appendChild(blank(r[spec.key]) ? el("div","a none","—") : elLinked("div","a",r[spec.key]));
+    answers.appendChild(qa);
+  }));
+  card.appendChild(answers);
+
+  if(full && !blank(r.feedback)){
+    const fb=el("div","fb");
+    const head=el("div","fbhead");
+    head.appendChild(el("span",null,"Feedback"));
+    if(!blank(r.score)) head.appendChild(el("span","score",r.score));
+    fb.appendChild(head);
+    fb.appendChild(elLinked("div","a",r.feedback));
+    fb.appendChild(el("div","bwhen", r.graded_at ? "Graded "+longDay(new Date(r.graded_at)) : ""));
+    card.appendChild(fb);
+  }
+
+  n.appendChild(card);
+  return n;
+}
+
+function turnedIn(){
+  const box=el("div");
+  box.appendChild(el("h2","sect","Turned in"));
+  if(!cnn.reports.length){
+    box.appendChild(emptyCard("Nothing turned in yet.",
+      "<p>Each report shows up here once it's turned in, newest first. "+
+      "When it's been graded, the feedback appears on its card.</p>"));
+    return box;
+  }
+  // Grouped by school year; this year opens itself, earlier ones stay folded.
+  const groups=[], byYear={};
+  cnn.reports.forEach(r=>{
+    const y=schoolYear(reportDate(r));
+    if(!byYear[y]){ byYear[y]={year:y, items:[]}; groups.push(byYear[y]); }
+    byYear[y].items.push(r);
+  });
+  groups.sort((a,b)=>b.year-a.year);
+  const now=schoolYear(today());
+  groups.forEach(g=>box.appendChild(shelfBlock(
+    {id:"cnn10-"+g.year, title:g.year+"–"+String(g.year+1).slice(2), empty:"Nothing turned in.",
+     openByDefault: g.year===now || groups.length===1},
+    g.items, r=>reportCard(r,"full"))));
+  return box;
+}
+
+function cnnFoot(){
+  const box=el("p","quiet cnnfoot");
+  const out=el("button","signout","Sign out");
+  out.addEventListener("click", async ()=>{
+    out.disabled=true;
+    try{
+      const c=await client();
+      const {error}=await c.auth.signOut();
+      if(error) throw error;
+      forgetCnn();
+      render();
+    }catch(err){
+      out.disabled=false;
+      out.textContent="Couldn't sign out — "+plainError(err)+". Try again";
+    }
+  });
+  box.appendChild(out);
+  return box;
+}
+
+/* Every other view is rebuilt on each refresh. This one has half-typed words
+   in it and a keyboard up, so once it's on screen it's patched in place: the
+   forms stay put, and the turned-in list is only redrawn when something in it
+   actually changed — new feedback, say. */
+function renderCnn10(host){
+  stepper([]);
+  const mode = cnn.state;
+  let root=host.querySelector(":scope > .cnn");
+  if(root && root.dataset.mode!==mode){ root.remove(); root=null; }
+  const fresh=!root;
+  if(fresh){ root=el("div","cnn"); root.dataset.mode=mode; host.appendChild(root); }
+
+  const kick="B"+(cnn.cached?" · saved copy":"");
+  if(mode==="unset"){
+    setHead("B", "Current events", "");
+    if(fresh) root.appendChild(emptyCard("Current events isn't connected yet.","<p>"+NOT_CONNECTED.cnn10+"</p>"));
+    return;
+  }
+  if(mode==="loading"){
+    setHead("B", "Current events", "");
+    if(fresh) root.appendChild(el("p","quiet","Checking this device is signed in…"));
+    return;
+  }
+  if(mode==="signedout"){
+    setHead("B", "Current events", "");
+    if(fresh) root.appendChild(signInCard());
+    return;
+  }
+  if(mode==="error"){
+    setHead("B", "Current events", "");
+    root.innerHTML="";
+    root.appendChild(errorCard("Can't reach current events right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(cnn.error && (cnn.error.message||cnn.error) || "")));
+    root.appendChild(cnnFoot());
+    return;
+  }
+
+  const days=new Set(cnn.log.map(x=>x.log_date)).size;
+  setHead(kick, "Current events",
+          plural(cnn.reports.length,"report","reports")+" · logged "+plural(days,"day","days"));
+
+  if(fresh){
+    root._daily=root.appendChild(dailyForm());
+    root._report=root.appendChild(reportForm());
+    root._list=root.appendChild(turnedIn());
+    root.appendChild(cnnFoot());
+    root._sig=JSON.stringify(cnn.reports);
+    return;
+  }
+  root._daily._sync();
+  root._report._sync();
+  const sig=JSON.stringify(cnn.reports);
+  if(sig!==root._sig){
+    const list=turnedIn();
+    root.replaceChild(list, root._list);
+    root._list=list; root._sig=sig;
+  }
+}
+
+/* Printing from this view prints reports, as documents: whichever have their
+   answers open, or every one of them if none do. So one report on its own is
+   open it, then print. */
+let printUndo=[];
+window.addEventListener("beforeprint", ()=>{
+  if(currentView!=="cnn10") return;
+  const all=[...document.querySelectorAll(".cnn .report")];
+  if(!all.length) return;
+  const open=all.filter(n=>n.querySelector(".answers[open]"));
+  const chosen=open.length ? open : all;
+  document.body.classList.add("cnn-printing");
+  chosen.forEach((n,i)=>{
+    n.classList.add("printing");
+    if(i) n.classList.add("pbreak");
+    [n.closest("details.shelf"), n.querySelector("details.answers")].forEach(d=>{
+      if(d && !d.open){ d.open=true; printUndo.push(d); }
+    });
+  });
+});
+window.addEventListener("afterprint", ()=>{
+  document.body.classList.remove("cnn-printing");
+  document.querySelectorAll(".report.printing").forEach(n=>n.classList.remove("printing","pbreak"));
+  printUndo.forEach(d=>{ d.open=false; });
+  printUndo=[];
+});
+
 function renderStub(host, view){
   setHead("B", view.title, "");
   stepper([]);
@@ -1412,15 +2195,33 @@ function render(){
     view.id==="today" ? "" : "none";
 
   const host=document.getElementById("view");
-  host.innerHTML="";
+  // CNN 10 patches itself in place so a refresh can't wipe what she's typing.
+  if(!(view.id==="cnn10" && host.querySelector(":scope > .cnn"))) host.innerHTML="";
 
   if(view.id==="today")        renderToday(host);
   else if(view.id==="plan")    renderPlan(host);
   else if(view.id==="reading") renderReading(host);
   else if(view.id==="wins")    renderWins(host);
+  else if(view.id==="cnn10"){
+    // Whatever goes wrong in here stays in here.
+    try{ renderCnn10(host); }
+    catch(err){
+      host.innerHTML="";
+      host.appendChild(errorCard("Current events couldn't be shown.",
+        "The rest of the page is fine. Reloading usually sorts this out.",
+        String(err && err.message || err)));
+    }
+  }
   else                         renderStub(host, view);
 
   const f=document.getElementById("foot");
+  if(view.needs===null){
+    // Not a sheet tab — the foot follows the Supabase read instead.
+    f.textContent = cnn.state!=="ok" ? ""
+      : cnn.cached ? "No connection — showing the last saved copy."
+      : "Saved to your account · updates on its own.";
+    return;
+  }
   const s=sheet[view.needs];
   if(!s || s.state==="unset" || s.state==="error") f.textContent="";
   else if(s.cached) f.textContent="No connection — showing the last saved copy.";
@@ -1429,8 +2230,9 @@ function render(){
 
 async function refresh(){
   // The plan is loaded whatever the view: Today borrows its colours, and falls
-  // back to it when the daily tab has nothing to say.
-  await Promise.all([load("plan"), load("daily"), load("reading"), load("wins")]);
+  // back to it when the daily tab has nothing to say. CNN 10 loads beside the
+  // sheet tabs and never throws, so it can't hold any of them up.
+  await Promise.all([load("plan"), load("daily"), load("reading"), load("wins"), loadCnn10()]);
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
     try{ planModel=buildPlan(sheet.plan.rows); }
