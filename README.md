@@ -1,24 +1,30 @@
 # School
 
-One phone-first page, six views, no build step. Every view but one reads a
-tab of the same Google Sheet, published to the web as CSV, so the Sheet stays
-the only thing that ever gets edited. The exception is CNN 10, which is written
-to, and so keeps its words in Supabase behind a sign-in.
+One phone-first page, six views, no build step. The plans come from tabs of
+one Google Sheet, published to the web as CSV, and the Sheet is the only place
+they're edited. What actually happened — what she ticked, her notes, one-offs,
+her CNN 10 work — is written from the page into Supabase. **The sheet is
+intent; the app is record.** The whole page sits behind one family sign-in.
 
 | view | reads | state |
 |---|---|---|
-| **Today** (opens here) | `daily` tab | built |
+| **Today** (opens here) | `plan` tab, plus what's been done from Supabase | built |
 | **Plan** — the week at a glance | `plan` tab | built |
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
 | **Map** — subjects and credits to 12th grade | `map` tab | stub, and last in the tabs until it isn't |
 
-Plain HTML/CSS/JS in `index.html`. No framework, no npm, and no accounts for
-anyone viewing it — except `#cnn10`, which asks for the family sign-in and
-nothing else does. Views are linkable: `#today`, `#plan`, `#reading`, `#wins`,
-`#cnn10`, `#map` — the hashes are fixed, so tab order can change without breaking a
-bookmark.
+Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
+`#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
+fixed, so tab order can change without breaking a bookmark.
+
+**Every view asks for the family sign-in first**, once per browser. Anyone
+helping on the day needs it on their device too. Signing out (at the foot of
+every view) signs out that device only, and clears the saved copies from it —
+the sheet tabs included — except a half-written CNN 10 report. The published
+Sheet CSVs themselves are still public; the sign-in guards what's in
+Supabase.
 
 ## Where it runs
 
@@ -44,7 +50,7 @@ per tab. Both go at the top of `index.html`:
 
 ```js
 const PUB_ID = "2PACX-1vABC...";
-const GID = { plan: "0", daily: "123456", map: "", reading: "789012", wins: "345678" };
+const GID = { plan: "0", map: "", reading: "789012", wins: "345678" };
 ```
 
 A tab left as `""` is simply not connected. Its view says so and the rest of
@@ -52,119 +58,172 @@ the page carries on.
 
 ## The `plan` tab
 
-Read exactly as it already is — week-level, subjects down the left, weeks
-across the top, section dividers in between. Nothing about its shape needs to
-change. The page looks for:
+Week-level, subjects down the left, weeks across the top, section dividers in
+between. It is both the **Plan** view and the source of every day on
+**Today**. The page looks for:
 
 - a row starting with **Week** in column A, week numbers running across it
-- a row starting with **Date** (optional), the Monday of each week under it
-- a row starting with **Subject** with **Source** beside it (optional)
+- a row starting with **Date**, the Monday of each week under it — Today needs
+  this to know which day is which
+- a row starting with **Subject** with **Source** beside it
+- beside Source, three optional columns found by their headings, in any order:
+  **Time**, **Who** and **Days** (below)
 - everything below that: one row per subject
-- a row with a name but no source and no week cells = a **section divider**
+- a row with a name and nothing else = a **section divider**
 - a blank column = a week off; `--` in a cell = nothing that week
 
-Section names set the left-edge colour: *Rituals* navy, *Parent Led* ochre,
-*Self-Paced* periwinkle. Trombone and STEM lab stay plum. Cells with line
-breaks in them render as separate lines.
-
-## The `daily` tab
-
-The same shape as the plan tab, one step finer: subjects down the left, **one
-column per school day** across the top, section dividers in between. Freeze
-A:C and scroll right. `daily-template.csv` is the whole school year — every
-date already filled in from the plan tab, week 2 worked through — ready to
-paste straight in.
-
 ```
-A: Subject | B: Time | C: Who | (Every, optional) | then one column per school day
+Subject | Source | Time | Who | Days | week 1 | week 2 | …
 ```
 
-The page looks for a row starting **Date** with a date under each school day,
-and a row starting **Subject** with **Time** and **Who** beside it. Everything
-below that is one row per subject. A row with a name but nothing else is a
-section divider. Columns without a date are ignored, so you can leave gaps
-between weeks.
+Freeze through `Days` and the current week is already on screen.
 
-Columns A–C are the skeleton — the subject, its usual time, and who leads.
-Set them once. What changes daily goes in the day's cell:
-
-| in a cell | means |
+| column | holds |
 |---|---|
-| `x ` at the front | done — struck through, dimmed, locked for everyone |
-| `> ` at the front | carried on to the next day the sheet knows about |
-| `-` or empty | nothing that day |
-| `9:55 ` at the front | that day's time, overriding column B |
-| `@dad` `@adult` `@own` | that day's who, overriding column C |
-| `// …` at the end | your note about how it went |
-| a pasted link | shown as a tappable link |
-| `#cnn10` (or `#reading`, `#wins`, …) | a link to that tab, on the same page — `Write today's line #cnn10` shows *CNN 10 →* |
+| `Time` | the subject's usual time. Blank means no time |
+| `Who` | `mom` / `adult`, `dad`, `own`. Blank falls back to the section the row sits under |
+| `Days` | which weekdays it runs: `Mon-Fri`, `Mon & Wed`, `Tue & Thu`, `Fri`, `Sun`. Blank means every school day |
 
-So `x 9:55 @dad Unit 1 practice set // she flew through it` is done, at 9:55,
-with Dad, with a note. Everything left over is the detail line. A cell holding
-only a time (`10:30`) sets the time and takes its text from the row name —
-which is how Break and Lunch move around during the week.
+Section names set the left-edge colour: *Rituals* navy, *Parent Led* ochre,
+*Self-Paced* periwinkle, *Activities* plum. Trombone and STEM lab stay plum.
 
-`x-axis practice` is not mistaken for a done marker; the marker only counts
-when a space or the end of the cell follows it.
+### Writing the week — one task per line
 
-Paste a meeting link straight into the cell — `Robotics — 6:30pm
-https://meet.google.com/abc-defg-hij` — and the page turns it into a link she
-can tap, protocol trimmed off the label so it stays short on a phone. The `//`
-in `https://` is not read as a note marker, so a link and a note can sit in the
-same cell.
-
-**Things that happen every week go in an `Every` column** — an optional
-column headed `Every`, between `Who` and the first date. Freeze A:D instead of
-A:C. A cell there starts with the weekday and is otherwise an ordinary cell:
+Each line of a week's cell is one task, and how the line starts says when it's
+due. One subject can have as many lines as it needs:
 
 ```
-Trombone | | own | Sun 3:00pm @adult Lesson on Zoom https://zoom.us/j/…
+Watch the lesson video               ← every day this subject runs
+Mon Unit 1 practice set              ← Monday only
+Mon Read pp. 22–25                   ← a second task, same day
+By Fri DO Week 1 problem set         ← any day she likes, due Friday
 ```
 
-That puts a Trombone lesson, at 3:00pm, with its link, on every Sunday from
-the first date in the sheet to the last — Sundays included even though they
-have no column of their own. `Mon/Wed`, `Tues & Thu` and `Sundays` all work.
-Type it once; changing the link is changing one cell. The row's own day cells
-carry on as normal, so the Trombone row can hold daily practice and the
-Sunday lesson at once. If a dated day has its own cell for that row, the cell
-wins, which is how one week says something different. Every-column items can't
-be marked `x` or `>` ahead of time, and a Friday `>` still carries to Monday,
-not to Sunday.
+| line starts with | means |
+|---|---|
+| nothing | **daily** — every day the subject runs, per its `Days`. It's back tomorrow whether or not it was done today |
+| `Mon`, `Tue`, `Tues`, `Thu`, `Mon & Wed`, `Mon/Wed`, `Mon-Wed` | **pinned** to those days |
+| `By Fri`, `By Wed` | **hers to pace** — on every school day of the week with a *due Fri* chip, until she ticks it |
 
-**Rows named `Break`, `Lunch`, `Note` or `Evening`** are treated specially —
-the first two as grey pauses with no checkbox, the other two as the day's
-banner and its evening line. Everything else, Reading included, is an ordinary
-task with a checkbox.
+After that, a line reads like any cell always has:
 
-**The sheet's row order is the day's order.** A time is shown when you give
-one, but it never reorders anything — so if you want a break mid-morning, put
-the `Break` row where it belongs in the list rather than at the bottom. The
-time gutter is all-or-nothing per day: give one item a time and every row that
-day gets the column, so the coloured edges stay in line.
+| in a line | means |
+|---|---|
+| `9:55 ` after the day | that task's time, overriding `Time` |
+| `@dad` `@adult` `@own` | that task's who, overriding `Who` |
+| `// …` at the end | a note from you, shown in italics under the task |
+| a pasted link | a tappable link, protocol trimmed so it stays short |
+| `#cnn10` (or `#reading`, `#wins`, …) | a link to that tab — `Write today's line #cnn10` shows *CNN 10 →* |
+| `--` on its own | nothing that week |
 
-**Section dividers carry down.** A row with a name and nothing else is a
-divider, and it sets both the left-edge colour and the default `Who` for the
-rows beneath it: *Parent Led* → ochre and *Instructor/parent-led*, *Self-Paced*
-→ periwinkle and *Independent*, *Rituals* → navy, *Activities* → plum. Trombone
-and STEM lab stay plum wherever you file them. So `Who` only needs filling in
-where a row differs from its section.
+So `Mon 9:55 @dad Unit 1 practice set // bring the calculator` is Monday, at
+9:55, with Dad, with a note. A line that is only a day (`Mon`) takes its text
+from the subject's name.
 
-A divider is only allowed to change the section if its name reads like one
-(*rituals, parent, self-paced, independent, activities, around*). A subject row
-you haven't started using yet looks identical to a divider — empty, with just a
-name — so an unrecognised empty row is left alone rather than silently
-resetting the section for everything under it.
+A line that happens to start with a weekday word is read as one — `Sun and
+Moon unit` becomes *and Moon unit*, on Sunday. Put something in front of it
+(`Unit: Sun and Moon`).
 
-Columns with nothing in them aren't treated as school days, so a year of
-pre-filled dates costs nothing.
+**`x` and `>` are no longer typed in the Sheet.** Done and carried are state,
+and live in Supabase. If either turns up at the start of a line, the marker is
+ignored and the task still shows. Don't mark anything done in the Sheet — two
+places saying what's done will disagree within a fortnight.
 
-Her checkboxes are in memory only. They reset on reload and are never written
-anywhere — not to the Sheet, not to the browser.
+The CNN 10 weekly report is just a `By Fri` line on the Current Events row.
 
-**No formatting reaches the page.** Published CSV is plain text and the
-published-HTML view is a JavaScript shell with no content in it, so
-strikethrough, colour and bold in the Sheet are invisible here. That is why
-done is `x` and not a struck-through cell.
+### Break, Lunch, Note and Evening
+
+Ordinary rows on the plan tab, placed in the day by where they sit. The Plan
+view leaves them out.
+
+- **Break** and **Lunch** are grey pauses with no checkbox. With a `Time` and
+  an empty week cell they run on their `Days` without anything typed; `--`
+  takes them out of a week, and lines in the cell work as usual (`Wed 11:00`).
+- **Note** lines are the day's banner — `Mon No school — Labor Day`.
+- **Evening** lines go under *This evening* at the foot of the day —
+  `Tue Robotics — 6:00pm https://…`.
+
+Everything else, Reading included, is a task with a checkbox.
+
+**Row order is the day's order.** A time is shown when there is one, but never
+reorders anything. The time gutter is all-or-nothing per day, so the coloured
+edges stay in line.
+
+**Section dividers carry down**, setting the left-edge colour and the default
+`Who` for the rows beneath: *Parent Led* → ochre and *Instructor/parent-led*,
+*Self-Paced* → periwinkle and *Independent*, *Rituals* → navy, *Activities* →
+plum. A row with only a name is only treated as a divider if its name reads
+like one (*rituals, parent, self-paced, independent, activities, around*), so a
+subject you haven't started using yet doesn't reset the section under it.
+
+**No formatting reaches the page.** Published CSV is plain text, so
+strikethrough, colour and bold in the Sheet are invisible here.
+
+## Today
+
+One day at a time, built from the plan tab's week column for that day. Every
+weekday of every dated week is a school day; a Saturday or Sunday is a day
+only when something lands on it (a `Sun` in `Days`, say). *‹ Prev day* and
+*Next day ›* step through them, and *Today* comes back.
+
+Each subject is one block. A subject with one task that day is the familiar
+row — box, name, detail. A subject with several shows its name, then one
+ticked line per task: carried tasks first, then that day's own, then one-offs,
+then the ones she paces (*overdue* before *due Fri*). There is no separate
+"this week" panel; the whole day is one list with the flexible parts marked.
+
+### What happens when she ticks
+
+**Ticking looks the same for every task.** It strikes through and stays exactly
+where it is for the rest of that day. The difference is what happens next:
+
+| kind | ticked | not ticked |
+|---|---|---|
+| daily | done for that day. Tomorrow starts clean | never carries — a missed fifteen minutes isn't thirty tomorrow |
+| pinned | done | shows on the following school days tagged *carried from Tuesday* |
+| `By Fri` | done for the week — gone from the days after | shows every school day; after its due day, tagged *overdue · was due Fri* |
+
+**Carried and overdue stop after five school days.** Weekends and weeks off
+don't count. After that it's gone from the day, though still in Supabase.
+
+A tick saves straight away and shows on every signed-in device at the next
+refresh. If it doesn't save, the box un-ticks itself and says why.
+
+**Notes and skipping.** *note* on any task opens a line for how it went — this
+is where *she flew through it* goes now, written on the day. The same panel has
+*Skip it*, which stops a task carrying (or a `By` task showing) without
+pretending it was done, and *Not skipped after all* to undo that.
+
+**Something that isn't in the plan** — a field trip, the dentist, *finish
+yesterday's lab* — goes in *Add something to today* at the foot of the day.
+Choose a subject to put it under, or leave it on its own. A time, `@dad` and
+`//` work here too. It has a box like anything else, stays on that day only,
+and *Take it off the day* (under *note*) removes it.
+
+A refresh never redraws the day while a note or one-off is being typed.
+
+### Setting it up
+
+In the Supabase project that already holds CNN 10, run `supabase/day.sql` in
+the SQL editor. That's all — the sign-in is the same one.
+
+`day_state` holds one row per task she has touched, keyed by the day (or, for a
+`By` task, that week's Monday), the subject's name, and the task's own words
+lowercased with everything but letters and digits removed. So adding a line
+above a task changes nothing, but **rewording a task, or renaming a subject,
+starts it afresh** — its old ticks and notes stay in the table, unread.
+`done_on` is the day she ticked it, which is how a `By Fri` task knows to stay
+struck through on Tuesday and be gone on Wednesday. `day_extra` holds the
+one-offs.
+
+For the weekly review, everything that got done is in `day_state` where
+`done_at` is set.
+
+### The old `daily` tab
+
+Retired at a week boundary in September 2026. It stays in the Sheet as an archive until
+the school year ends — unhooked, and not imported. It was never the
+compliance record; the vault's `Log/` folder is.
 
 ## The `reading` tab
 
@@ -199,7 +258,7 @@ dragging rows.
 A shelf with nothing on it still shows, folded, with a `0`. The left edge of
 each book is coloured by its `Context`, using the same colours as the plan.
 
-A link in any cell becomes a tappable link, same as on the daily tab.
+A link in any cell becomes a tappable link, same as on the plan tab.
 
 ## The `wins` tab
 
@@ -259,10 +318,11 @@ that report prints; print with none open and they all do.
 
 ### Setting it up
 
-1. Make a Supabase project. In its SQL editor, run `supabase/cnn10.sql`.
+1. Make a Supabase project. In its SQL editor, run `supabase/cnn10.sql`, then
+   `supabase/day.sql`.
 2. Under **Authentication**, switch **off** new sign-ups. The publishable key sits in
    `index.html` in a public repo, so with sign-ups on, anyone could make an
-   account and read her work.
+   account, open the page and read her work.
 3. Add the one family account, by email and password.
 4. Paste the project URL and the publishable key (Project Settings › API Keys)
    into the top of `index.html`, inside the quotes:
@@ -272,9 +332,7 @@ const SB_URL = "https://xxxx.supabase.co";
 const SB_KEY = "sb_publishable_...";   // never the secret key
 ```
 
-Signing in once keeps that browser signed in. *Sign out* is at the foot of the
-view, and signing out clears the saved copy from the device (a half-written
-report stays — it's hers).
+Signing in once keeps that browser signed in, for the whole page.
 
 ### Filing into the vault
 
@@ -316,20 +374,22 @@ the others.
 
 | situation | what happens |
 |---|---|
-| gid left as `""` | A calm dashed card in that view saying it isn't connected, and for `daily`, the exact columns it wants. Today falls back to showing the week's plan. |
-| tab not published / 404 / HTML back instead of CSV | Red banner in that view naming the problem. Today falls back to the week's plan. Other views unaffected. |
+| gid left as `""` | A calm dashed card in that view saying it isn't connected. |
+| tab not published / 404 / HTML back instead of CSV | Red banner in that view naming the problem. Other views unaffected. |
 | no connection, but this browser has seen it before | The last saved copy, with *saved copy* in the kicker and *No connection — showing the last saved copy* at the foot. |
 | tab published but completely empty | Dashed card: published, but empty. Not an error. |
 | `reading` has no `Title` column | Red banner naming the headings it wants. |
 | `wins` has no `What` column | Red banner naming the headings it wants. |
-| no `Date` row found | Red banner saying so. If it spots the old one-row-per-item layout it says that specifically. |
-| a `Date` row with no dates across it | Red banner saying so. |
-| `daily` has days, but none for today | Today shows the nearest day it does have, and says so. The **Today** button returns to that day, not to an empty one. |
-| `daily` has rows for today but the `plan` tab is broken | Today works. Colours fall back to a built-in list. |
-| `SB_URL` left as `""` | CNN 10 shows a calm dashed card saying what to fill in. Every other view carries on. |
-| signed out | CNN 10 shows a small sign-in card and no report data. No other view ever asks. |
-| Supabase unreachable, no saved copy | Red banner inside CNN 10 only. |
-| Supabase unreachable, signed in here before | The last saved copy, with *saved copy* in the kicker. Saving says it didn't, and why. |
+| `plan` has no `Date` row | The Plan view works; Today shows a red banner saying it needs the Mondays. |
+| a `Days` cell that isn't days (`MWF`) | A quiet line at the top of Today naming the row; that subject runs every school day until it's fixed. |
+| no school day today | Today shows the nearest one ahead, and says so. The **Today** button returns to that day. |
+| `plan` tab has no `Time`/`Who`/`Days` columns yet | Today still works: every subject every school day, times blank, who from its section. |
+| `SB_URL` left as `""` | Every view shows a dashed card saying what to fill in. |
+| signed out | Every view shows the sign-in card, and nothing else. |
+| no connection, and this device was never signed in | A red banner with *Try again*. |
+| no connection, signed in here before | The whole page carries on from saved copies. Ticks and notes say they didn't save, and why. |
+| Supabase unreachable when stepping to a day it hasn't read | Today shows the day from the plan with its boxes locked, and a red banner saying ticks can't be checked. |
+| Supabase unreachable inside CNN 10, no saved copy | Red banner inside CNN 10 only. |
 
 The page re-checks the Sheet, and Supabase, every 60 seconds and updates on its own. Google
 caches published CSVs for a few minutes, so an edit takes a moment to show up.

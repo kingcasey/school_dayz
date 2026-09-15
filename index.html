@@ -98,6 +98,34 @@
   .check:disabled{cursor:default}
   .block.done .name,.block.done .what{text-decoration:line-through;opacity:.42}
 
+  /* A subject with more than one task that day: the name on its own, then one
+     ticked line per task. A subject with one task keeps the single row above. */
+  .task{margin-top:.5rem}
+  .task .what{font-size:.96rem;color:var(--ink);margin-top:.05rem;flex:1}
+  .task.done .what{text-decoration:line-through;opacity:.42}
+  .task .tags{margin-top:.3rem}
+  .ttime{font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-right:.35rem;
+        font-variant-numeric:tabular-nums}
+  .tag.due{border-color:var(--navy);color:var(--navy)}
+  .tag.overdue{border-color:#A32B1E;color:#A32B1E}
+  .block.skipped .name,.block.skipped .what,.task.skipped .what{opacity:.42}
+  .notebtn{font-family:inherit;font-size:.76rem;font-weight:600;color:var(--ink-soft);
+        background:none;border:0;padding:.13rem 0;cursor:pointer;margin-left:auto;
+        text-decoration:underline;text-underline-offset:2px}
+  .notebtn:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .row>.notebtn{margin-top:.2rem}
+  button.memo{display:block;font-family:inherit;text-align:left;background:none;border:0;
+        padding:0;cursor:pointer}
+  button.memo:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .noteedit{margin-top:.5rem}
+  .noteedit .actions{margin-top:.5rem}
+  .quietbtn{font-family:inherit;font-size:.85rem;font-weight:600;color:var(--navy);
+        background:transparent;border:1.5px solid var(--rule);border-radius:.2rem;
+        padding:.5rem .75rem;cursor:pointer}
+  .quietbtn:hover{border-color:var(--navy)}
+  .quietbtn:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  select.input{appearance:auto}
+
   .pause{padding:.5rem 0}
   .pause .card{border-left-color:transparent}
   .pause .name{font-size:.88rem;font-weight:400;color:var(--ink-soft);font-style:italic}
@@ -223,12 +251,12 @@
   .signout:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
 
   @media print{
-    nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot{display:none}
+    nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot,.notebtn,.noteedit,.addform{display:none}
     body{background:#fff}
     .block,.prow{page-break-inside:avoid}
 
     /* A printed report is a document: the answers, not the inputs. */
-    .cnnform,.signin,.cnnfoot,.cnn .sect,.cnn .quiet,.cnn .empty,
+    .cnnform,.signin,.cnn .sect,.cnn .quiet,.cnn .empty,
     .cnn .shelf>summary,.shelf .answers>summary,.answers>summary,.report .tags{display:none}
     body.cnn-printing header{display:none}
     body.cnn-printing,.cnn .shelf .body{padding-bottom:0}
@@ -269,8 +297,8 @@
   <div class="body">
     <p>School runs <b>9:00 to 3:00</b>. The times are a guide, not a bell schedule — if something runs long, shift the rest.</p>
     <p><b>Ochre tags</b> mean an adult sits with her. <b>Plain tags</b> mean she works alone — check in, don't hover.</p>
-    <p>Boxes reset when the page reloads. They're for her, so she knows what's left.</p>
-    <p>Anything already <b>crossed out and dimmed</b> is done — that's the record of what's been taught, and it can't be un-ticked.</p>
+    <p>A <b>ticked box is saved</b>, on every device — tick it again to undo. Anything crossed out is done.</p>
+    <p><b>Carried from Monday</b> means it's from an earlier day and still not done. A <b>due Fri</b> chip means it's hers to fit in any day before then.</p>
   </div>
 </details>
 
@@ -281,14 +309,17 @@
 <div id="view" class="day"></div>
 
 <p class="foot" id="foot"></p>
+<p class="foot" id="account"></p>
 
 </div>
 
 <script>
 /* ==========================================================================
    B — school
-   Every view reads a tab of one Google Sheet, published to the web as CSV.
+   The views read tabs of one Google Sheet, published to the web as CSV.
    Nothing here needs weekly editing — edit the Sheet, the page follows.
+   What she has done is kept in Supabase, and the whole page sits behind the
+   one family sign-in.
 
    TO CONNECT:
    In the Sheet: File > Share > Publish to web > pick the tab > CSV > Publish.
@@ -302,16 +333,15 @@
 const PUB_ID = "2PACX-1vRMQiMoSlVIa7yXr-SqAOC7P9QiE4-98mXm6ZkM1dRjliLYUJeRG8ss41op_URx1K57AyHWvy8UL5zO";
 
 const GID = {
-  plan:    "2064533394",      // the existing week-level "plan" tab
-  daily:   "277283136",       // the new day-level "daily" tab  (see README)
+  plan:    "2064533394",      // the "plan" tab — the week, and each day's tasks in it
   map:     "",                // Education map      — not built yet
   reading: "1478186643",      // the "reading" tab  (see README)
   wins:    "67138078",        // the "wins" tab     (see README)
 };
 
-/* --- CNN 10 (Supabase) --------------------------------------------------
-   Reports and the daily log are the one thing on this page that gets
-   written rather than read. Everything else still comes from the Sheet.   */
+/* --- Supabase -----------------------------------------------------------
+   The sign-in, what she ticks and notes on Today, and CNN 10's reports and
+   daily log. Plans still come from the Sheet; what happened lives here.   */
 const SB_URL = "https://lyaxyzmdcyrqixdwyysm.supabase.co";
 const SB_KEY = "sb_publishable_gD0RfeX7kIcbS_7e4BRbMA_lPWEB6yR";   // publishable key — never the secret key
 
@@ -325,7 +355,7 @@ const SB_LIB  = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm
    first, and nothing else depends on this order. CNN 10 reads Supabase
    rather than a sheet tab, which is what needs:null says. */
 const VIEWS = [
-  {id:"today",   tab:"Today",   title:"Today",           needs:"daily"},
+  {id:"today",   tab:"Today",   title:"Today",           needs:"plan"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
@@ -376,12 +406,11 @@ const MONTH   = ["January","February","March","April","May","June","July","Augus
 const sheet = {};              // per tab: {state, rows, text, error, cached}
 let planModel  = null;         // parsed plan tab
 let planError  = null;         // why the plan tab wouldn't parse, if it wouldn't
-let dailyModel = null;         // parsed daily tab
+let dayModel  = null;          // the plan tab, read as days
 let currentView = "today";
 let weekIdx = null;            // which week the Plan view is showing
 let dayIdx  = null;            // which day the Today view is showing
 let dayAuto = true;            // true while Today is on the day it picked itself
-const session = new Set();     // her ticks. In memory only. Never written anywhere.
 let readModel = null;          // the reading tab, sorted onto its three shelves
 let winsModel = null;          // the wins tab, bucketed by year
 
@@ -505,14 +534,6 @@ function normWho(s){
   return "own";
 }
 
-function normStatus(s){
-  s=String(s==null?"":s).trim().toLowerCase();
-  if(/^(done|taught|complete|completed|true|yes|y|x|✓)$/.test(s)) return "done";
-  if(/^(carried|carry|carryover|carried over|rollover|moved)$/.test(s)) return "carried";
-  if(/^(skip|skipped|n\/a|na|cancelled|canceled)$/.test(s)) return "skip";
-  return "";
-}
-
 /* Subject -> colour. Tries the whole name, then the part before "/" or "(". */
 function keysFor(name){
   const clean=t=>String(t||"").toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -555,11 +576,18 @@ function parseCSV(text){
 }
 
 /* ==========================================================================
-   THE PLAN TAB — week-level, as it already exists.
+   THE PLAN TAB — week-level, and the source of every day.
    Subjects down the left, weeks across the top, section dividers in between.
-   Read as-is. Nothing about the sheet's shape is changed by this page.
+   Time, Who and Days columns beside Source say when a subject runs; the
+   Plan view ignores them, and Today reads them (see buildDays, below).
    ========================================================================== */
-function buildPlan(rows){
+const PLAN_COL = [
+  ["time", /^time\b/],
+  ["who",  /^who\b/],
+  ["days", /^days?\b/],
+];
+
+function planHead(rows){
   const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
   const first=r=> cell(r,0).toLowerCase();
 
@@ -596,16 +624,35 @@ function buildPlan(rows){
   if(!weeks.length) throw new Error(
     "The week row was found, but there are no week numbers across it.");
 
+  // Time, Who and Days, found by name in any order. Anything else is ignored.
+  const col={};
+  if(headRow>=0){
+    for(let c=1;c<(rows[headRow]||[]).length;c++){
+      if(c===sourceCol || weeks.some(w=>w.col===c)) continue;
+      const h=cell(headRow,c).toLowerCase();
+      for(const [key,re] of PLAN_COL) if(col[key]==null && re.test(h)) col[key]=c;
+    }
+  }
+  return {cell:cell, bodyStart:bodyStart, sourceCol:sourceCol, col:col, weeks:weeks};
+}
+
+function buildPlan(rows){
+  const head=planHead(rows), cell=head.cell, weeks=head.weeks;
+  const at=(r,key)=> head.col[key]==null ? "" : cell(r,head.col[key]);
+
   const sections=[]; const edge={};
   let current={name:"", rows:[], colour:OTHER_EDGE};
   sections.push(current);
 
-  for(let r=bodyStart;r<rows.length;r++){
+  for(let r=head.bodyStart;r<rows.length;r++){
     const name=cell(r,0);
     if(!name) continue;
-    const source=cell(r,sourceCol);
+    // Break, Lunch, Note and Evening place things in the day. They aren't
+    // lessons, so the week plan doesn't list them.
+    if(DAY_SPECIAL.test(name.toLowerCase())) continue;
+    const source=cell(r,head.sourceCol);
     const cells=weeks.map(w=>cell(r,w.col));
-    const hasWork=cells.some(v=>!blank(v));
+    const hasWork=cells.some(v=>!blank(v)) || !!(at(r,"time")||at(r,"who")||at(r,"days"));
 
     if(!source && !hasWork){                   // a section divider row
       const sec=sectionMatch(name);
@@ -630,24 +677,40 @@ function planWeekIndex(){
 }
 
 /* ==========================================================================
-   THE DAILY TAB — the same shape as the plan tab, one step finer.
-   Subjects down the left, one column per school day across the top, section
-   dividers in between. Column A the subject, B its usual time, C who leads.
-   Freeze A:C and scroll right; a new week is five new columns.
+   A DAY, FROM THE PLAN TAB.
+   Each line of a week's cell is one task, and how the line starts says when:
 
-   Inside a day's cell:
-     x ....       done — struck through and locked, for everyone
-     > ....       carried on to the next day
-     -  or empty  nothing that day
-     9:55 ....    a time just for that day, overriding column B
-     @dad         who, just for that day, overriding column C
-     // ....      your note about how it went
+     Watch the lesson video          daily — every day the subject runs
+     Mon Unit 1 practice set         pinned — Monday only
+     Mon Read pp. 22–25              a second task, same day, same subject
+     By Fri DO Week 1 problem set    hers to pace — any school day, due Friday
+
+   Day words are everyDay()'s: Mon, Tue, Tues, Thu, Mon & Wed, Mon/Wed, and a
+   range, Mon-Thu. After the prefix a line is an ordinary cell (readCell): a
+   leading 9:55 for its time, @dad for who, // before a note, a pasted link.
+   -- means nothing that week. A line starting x or > keeps its task and loses
+   the marker: done and carried aren't typed in the Sheet any more.
+
+   Beside Source, three columns set the subject's defaults: Time, Who (dad /
+   mom / own) and Days (Mon-Fri, Mon & Wed, Fri — empty is every school day).
+   A blank Who falls back to the section the row sits under, and row order is
+   the day's order.
+
+   What happened is kept in Supabase (day_state), not the Sheet:
+     daily   done for that day. Tomorrow starts clean; it never carries.
+     pinned  not done or skipped, it shows on the next school days tagged
+             "carried from Monday".
+     By      done for the week — one tick and it's gone from the days after.
+             Past its due day it's tagged "overdue".
+   Carried and overdue both stop after five school days. Whatever the kind, a
+   tick strikes a task through and it stays where it is for the rest of the day.
 
    Rows called Break, Lunch, Note or Evening are treated specially. Everything
    else — Reading included — is an ordinary task with a checkbox, in the
    section it sits under.
    ========================================================================== */
 const DAY_SPECIAL = /^(break|lunch|recess|note|notes|evening|evenings)$/;
+const CARRY_DAYS  = 5;     // school days a carried or overdue task keeps showing
 
 /* One cell, unpacked. Returns null when the day has nothing. */
 function readCell(text, rowTime, rowWho){
@@ -677,7 +740,7 @@ function readCell(text, rowTime, rowWho){
   return {status:status, start:start, who:who, hasWho:hasWho, detail:s, note:note};
 }
 
-/* An Every cell: weekdays at the front, then an ordinary cell.
+/* Weekdays at the front of some text, then whatever follows.
    "Sun 3:00pm Lesson https://zoom.us/j/…" -> {days:[0], rest:"3:00pm Lesson …"} */
 function everyDay(word){
   const w=word.toLowerCase().replace(/s$/,"");         // Sundays -> sunday
@@ -700,85 +763,87 @@ function readEvery(text){
   return days.length ? {days:days, rest:s.trim()} : null;
 }
 
-function buildDaily(rows){
-  if(!rows.length) throw new Error("The daily tab came back empty.");
-  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
-  const first=r=> cell(r,0).toLowerCase();
-  const width=Math.max(...rows.map(r=>r.length));
-  const look=Math.min(rows.length,12);
+function weekPos(d){ return (d+6)%7; }                 // Monday 0 … Sunday 6
 
-  // The layout this replaced put its headings in row 1. Say so, rather than
-  // leaving a puzzling error while the tab is mid-swap.
-  const h0=(rows[0]||[]).map(x=>String(x==null?"":x).trim().toLowerCase());
-  if(h0[0]==="date" && ["start","status","type","detail"].some(k=>h0.indexOf(k)>0))
-    throw new Error(
-      "This is the old one-row-per-item daily tab. The page now reads the grid version — "+
-      "subjects down the left, one column per school day across the top. "+
-      "daily-template.csv in the repo is the whole year, ready to paste in.");
-
-  // The date row: the one starting with "Date", or the first with dates across it.
-  let dateRow=-1;
-  for(let r=0;r<look;r++) if(first(r)==="date"){ dateRow=r; break; }
-  if(dateRow<0){
-    for(let r=0;r<look;r++){
-      let n=0;
-      for(let c=1;c<width;c++) if(parseDate(cell(r,c).replace(/^[A-Za-z]{3,9}\.?\s+/,""))) n++;
-      if(n>=2){ dateRow=r; break; }
-    }
-  }
-  if(dateRow<0) throw new Error(
-    'Could not find the date row. One row near the top must start with the word "Date" in '+
-    "column A, with each school day's date running across it.");
-
+/* Days, for the Days column and the front of a line: readEvery()'s list, plus
+   a range. "Mon-Thu Read" -> {days:[1,2,3,4], rest:"Read"} */
+function readDays(text){
+  let s=String(text==null?"":text).trim();
   const days=[];
-  for(let c=1;c<width;c++){
-    const d=parseDate(cell(dateRow,c).replace(/^[A-Za-z]{3,9}\.?\s+/,""));
-    if(d) days.push({col:c, date:d, items:[], notes:[], evenings:[], carried:[]});
-  }
-  if(!days.length) throw new Error(
-    "The date row was found, but there are no dates across it.");
-
-  // The heading row: "Subject" in column A, with Time and Who beside it.
-  let headRow=-1;
-  for(let r=0;r<look;r++) if(first(r)==="subject"){ headRow=r; break; }
-  let timeCol=-1, whoCol=-1, everyCol=-1;
-  const firstDayCol=days[0].col;
-  if(headRow>=0){
-    for(let c=1;c<firstDayCol;c++){
-      const h=cell(headRow,c).toLowerCase();
-      if(h==="time" && timeCol<0) timeCol=c;
-      if(h==="who"  && whoCol<0)  whoCol=c;
-      if(/^(every|weekly|each)/.test(h) && everyCol<0) everyCol=c;
+  const add=d=>{ if(days.indexOf(d)<0) days.push(d); };
+  for(;;){
+    const r=s.match(/^([a-z]+)\.?(?:\s*[-–—]\s*|\s+(?:to|through|thru)\s+)([a-z]+)\.?(?![a-z])/i);
+    const a=r?everyDay(r[1]):-1, b=r?everyDay(r[2]):-1;
+    if(a>=0 && b>=0){
+      for(let i=0;i<7;i++){ const d=(a+i)%7; add(d); if(d===b) break; }
+      s=s.slice(r[0].length).replace(/^\s*(?:[,\/&]\s*|and\s+)?/i,"");
+      continue;
     }
+    const e=readEvery(s);
+    if(!e) break;
+    e.days.forEach(add);
+    s=e.rest;
   }
+  return days.length ? {days:days, rest:s.trim()} : null;
+}
 
-  // Days the Every column adds that have no column of their own — Sundays,
-  // mostly. Only inside the span the date row covers.
-  const extra={};
-  const spanStart=new Date(Math.min(...days.map(d=>d.date)));
-  const spanEnd  =new Date(Math.max(...days.map(d=>d.date)));
-  const byIso={};
-  days.forEach(d=>{ byIso[iso(d.date)]=d; });
-  function standingDates(weekdays){
-    const out=[];
-    for(let d=spanStart; d<=spanEnd; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1))
-      if(weekdays.indexOf(d.getDay())>=0) out.push(d);
-    return out;
+/* One line of a plan cell -> {kind, days|due, rest}, or null if there's nothing. */
+function readLine(line){
+  let s=String(line==null?"":line).trim().replace(/^(?:[•·*]|-(?!-))\s+/,"");
+  if(blank(s)) return null;
+  s=s.replace(/^(?:(?:x|✓)(?:\s+|$)|>+\s*)/i,"").trim();       // no longer sheet syntax
+  if(blank(s)) return null;
+
+  const by=s.match(/^by\s+/i);
+  if(by){
+    const d=readDays(s.slice(by[0].length));
+    if(d) return {kind:"by", due:d.days.reduce((x,y)=>weekPos(y)>weekPos(x)?y:x), rest:d.rest};
   }
-  if(timeCol<0 && firstDayCol>1) timeCol=1;
-  if(whoCol<0  && firstDayCol>2) whoCol=2;
-  const bodyStart = headRow>=0 ? headRow+1 : dateRow+1;
+  const d=readDays(s);
+  if(d) return {kind:"pinned", days:d.days, rest:d.rest};
+  return {kind:"daily", rest:s};
+}
 
-  let order=0, sawSubject=false;
+/* A task's name in day_state: its own words, lowercased, letters and digits
+   only. Not its place in the cell, so a line added above it changes nothing;
+   rewording it starts it afresh, which is right. */
+function itemKey(text){
+  return String(text==null?"":text).toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}]/gu,"");
+}
+
+function runsOn(s, wd){ return s.runs ? s.runs.indexOf(wd)>=0 : (wd>=1 && wd<=5); }
+
+/* The lines of one subject that land on a weekday of one week — By lines aside,
+   which belong to the whole week. */
+function linesOn(s, wi, wd){
+  return (s.lines[wi]||[]).filter(l=>
+    l.kind==="daily" ? runsOn(s,wd) : l.kind==="pinned" ? l.days.indexOf(wd)>=0 : false);
+}
+
+/* Break or Lunch with a Time and an empty cell runs on its Days without a
+   word typed; -- still takes it out of the week. */
+function standingPause(s, wi, wd){
+  return s.kind==="pause" && !s.lines[wi].length && s.cells[wi]==="" && !!s.time && runsOn(s,wd);
+}
+
+function buildDays(rows){
+  const head=planHead(rows), cell=head.cell;
+  const at=(r,key)=> head.col[key]==null ? "" : cell(r,head.col[key]);
+
+  const weeks=head.weeks.filter(w=>w.date).map(w=>({num:w.num, col:w.col, monday:mondayOf(w.date)}))
+    .sort((a,b)=>a.monday-b.monday);
+  if(!weeks.length) throw new Error(
+    'The plan tab has no dates under its weeks. Today needs the row starting "Date", '+
+    "with the Monday of each week under it, to know which day is which.");
+
+  const subjects=[], problems=[];
   let secEdge=null, secWho="";
-  for(let r=bodyStart;r<rows.length;r++){
+  for(let r=head.bodyStart;r<rows.length;r++){
     const name=cell(r,0);
     if(!name) continue;
-    const rowTime = timeCol>=0 ? cell(r,timeCol) : "";
-    const rowWho  = whoCol>=0  ? cell(r,whoCol)  : "";
-    const cells=days.map(d=>cell(r,d.col));
-    const every = everyCol>=0 ? readEvery(cell(r,everyCol)) : null;
-    if(!rowTime && !rowWho && !every && !cells.some(v=>!blank(v))){
+    const time=at(r,"time"), who=at(r,"who"), daysText=at(r,"days");
+    const cells=weeks.map(w=>cell(r,w.col));
+    if(!cell(r,head.sourceCol) && !time && !who && !daysText && !cells.some(v=>!blank(v))){
       // Nothing on this row anywhere in the year. Either a section divider or a
       // subject not in use yet — and only a name we recognise as a section is
       // allowed to change the section for the rows beneath it.
@@ -790,79 +855,59 @@ function buildDaily(rows){
       }
       continue;
     }
-    sawSubject=true;
 
-    const kind=name.toLowerCase();
-    const special=DAY_SPECIAL.test(kind);
-    const isPause = kind==="break" || kind==="lunch" || kind==="recess";
-
-    const place=(day,p)=>{
-      if(kind==="note"||kind==="notes"){ if(p.detail) day.notes.push(p.detail); return; }
-      if(kind==="evening"||kind==="evenings"){ if(p.detail) day.evenings.push(p.detail); return; }
-      day.items.push({
-        order:  order++,
-        day:    iso(day.date),
-        start:  p.start,
-        mins:   minutes(p.start),
-        subject:name,
-        detail: isPause ? (p.detail||name) : p.detail,
-        note:   p.note,
-        who:    normWho(p.who),
-        hasWho: p.hasWho,
-        edge:   secEdge,
-        status: special && !isPause ? "" : p.status,
-        pause:  isPause,
-      });
-    };
-    days.forEach((day,i)=>{
-      const p=readCell(cells[i], rowTime, rowWho||secWho);
-      if(p) place(day,p);
-    });
-
-    // The Every column: the same thing on the same weekday, all year. A cell
-    // of its own on a dated day wins, so one week can say something different.
-    if(every){
-      // Just "Sun" is enough — the row's name, time and who say the rest.
-      const p=readCell(every.rest, rowTime, rowWho||secWho) ||
-        {start:rowTime, who:rowWho||secWho, hasWho:!!(rowWho||secWho), detail:"", note:""};
-      p.status="";                           // nothing to be done, or carried, ahead of time
-      standingDates(every.days).forEach(d=>{
-        const k=iso(d), dated=byIso[k];
-        if(dated){ if(blank(cells[days.indexOf(dated)])) place(dated,p); return; }
-        place(extra[k] || (extra[k]={date:d, items:[], notes:[], evenings:[], carried:[]}), p);
-      });
+    let runs=null;
+    if(!blank(daysText)){
+      const d=readDays(daysText);
+      if(d && !d.rest) runs=d.days;
+      else problems.push(name+"'s Days cell says “"+daysText+"”, which isn't a list of days, "+
+                         "so it's showing every school day until that's fixed.");
     }
-  }
-  if(!sawSubject) throw new Error("The daily tab has a date row but no subject rows under it.");
 
-  // Anything marked > shows again on the next day the sheet knows about.
-  days.forEach((day,i)=>{
-    if(i===0) return;
-    days[i-1].items.forEach(it=>{
-      if(it.status==="carried" && !it.pause){
-        day.carried.push(Object.assign({}, it, {
-          carriedFrom: WEEKDAY[days[i-1].date.getDay()],
-          status:"", start:"", mins:null,
-        }));
-      }
+    const low=name.toLowerCase();
+    subjects.push({
+      name:   name,
+      order:  subjects.length,
+      kind:   /^notes?$/.test(low) ? "note" : /^evenings?$/.test(low) ? "evening"
+            : DAY_SPECIAL.test(low) ? "pause" : "task",
+      time:   time,
+      who:    who || secWho,
+      edge:   secEdge,
+      runs:   runs,
+      cells:  cells,
+      lines:  cells.map(c=> blank(c) ? [] : c.split("\n").map(readLine).filter(Boolean)),
     });
+  }
+  if(!subjects.length) throw new Error("The plan tab has weeks, but no subject rows under them.");
+
+  // Every weekday of every dated week is a school day. A Saturday or Sunday is
+  // a day too, but only when something on the plan lands on it.
+  const days=[], school=[], byDay={};
+  weeks.forEach((w,wi)=>{
+    for(let off=0;off<7;off++){
+      const date=new Date(w.monday.getFullYear(), w.monday.getMonth(), w.monday.getDate()+off);
+      const wd=date.getDay(), k=iso(date);
+      if(off<5){ school.push(k); byDay[k]={week:wi, wd:wd}; }
+      if(off<5 || subjects.some(s=>linesOn(s,wi,wd).length || standingPause(s,wi,wd)))
+        days.push({date:date, iso:k, week:wi, school:off<5});
+    }
   });
-
-  // Every-column days join after carrying, so a Friday > still lands on Monday.
-  const all=days.concat(Object.keys(extra).map(k=>extra[k])).sort((a,b)=>a.date-b.date);
-
-  // A date column with nothing under it isn't a school day.
-  const live=all.filter(d=>d.items.length||d.notes.length||d.evenings.length||d.carried.length);
-  if(!live.length) throw new Error("The daily tab has dates and subjects, but no days filled in yet.");
-  return {days:live};
+  return {weeks:weeks, subjects:subjects, days:days, school:school, at:byDay, problems:problems};
 }
 
-function dailyDayIndex(){
-  if(!dailyModel || !dailyModel.days.length) return 0;
-  const k=iso(today());
-  const days=dailyModel.days;
-  for(let i=0;i<days.length;i++) if(iso(days[i].date)===k) return i;
-  for(let i=0;i<days.length;i++) if(days[i].date>today()) return i;   // nearest ahead
+/* How many school days fall on or before a date. The gap between two of these
+   is how many school days apart they are, weekends and weeks off skipped. */
+function schoolRank(model, k){
+  let lo=0, hi=model.school.length;
+  while(lo<hi){ const mid=(lo+hi)>>1; if(model.school[mid]<=k) lo=mid+1; else hi=mid; }
+  return lo;
+}
+
+function dayIndexFor(model){
+  if(!model || !model.days.length) return 0;
+  const k=iso(today()), days=model.days;
+  for(let i=0;i<days.length;i++) if(days[i].iso===k) return i;
+  for(let i=0;i<days.length;i++) if(days[i].iso>k) return i;         // nearest ahead
   return days.length-1;                                              // else the last one
 }
 
@@ -1056,14 +1101,6 @@ const NOT_CONNECTED = {
   plan: 'The <code>plan</code> tab isn\'t connected yet. In the Sheet: '+
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>plan</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. Then paste the id and the gid into the top of this file.',
-  daily:'The <code>daily</code> tab isn\'t built yet. It is shaped like the plan tab, one step '+
-        'finer: subjects down the left, one column per school day across the top.'+
-        '<ul><li>a row starting <code>Date</code> — a date under each school day</li>'+
-        '<li>a row starting <code>Subject</code>, with <code>Time</code> and <code>Who</code> beside it</li>'+
-        '<li>then one row per subject, section dividers in between</li></ul>'+
-        'In a day\'s cell: <code>x</code> done · <code>&gt;</code> carried · <code>-</code> nothing · '+
-        'a leading <code>9:55</code> for that day\'s time · <code>@dad</code> for who · '+
-        '<code>//</code> before your note. A pasted link becomes a tappable one.',
   map:  'This is where subjects and credits from now through 12th grade will live. '+
         'Nothing is wired up yet — the tab and the shape of it come next.',
   reading:'The <code>reading</code> tab isn\'t connected yet. In the Sheet: '+
@@ -1081,9 +1118,10 @@ const NOT_CONNECTED = {
         '<li><code>Type</code> — certification, competition, performance, project, milestone</li>'+
         '<li>the issuing or awarding body, and <code>Notes/Results</code></li>'+
         '<li><code>Evidence</code> — a share link becomes tappable; a filename is noted as on file</li></ul>',
-  cnn10:'The daily line and the weekly reports are saved to Supabase rather than the Sheet, '+
-        'because this is the one view that gets written to.'+
-        '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code> in its SQL editor</li>'+
+  supabase:'Her ticks, notes and reports are saved to Supabase, and the whole page sits behind '+
+        'its one family sign-in.'+
+        '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code> and '+
+        '<code>supabase/day.sql</code> in its SQL editor</li>'+
         '<li>under Authentication, switch off new sign-ups first, then add the one family '+
         'account by email and password</li>'+
         '<li>paste the project URL into <code>SB_URL</code> and the publishable key into '+
@@ -1111,148 +1149,740 @@ function makeStep(label, aria, disabled, fn){
   return b;
 }
 
-/* --- one block row, shared by Today and the plan fallback --------------- */
-function blockRow(it, showTime){
-  const row=el("div","block"+(it.pause?" pause":"")+(showTime?"":" notime"));
+/* ==========================================================================
+   The sign-in. The whole page sits behind the one family account: what she
+   ticks, what she writes and the feedback on it all live in Supabase, and one
+   door is simpler than a locked room inside an open house. One sign-in per
+   browser — the session is kept and quietly refreshed.
+   ========================================================================== */
+const AUTH_KEY = CACHE+"cnn10auth";   // named when only CNN 10 was signed in; kept so nobody is signed out by the move
 
-  if(showTime) row.appendChild(el("div","time", it.start||""));
+/* state: unset · checking · out · in · error */
+const auth = {state: SB_URL&&SB_KEY ? "checking" : "unset", error:null};
+let sb=null, sbImport=null;
+
+function client(){
+  if(sb) return Promise.resolve(sb);
+  if(!sbImport){
+    sbImport=import(SB_LIB).then(mod=>{
+      sb=mod.createClient(SB_URL, SB_KEY, {auth:{
+        persistSession:true, autoRefreshToken:true, storageKey:AUTH_KEY}});
+      sb.auth.onAuthStateChange(event=>{
+        // A refresh token that stops working lands here too. Deferred, because
+        // the auth client can't be called back into from inside this callback.
+        if(event==="SIGNED_OUT") setTimeout(signedOut);
+      });
+      return sb;
+    }).catch(err=>{ sbImport=null; throw err; });
+  }
+  return sbImport;
+}
+
+function offline(err){
+  const m=String(err && (err.name+" "+err.message) || err || "");
+  return /retryable|fetch|network|load failed|offline|import/i.test(m);
+}
+
+async function checkAuth(){
+  if(auth.state==="unset") return;
+  try{
+    const c=await client();
+    const {data, error}=await c.auth.getSession();
+    if(data && data.session){ auth.state="in"; return; }
+    if(error) throw error;
+    auth.state="out";
+  }catch(err){
+    // No connection, but this browser was signed in: carry on from the saved
+    // copies. Anything that needs the network says so when it tries.
+    let saved=false;
+    try{ saved=!!localStorage.getItem(AUTH_KEY); }catch(_){}
+    if(offline(err) && saved) auth.state="in";
+    else if(offline(err)){ auth.state="error"; auth.error=err; }
+    else auth.state="out";
+  }
+}
+
+/* Signed out means none of it stays behind on the device — the sheet copies
+   included — except a half-written report, which is hers. */
+function signedOut(){
+  auth.state="out";
+  forgetCnn(); forgetDay();
+  Object.keys(GID).forEach(name=>{
+    delete sheet[name];
+    try{ localStorage.removeItem(CACHE+name); }catch(_){}
+  });
+  planModel=null; planError=null; dayModel=null; readModel=null; winsModel=null;
+  render();
+}
+
+function signInCard(){
+  const box=el("form","signin");
+  box.appendChild(el("b",null,"Sign in"));
+  box.appendChild(el("p",null,
+    "Her days, her work and the feedback on it are private. Signing in once keeps this device signed in."));
+
+  const email=field({key:"email", label:"Email", auto:"username"}, "", ()=>{});
+  const pass =field({key:"password", label:"Password", auto:"current-password"}, "", ()=>{});
+  email.querySelector("input").type="email";
+  pass.querySelector("input").type="password";
+  box.append(email, pass);
+
+  const act=el("div","actions");
+  const go=el("button","go","Sign in"); go.type="submit";
+  const said=el("span","said");
+  said.setAttribute("aria-live","polite");
+  act.append(go, said);
+  box.appendChild(act);
+
+  box.addEventListener("submit", async ev=>{
+    ev.preventDefault();
+    const e=email.querySelector("input"), p=pass.querySelector("input");
+    if(!e.value.trim() || !p.value){
+      said.className="said needs";
+      said.textContent="Still needs "+(!e.value.trim()?"the email.":"the password.");
+      (!e.value.trim()?e:p).focus();
+      return;
+    }
+    busyButton(go, said, "Signing in…");
+    try{
+      const c=await client();
+      const {error}=await c.auth.signInWithPassword({email:e.value.trim(), password:p.value});
+      if(error) throw error;
+      auth.state="in";
+      render();
+      refresh();
+    }catch(err){
+      go.disabled=false;
+      said.className="said needs";
+      said.textContent = /invalid|credentials/i.test(String(err && err.message))
+        ? "That email and password don't match."
+        : "Couldn't sign in — "+plainError(err)+".";
+    }
+  });
+  return box;
+}
+
+/* Signing out here signs out this device only — not her laptop as well. */
+function accountFoot(){
+  const host=document.getElementById("account");
+  if(auth.state!=="in"){ host.innerHTML=""; return; }
+  if(host.querySelector(".signout")) return;
+  const out=el("button","signout","Sign out");
+  out.addEventListener("click", async ()=>{
+    out.disabled=true;
+    try{
+      const c=await client();
+      const {error}=await c.auth.signOut({scope:"local"});
+      if(error) throw error;
+      signedOut();
+    }catch(err){
+      out.disabled=false;
+      out.textContent="Couldn't sign out — "+plainError(err)+". Try again";
+    }
+  });
+  host.appendChild(out);
+}
+
+function renderGate(host){
+  stepper([]);
+  if(auth.state==="unset"){
+    setHead("B", "School", "");
+    host.appendChild(emptyCard("The sign-in isn't set up yet.", "<p>"+NOT_CONNECTED.supabase+"</p>"));
+  } else if(auth.state==="checking"){
+    setHead("B", "School", "");
+    host.appendChild(el("p","quiet","Checking this device is signed in…"));
+  } else if(auth.state==="error"){
+    setHead("B", "School", "");
+    host.appendChild(errorCard("Can't check the sign-in right now.",
+      "There's no connection, and this device hasn't been signed in before.",
+      String(auth.error && (auth.error.message||auth.error) || "")));
+    const again=el("button","go","Try again");
+    again.addEventListener("click", async ()=>{
+      again.disabled=true;
+      auth.state="checking"; render();
+      await checkAuth(); render(); refresh();
+    });
+    host.appendChild(again);
+  } else {
+    setHead("B", "School", "");
+    host.appendChild(signInCard());
+  }
+}
+
+/* ==========================================================================
+   What happened — Supabase's day_state and day_extra.
+   Read as a window of dates around the day on screen: far enough back to find
+   anything still carried or overdue into it, a little ahead for flicking
+   forward. Stepping outside the window reads a new one.
+   ========================================================================== */
+const DAY_KEY   = CACHE+"day";        // the last good window, for when there's no connection
+const DAY_BACK  = 35;                 // calendar days read behind the day on screen
+const DAY_AHEAD = 14;                 // and ahead of it
+
+const day = {rows:{}, extras:[], from:null, to:null, state:"idle", error:null, cached:false,
+             busy:null, busyFrom:null, failedFrom:null};
+const pending = {};                   // writes on their way, laid over any read that lands first
+
+function addDays(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()+n); }
+function stateId(kind, date, subject, key){ return kind+"|"+date+"|"+subject+"|"+key; }
+
+function dayCovers(k){
+  const d=parseDate(k);
+  return !!day.from && day.from<=iso(addDays(d,-(DAY_BACK-7))) && day.to>=k;
+}
+
+function saveDay(){
+  try{ localStorage.setItem(DAY_KEY, JSON.stringify({rows:day.rows, extras:day.extras, from:day.from, to:day.to})); }catch(_){}
+}
+function forgetDay(){
+  Object.assign(day, {rows:{}, extras:[], from:null, to:null, state:"idle", error:null, cached:false, failedFrom:null});
+  try{ localStorage.removeItem(DAY_KEY); }catch(_){}
+}
+
+/* PostgREST hands back a thousand rows at most, so read in pages. */
+async function readAll(query){
+  const out=[];
+  for(let at=0;;at+=1000){
+    const {data, error}=await query().range(at, at+999);
+    if(error) throw error;
+    out.push(...data);
+    if(data.length<1000) return out;
+  }
+}
+
+/* Never throws, so refresh() can wait on it beside the sheet tabs. */
+function loadDay(d){
+  if(auth.state!=="in") return Promise.resolve(day);
+  const from=iso(addDays(d,-DAY_BACK)), to=iso(addDays(d,DAY_AHEAD));
+  if(day.busy){
+    return day.busyFrom===from ? day.busy
+      : day.busy.then(()=> dayCovers(iso(d)) ? day : loadDay(d));
+  }
+  day.busyFrom=from;
+  day.busy=(async()=>{
+    try{
+      const c=await client();
+      const [st, ex]=await Promise.all([
+        readAll(()=>c.from("day_state").select("*").gte("day_date",from).lte("day_date",to)
+          .order("day_date").order("kind").order("subject").order("item_key")),
+        readAll(()=>c.from("day_extra").select("*").gte("day_date",from).lte("day_date",to)
+          .order("created_at").order("id")),
+      ]);
+      const rows={};
+      st.forEach(r=>{ rows[stateId(r.kind, r.day_date, r.subject, r.item_key)]=r; });
+      Object.keys(pending).forEach(id=>{ rows[id]=pending[id]; });
+      Object.assign(day, {rows:rows, extras:ex, from:from, to:to, state:"ok", cached:false,
+                          error:null, failedFrom:null});
+      saveDay();
+    }catch(err){
+      day.error=err; day.failedFrom=from;
+      if(day.state!=="ok"){
+        let saved=null;
+        try{ saved=JSON.parse(localStorage.getItem(DAY_KEY)||"null"); }catch(_){}
+        if(saved && saved.from) Object.assign(day, saved, {state:"ok", cached:true});
+        else day.state="error";
+      } else day.cached=true;
+    }finally{
+      day.busy=null; day.busyFrom=null;
+    }
+    return day;
+  })();
+  return day.busy;
+}
+
+/* Only what changed is sent; the row's other columns stay as they are. */
+async function saveState(t, patch){
+  const id=t.sid, key={day_date:t.sdate, kind:t.skind, subject:t.subject, item_key:t.key};
+  const before=day.rows[id] || null;
+  day.rows[id]=pending[id]=Object.assign({}, key, before, patch);
+  try{
+    const c=await client();
+    const {data, error}=await c.from("day_state")
+      .upsert(Object.assign({}, key, patch), {onConflict:"day_date,kind,subject,item_key"})
+      .select().single();
+    if(error) throw error;
+    day.rows[id]=data;
+    saveDay();
+    return data;
+  }catch(err){
+    if(before) day.rows[id]=before; else delete day.rows[id];
+    throw err;
+  }finally{
+    delete pending[id];
+  }
+}
+
+async function addExtra(date, subject, text){
+  const c=await client();
+  const {data, error}=await c.from("day_extra")
+    .insert({day_date:date, subject:subject||null, text:text}).select().single();
+  if(error) throw error;
+  day.extras=day.extras.concat([data]);
+  saveDay();
+}
+
+async function removeExtra(x){
+  const c=await client();
+  const {error}=await c.from("day_extra").delete().eq("id", x.id);
+  if(error) throw error;
+  day.extras=day.extras.filter(e=>e.id!==x.id);
+  saveDay();
+}
+
+/* How a task with this state reads on day X. null means it isn't shown —
+   dealt with on an earlier day. On its own day it always shows, and a task
+   ticked on a later day shows as not yet done, which it wasn't, then. */
+function seenOn(r, X, isHome){
+  if(!r) return {done:false, skipped:false};
+  const on = r.done_on || (r.done_at ? iso(new Date(r.done_at)) : r.skipped ? r.day_date : null);
+  if(!on || on>X) return {done:false, skipped:false};
+  if(on<X && !isHome) return null;
+  return {done:!!r.done_at, skipped:!r.done_at && !!r.skipped};
+}
+
+/* Everything on one day, in the plan's row order: one block per subject, with
+   carried tasks first, then the day's own, then one-offs, then the ones she
+   paces — overdue before due. Notes and evening lines come back separately. */
+function dayView(model, idx){
+  const dd=model.days[idx], X=dd.iso, wd=dd.date.getDay(), wi=dd.week;
+  const rankX=schoolRank(model, X);
+  const out={blocks:[], notes:[], evenings:[]};
+
+  const extrasFor={}, loose=[];
+  day.extras.filter(x=>x.day_date===X).forEach(x=>{
+    const s=x.subject && model.subjects.find(s=>s.kind==="task" && s.name===x.subject);
+    if(s) (extrasFor[s.name]=extrasFor[s.name]||[]).push(x); else loose.push(x);
+  });
+
+  const task=(s, l, more)=>{
+    const p=readCell(l.rest, s.time, s.who) ||
+      {start:s.time, who:s.who, hasWho:!!s.who, detail:"", note:""};
+    return Object.assign({subject:s.name, start:p.start, who:normWho(p.who), hasWho:p.hasWho,
+      detail:p.detail, note:p.note, key:itemKey(p.detail)||itemKey(s.name)}, more);
+  };
+  const extraTask=(x, s)=>{
+    const p=readCell(x.text, "", s?s.who:"") || {start:"", who:"", hasWho:false, detail:x.text, note:""};
+    return {subject:s?s.name:"", start:p.start, who:normWho(p.who), hasWho:p.hasWho,
+      detail:p.detail, note:p.note, key:"x-"+x.id, extra:x};
+  };
+  const place=(list, t, kind, date, isHome)=>{
+    t.skind=kind; t.sdate=date; t.sid=stateId(kind, date, t.subject, t.key); t.onDay=X;
+    const v=seenOn(day.rows[t.sid], X, isHome);
+    if(!v) return;
+    t.done=v.done; t.skipped=v.skipped; t.row=day.rows[t.sid]||null;
+    list.push(t);
+  };
+
+  model.subjects.forEach(s=>{
+    if(s.kind==="note" || s.kind==="evening"){
+      linesOn(s, wi, wd).forEach(l=>{
+        const p=readCell(l.rest, "", "");
+        if(p && p.detail) (s.kind==="note" ? out.notes : out.evenings).push(p.detail);
+      });
+      return;
+    }
+    if(s.kind==="pause"){
+      linesOn(s, wi, wd).forEach(l=>{
+        const p=readCell(l.rest, s.time, "");
+        out.blocks.push({pause:true, subject:s.name,
+          tasks:[{start:p?p.start:s.time, detail:(p&&p.detail)||s.name}]});
+      });
+      if(standingPause(s, wi, wd))
+        out.blocks.push({pause:true, subject:s.name, tasks:[{start:s.time, detail:s.name}]});
+      return;
+    }
+
+    const carried=[], own=[], extras=[], overdue=[], due=[];
+    if(dd.school){
+      // A pinned task from one of the school days before, still not done.
+      for(let back=CARRY_DAYS;back>=1;back--){
+        const k=model.school[rankX-1-back], src=k && model.at[k];
+        if(!src) continue;
+        (s.lines[src.week]||[]).forEach(l=>{
+          if(l.kind!=="pinned" || l.days.indexOf(src.wd)<0) return;
+          place(carried, task(s, l, {carriedFrom:(src.week<wi?"last ":"")+WEEKDAY[src.wd]}), "day", k, false);
+        });
+      }
+    }
+    linesOn(s, wi, wd).forEach(l=>place(own, task(s, l, {}), "day", X, true));
+    (extrasFor[s.name]||[]).forEach(x=>place(extras, extraTask(x, s), "day", X, true));
+    if(dd.school){
+      // Hers to pace: this week's, and any from the weeks before still overdue.
+      for(let w=Math.max(0, wi-3); w<=wi; w++){
+        const mon=model.weeks[w].monday;
+        (s.lines[w]||[]).forEach(l=>{
+          if(l.kind!=="by") return;
+          const dueOn=iso(addDays(mon, weekPos(l.due))), when=WEEKDAY[l.due].slice(0,3);
+          if(X<=dueOn){
+            if(w===wi) place(due, task(s, l, {dueDay:when}), "week", iso(mon), false);
+          } else if(rankX-schoolRank(model, dueOn)<=CARRY_DAYS){
+            place(overdue, task(s, l, {dueDay:when, overdue:true}), "week", iso(mon), false);
+          }
+        });
+      }
+    }
+    const tasks=carried.concat(own, extras, overdue, due);
+    if(tasks.length) out.blocks.push({subject:s.name, edge:s.edge, tasks:tasks});
+  });
+
+  // One-offs with nothing to sit under are a block of their own, named by what they are.
+  loose.forEach(x=>{
+    const list=[];
+    place(list, extraTask(x, null), "day", X, true);
+    list.forEach(t=>{
+      const name=t.detail || x.text;
+      t.detail="";
+      out.blocks.push({subject:name, loose:true, tasks:[t]});
+    });
+  });
+  return out;
+}
+
+/* --- one block: a subject and its tasks for the day ---------------------- */
+let chkSeq=0;
+const ui={note:null, noteText:"", noteFocus:false, addOpen:false, addText:"", addSubject:""};   // survives a redraw
+
+function blockRow(b, showTime, writable){
+  const row=el("div","block"+(b.pause?" pause":"")+(showTime?"":" notime"));
+  const start=(b.tasks.find(t=>t.start)||{}).start||"";
+  if(showTime) row.appendChild(el("div","time", start));
 
   const card=el("div","card");
-  if(!it.pause) card.style.setProperty("--edge", edgeFor(it.subject, it.edge));
-
-  if(it.pause){
-    card.appendChild(el("div","name", it.detail || it.subject));
+  if(b.pause){
+    card.appendChild(el("div","name", b.tasks[0].detail || b.subject));
     row.appendChild(card);
     return row;
   }
+  if(!b.loose) card.style.setProperty("--edge", edgeFor(b.subject, b.edge));
 
-  const line=el("div","row");
-  const box=document.createElement("input");
-  box.type="checkbox"; box.className="check";
-  box.id="chk-"+it.order+"-"+(it.carriedFrom?"c":"d");
+  const whos=new Set(b.tasks.filter(t=>!t.extra || t.hasWho).map(t=>t.who));
+  const syncBlock=()=>{
+    if(b.tasks.length>1) row.classList.toggle("done", !card.querySelector(".task:not(.done)"));
+  };
 
-  if(it.status==="done"){
-    // My record, from the sheet. Locked for everyone.
-    box.checked=true; box.disabled=true; row.classList.add("done");
-    box.setAttribute("aria-label", it.subject+" — already done (from the sheet)");
+  if(b.tasks.length===1){
+    // One task: the row it has always been — the box, the subject, the detail under it.
+    const t=b.tasks[0];
+    const line=el("div","row");
+    const box=checkbox(t, row, card, syncBlock, writable);
+    const nm=el("label","name",b.subject);
+    nm.setAttribute("for",box.id);
+    line.append(box,nm);
+    card.appendChild(line);
+    if(t.detail) card.appendChild(elLinked("div","what",t.detail));
+    taskFoot(card, t, true, writable, line);
   } else {
-    // Her tick. In memory, this session only.
-    const key=it.day+"|"+(it.carriedFrom||"")+"|"+it.subject+"|"+it.detail;
-    box.checked=session.has(key);
-    if(box.checked) row.classList.add("done");
-    box.setAttribute("aria-label","Mark "+it.subject+" done");
-    box.addEventListener("change",()=>{
-      row.classList.toggle("done", box.checked);
-      if(box.checked) session.add(key); else session.delete(key);
+    card.appendChild(el("div","name",b.subject));
+    b.tasks.forEach(t=>{
+      const tr=el("div","task");
+      const line=el("div","row");
+      const box=checkbox(t, tr, tr, syncBlock, writable);
+      const lab=el("label","what");
+      lab.setAttribute("for",box.id);
+      if(t.start && t.start!==start) lab.appendChild(el("span","ttime",t.start));
+      lab.appendChild(withLinks(el("span"), t.detail || b.subject));
+      line.append(box,lab);
+      tr.appendChild(line);
+      taskFoot(tr, t, whos.size>1, writable, line);
+      card.appendChild(tr);
     });
+    if(whos.size===1){
+      const tags=el("div","tags");
+      const w=[...whos][0];
+      tags.appendChild(el("span","who "+w, LABEL[w]));
+      card.appendChild(tags);
+    }
+    syncBlock();
   }
-
-  const nm=el("label","name",it.subject);
-  nm.setAttribute("for",box.id);
-  line.append(box,nm);
-  card.appendChild(line);
-
-  if(it.detail) card.appendChild(elLinked("div","what",it.detail));
-  if(it.note)   card.appendChild(elLinked("div","memo",it.note));
-
-  const tags=el("div","tags");
-  if(it.carriedFrom) tags.appendChild(el("span","tag","carried from "+it.carriedFrom));
-  else if(it.status==="carried") tags.appendChild(el("span","tag","carried over"));
-  tags.appendChild(el("span","who "+it.who, LABEL[it.who]));
-  if(tags.children.length) card.appendChild(tags);
 
   row.appendChild(card);
   return row;
 }
 
+/* The box writes through to Supabase. It changes on screen straight away and
+   changes back, with a word about why, if the save doesn't take. */
+function checkbox(t, target, host, syncBlock, writable){
+  const box=document.createElement("input");
+  box.type="checkbox"; box.className="check"; box.id="chk-"+(++chkSeq);
+  box.checked=!!t.done;
+  target.classList.toggle("done", !!t.done);
+  target.classList.toggle("skipped", !!t.skipped);
+  box.setAttribute("aria-label","Mark "+plainText(t.detail||t.subject)+" done");
+  box.disabled=!writable;
+
+  box.addEventListener("change", async ()=>{
+    const on=box.checked, wasSkipped=t.skipped;
+    target.classList.toggle("done", on); syncBlock();
+    box.disabled=true;
+    said(host, "");
+    try{
+      t.row=await saveState(t, on ? {done_at:new Date().toISOString(), done_on:t.onDay, skipped:false}
+                                  : {done_at:null, done_on:null});
+      t.done=on; t.skipped=false;
+      if(wasSkipped) render();
+    }catch(err){
+      box.checked=!on; target.classList.toggle("done", !on); syncBlock();
+      said(host, "Didn't save — "+plainError(err)+".");
+    }finally{
+      box.disabled=false;
+    }
+  });
+  return box;
+}
+
+/* A task's words for a screen reader: "#cnn10" is a link on screen, not a word. */
+function plainText(s){ return String(s).replace(VIEW_RE,"$1").replace(/\s{2,}/g," ").trim(); }
+
+function said(host, text){
+  let n=host.querySelector(":scope > .said");
+  if(!text){ if(n) n.remove(); return; }
+  if(!n){ n=el("div","said needs"); n.setAttribute("aria-live","polite"); host.appendChild(n); }
+  n.textContent=text;
+}
+
+/* Under a task: the plan's note, hers, its chips, and the way to write one. */
+function taskFoot(host, t, showWho, writable, line){
+  if(t.note) host.appendChild(elLinked("div","memo",t.note));
+  const hers=t.row && t.row.note;
+  const edit=()=>{ ui.note=t.sid+"@"+t.onDay; ui.noteText=hers||""; ui.noteFocus=true; render(); };
+  if(hers){
+    const m=el("button","memo",hers);
+    m.type="button";
+    m.setAttribute("aria-label","Edit the note: "+hers);
+    if(writable) m.addEventListener("click", edit); else m.disabled=true;
+    host.appendChild(m);
+  }
+
+  const tags=el("div","tags");
+  if(t.carriedFrom) tags.appendChild(el("span","tag","carried from "+t.carriedFrom));
+  if(t.overdue)     tags.appendChild(el("span","tag overdue","overdue · was due "+t.dueDay));
+  else if(t.dueDay) tags.appendChild(el("span","tag due","due "+t.dueDay));
+  if(t.skipped)     tags.appendChild(el("span","who own","skipped"));
+  if(showWho && (!t.extra || t.hasWho)) tags.appendChild(el("span","who "+t.who, LABEL[t.who]));
+  if(writable && !hers){
+    const nb=el("button","notebtn","note");
+    nb.type="button";
+    nb.setAttribute("aria-label","Add a note to "+plainText(t.detail||t.subject));
+    nb.addEventListener("click", edit);
+    // With no chips to sit beside, it goes up on the task's own line.
+    (tags.children.length ? tags : line).appendChild(nb);
+  }
+  if(tags.children.length) host.appendChild(tags);
+
+  if(writable && ui.note===t.sid+"@"+t.onDay) host.appendChild(noteEditor(t));
+}
+
+function noteEditor(t){
+  const box=el("form","noteedit");
+  const f=field({key:"note", label:"A note about how it went"}, ui.noteText, v=>{ ui.noteText=v; });
+  const input=f.querySelector("input");
+  box.appendChild(f);
+
+  const act=el("div","actions");
+  const go=el("button","go","Save note"); go.type="submit";
+  const msg=el("span","said");
+  msg.setAttribute("aria-live","polite");
+  act.appendChild(go);
+
+  const close=()=>{ ui.note=null; ui.noteText=""; render(); };
+  const run=async (btn, busy, patchOrFn)=>{
+    busyButton(btn, msg, busy);
+    try{
+      if(typeof patchOrFn==="function") await patchOrFn(); else await saveState(t, patchOrFn);
+      close();
+    }catch(err){
+      btn.disabled=false;
+      msg.className="said needs";
+      msg.textContent="Didn't save — "+plainError(err)+".";
+    }
+  };
+  // A form, so the keyboard's Enter or Go saves it on any phone.
+  box.addEventListener("submit", ev=>{ ev.preventDefault(); if(!go.disabled) run(go, "Saving…", {note:input.value.trim()||null}); });
+  input.addEventListener("keydown", ev=>{ if(ev.key==="Escape"){ ev.preventDefault(); close(); } });
+
+  // A one-off can be taken back off the day. Anything else can be skipped,
+  // which stops it carrying without pretending it was done.
+  if(t.extra){
+    const rm=el("button","quietbtn","Take it off the day"); rm.type="button";
+    rm.addEventListener("click", ()=>run(rm, "Taking it off…", ()=>removeExtra(t.extra)));
+    act.appendChild(rm);
+  } else if(t.skipped){
+    const un=el("button","quietbtn","Not skipped after all"); un.type="button";
+    un.addEventListener("click", ()=>run(un, "Saving…", {skipped:false, done_on:null}));
+    act.appendChild(un);
+  } else if(!t.done){
+    const sk=el("button","quietbtn","Skip it"); sk.type="button";
+    sk.addEventListener("click", ()=>run(sk, "Saving…", {skipped:true, done_at:null, done_on:t.onDay}));
+    act.appendChild(sk);
+  }
+  const cancel=el("button","signout","Cancel"); cancel.type="button";
+  cancel.addEventListener("click", close);
+  act.append(cancel, msg);
+  box.appendChild(act);
+  if(ui.noteFocus){ ui.noteFocus=false; setTimeout(()=>{ if(input.isConnected) input.focus(); }); }
+  return box;
+}
+
+/* Something with no week-level home: a field trip, the dentist, a lab to finish. */
+function addForm(dd, model, isToday){
+  const det=document.createElement("details");
+  det.className="helper addform";
+  det.open=ui.addOpen;
+  det.addEventListener("toggle",()=>{ ui.addOpen=det.open; });
+  det.appendChild(el("summary",null,"Add something to "+(isToday?"today":WEEKDAY[dd.date.getDay()])));
+
+  const body=el("form","body");
+  det.appendChild(body);
+  const what=field({key:"add-text", label:"What",
+    hint:"a time at the front, @dad, and // a note all work here, same as in the plan"},
+    ui.addText, v=>{ ui.addText=v; msg.textContent=""; });
+  body.appendChild(what);
+
+  const under=el("div","field");
+  const lab=el("label",null,"Under");
+  lab.setAttribute("for","add-under");
+  under.appendChild(lab);
+  const pick=document.createElement("select");
+  pick.className="input"; pick.id="add-under";
+  [["","Nothing — on its own"]].concat(model.subjects.filter(s=>s.kind==="task").map(s=>[s.name,s.name]))
+    .forEach(([v,label])=>{
+      const o=document.createElement("option");
+      o.value=v; o.textContent=label;
+      if(v===ui.addSubject) o.selected=true;
+      pick.appendChild(o);
+    });
+  pick.addEventListener("change",()=>{ ui.addSubject=pick.value; });
+  under.appendChild(pick);
+  body.appendChild(under);
+
+  const act=el("div","actions");
+  const go=el("button","go","Add it"); go.type="submit";
+  const msg=el("span","said");
+  msg.setAttribute("aria-live","polite");
+  act.append(go, msg);
+  body.appendChild(act);
+
+  const input=what.querySelector("input");
+  body.addEventListener("submit", async ev=>{
+    ev.preventDefault();
+    if(go.disabled) return;
+    const text=input.value.trim();
+    if(!text){ msg.className="said needs"; msg.textContent="Still needs what it is."; input.focus(); return; }
+    busyButton(go, msg, "Adding…");
+    try{
+      await addExtra(dd.iso, pick.value, text);
+      ui.addText=""; ui.addSubject=""; ui.addOpen=false;
+      render();
+    }catch(err){
+      go.disabled=false;
+      msg.className="said needs";
+      msg.textContent="Didn't add — "+plainError(err)+".";
+    }
+  });
+  return det;
+}
+
 /* --- Today -------------------------------------------------------------- */
+let shownDay=null;          // the day on screen, so a refresh reads the window around it
+
 function renderToday(host){
-  const s=sheet.daily||{state:"unset"};
-
-  if(s.state==="unset"){
+  const s=sheet.plan||{state:GID.plan?"loading":"unset"};
+  const stop=card=>{
     setHead("B", "Today", longDate(today()));
     stepper([]);
-    host.appendChild(emptyCard("The daily plan isn't connected yet.", "<p>"+NOT_CONNECTED.daily+"</p>"));
-    planFallback(host, "In the meantime, here's what the week plan says.");
-    return;
-  }
-  if(s.state==="error"){
-    setHead("B", "Today", longDate(today()));
-    stepper([]);
-    host.appendChild(errorCard("Can't reach the daily plan right now.",
-      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
-      String(s.error && s.error.message || s.error)));
-    planFallback(host, "The week plan is still readable, so here it is.");
-    return;
-  }
+    host.appendChild(card);
+  };
 
-  try{ dailyModel=buildDaily(s.rows); }
+  if(s.state==="loading") return stop(el("p","quiet","Reading the plan…"));
+  if(s.state==="unset") return stop(emptyCard("The plan tab isn't connected yet.","<p>"+NOT_CONNECTED.plan+"</p>"));
+  if(s.state==="error") return stop(errorCard("Can't reach the plan right now.",
+    "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+    String(s.error && s.error.message || s.error)));
+  if(planError) return stop(errorCard("The plan tab can't be read.",
+    "It's reachable, but this page couldn't find its shape. Here's the problem:",
+    String(planError.message||planError)));
+
+  try{ dayModel=buildDays(s.rows); }
   catch(err){
-    setHead("B", "Today", longDate(today()));
-    stepper([]);
-    host.appendChild(s.rows && s.rows.length>1
-      ? errorCard("The daily tab can't be read.",
-          "It's reachable, but the format isn't what this page expects. Here's the problem:",
-          String(err.message||err))
-      : emptyCard("The daily tab is published, but empty.",
-          "<p>Add the column headings in row 1 and one row per thing, per day. Then this page fills itself in.</p>"+
-          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
-    planFallback(host, "Until then, here's what the week plan says.");
-    return;
+    return stop(errorCard("The plan tab can't be read as days.",
+      "The week plan still works, but Today couldn't work out the days from it. Here's the problem:",
+      String(err.message||err)));
   }
 
-  if(dayIdx===null){ dayIdx=dailyDayIndex(); dayAuto=true; }
-  dayIdx=Math.max(0, Math.min(dayIdx, dailyModel.days.length-1));
-  const day=dailyModel.days[dayIdx];
-  const isToday = iso(day.date)===iso(today());
+  if(dayIdx===null){ dayIdx=dayIndexFor(dayModel); dayAuto=true; }
+  dayIdx=Math.max(0, Math.min(dayIdx, dayModel.days.length-1));
+  const dd=dayModel.days[dayIdx];
+  const isToday = dd.iso===iso(today());
+  shownDay=dd.date;
 
-  setHead("B"+(s.cached?" · saved copy":""), isToday?"Today":WEEKDAY[day.date.getDay()],
-          longDate(day.date));
+  // What's been done in the days around this one. Read it if it isn't here
+  // yet — once per window, so a read that fails waits for the next refresh.
+  const covered=dayCovers(dd.iso);
+  if(!covered && !day.busy && day.failedFrom!==iso(addDays(dd.date,-DAY_BACK))){
+    loadDay(dd.date).then(()=>{ if(currentView==="today" && !holdToday()) render(); });
+  }
+
+  setHead("B"+(s.cached||day.cached?" · saved copy":""), isToday?"Today":WEEKDAY[dd.date.getDay()],
+          longDate(dd.date));
   // The way home. Dimmed once you're already there, so it says where you are
   // as much as it does anything.
-  const home=dailyDayIndex();
+  const home=dayIndexFor(dayModel);
   stepper([
-    makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;render();}),
+    makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;ui.note=null;render();}),
     makeStep("Today",
              isToday        ? "You're on today"
-             : dayIdx===home ? "Showing the nearest day the sheet has to today"
+             : dayIdx===home ? "Showing the nearest school day to today"
              :                 "Jump back to today",
-             dayIdx===home, ()=>{dayIdx=home;dayAuto=true;render();}),
-    makeStep("Next day ›","Show the next day", dayIdx>=dailyModel.days.length-1, ()=>{dayIdx++;dayAuto=false;render();}),
+             dayIdx===home, ()=>{dayIdx=home;dayAuto=true;ui.note=null;render();}),
+    makeStep("Next day ›","Show the next day", dayIdx>=dayModel.days.length-1, ()=>{dayIdx++;dayAuto=false;ui.note=null;render();}),
   ]);
 
   if(!isToday && dayAuto){
     host.appendChild(emptyCard("Nothing is scheduled for today.",
-      "<p>Showing <b>"+esc(longDate(day.date))+"</b> instead — the nearest day the sheet has.</p>"));
+      "<p>Showing <b>"+esc(longDate(dd.date))+"</b> instead — the nearest school day.</p>"));
   }
 
-  day.notes.forEach(t=>{
+  const view=dayView(dayModel, dayIdx);
+  view.notes.forEach(t=>{
     const n=el("div","standing");
     withLinks(n.appendChild(el("b")), t);
     host.appendChild(n);
   });
+  dayModel.problems.forEach(p=>host.appendChild(el("p","quiet",p)));
 
-  const all=day.carried.concat(day.items);
-  if(!all.length){
-    host.appendChild(emptyCard("Nothing listed for this day.",
-      "<p>The daily tab has no rows dated "+esc(iso(day.date))+" yet.</p>"));
+  if(!covered){
+    host.appendChild(day.state==="error" || day.failedFrom===iso(addDays(dd.date,-DAY_BACK))
+      ? errorCard("Can't check what's been done.",
+          "The plan still reads, but ticks and notes can't be loaded for this day right now, "+
+          "so the boxes are locked until they can.",
+          String(day.error && (day.error.message||day.error) || ""))
+      : el("p","quiet","Checking what's been done…"));
   }
-  const showTime=all.some(it=>it.start);
-  all.forEach(it=>host.appendChild(blockRow(it, showTime)));
 
-  if(day.evenings.length){
+  if(!view.blocks.length){
+    host.appendChild(emptyCard("Nothing listed for this day.",
+      "<p>The plan has nothing for "+esc(WEEKDAY[dd.date.getDay()])+" in week "+
+      esc(dayModel.weeks[dd.week].num)+".</p>"));
+  }
+  const showTime=view.blocks.some(b=>b.tasks.some(t=>t.start));
+  view.blocks.forEach(b=>host.appendChild(blockRow(b, showTime, covered)));
+
+  if(view.evenings.length){
     const ev=el("div","evening");
     ev.appendChild(el("h2",null,"This evening"));
-    day.evenings.forEach(t=>ev.appendChild(elLinked("p",null,t)));
+    view.evenings.forEach(t=>ev.appendChild(elLinked("p",null,t)));
     host.appendChild(ev);
   }
+
+  if(covered) host.appendChild(addForm(dd, dayModel, isToday));
 }
 
-/* If the daily tab can't tell us anything, the week plan still can. */
-function planFallback(host, why){
-  if(!planModel) return;
-  host.appendChild(el("p","quiet",why));
-  planWeekBody(host, planWeekIndex());
+/* A refresh redraws Today from scratch, which would close the keyboard on
+   whatever she's typing. While a field there has focus, it waits. */
+function holdToday(){
+  const a=document.activeElement;
+  return currentView==="today" && !!a && document.getElementById("view").contains(a) &&
+         /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type!=="checkbox";
 }
 
 /* --- Lesson plan -------------------------------------------------------- */
@@ -1514,10 +2144,9 @@ function renderWins(host){
 const CNN_KEY   = CACHE+"cnn10";         // the last good read of both tables
 const DRAFT_KEY = CACHE+"cnn10draft";    // her half-written report
 
-/* state: unset · loading · signedout · error · ok */
-const cnn = {state: SB_URL&&SB_KEY ? "loading" : "unset",
-             reports:[], log:[], cached:false, error:null};
-let sb=null, sbImport=null, cnnBusy=null;
+/* state: loading · error · ok. Signing in is the page's, not this view's. */
+const cnn = {state:"loading", reports:[], log:[], cached:false, error:null};
+let cnnBusy=null;
 
 /* The questions, in order, grouped by the four steps of the report. The same
    list draws the form and the answers on a turned-in card, so the two can't
@@ -1577,24 +2206,6 @@ function plainError(err){
 }
 
 /* --- loading ------------------------------------------------------------ */
-function client(){
-  if(sb) return Promise.resolve(sb);
-  if(!sbImport){
-    sbImport=import(SB_LIB).then(mod=>{
-      // One sign-in per browser: the session is kept and quietly refreshed.
-      sb=mod.createClient(SB_URL, SB_KEY, {auth:{
-        persistSession:true, autoRefreshToken:true, storageKey:CACHE+"cnn10auth"}});
-      sb.auth.onAuthStateChange(event=>{
-        // A refresh token that stops working lands here too. Deferred, because
-        // the auth client can't be called back into from inside this callback.
-        if(event==="SIGNED_OUT") setTimeout(()=>{ forgetCnn(); if(currentView==="cnn10") render(); });
-      });
-      return sb;
-    }).catch(err=>{ sbImport=null; throw err; });
-  }
-  return sbImport;
-}
-
 function saveCnn(){
   try{ localStorage.setItem(CNN_KEY, JSON.stringify({reports:cnn.reports, log:cnn.log})); }catch(_){}
 }
@@ -1602,16 +2213,16 @@ function savedCnn(){
   try{ const v=JSON.parse(localStorage.getItem(CNN_KEY)||"null"); if(v && v.reports) return v; }catch(_){}
   return null;
 }
-/* Signed out means none of it stays behind on the device — except her draft,
-   which is hers and not yet anyone's record. */
+/* Signing out clears it all (see signedOut) — except her draft, which is hers
+   and not yet anyone's record. */
 function forgetCnn(){
-  cnn.state="signedout"; cnn.reports=[]; cnn.log=[]; cnn.cached=false; cnn.error=null;
+  cnn.state="loading"; cnn.reports=[]; cnn.log=[]; cnn.cached=false; cnn.error=null;
   try{ localStorage.removeItem(CNN_KEY); }catch(_){}
 }
 
 /* Never throws, so refresh() can wait on it beside the sheet tabs. */
 function loadCnn10(){
-  if(!SB_URL || !SB_KEY){ cnn.state="unset"; return Promise.resolve(cnn); }
+  if(auth.state!=="in") return Promise.resolve(cnn);
   if(!cnnBusy){
     cnnBusy=readCnn10().catch(fellOver).then(()=>{ cnnBusy=null; return cnn; });
   }
@@ -1633,7 +2244,7 @@ async function readCnn10(){
   const c=await client();
   const {data, error}=await c.auth.getSession();
   if(error) throw error;
-  if(!data.session){ forgetCnn(); return; }
+  if(!data.session){ signedOut(); return; }
 
   const [r, l]=await Promise.all([
     c.from("cnn10_reports").select("*").order("created_at",{ascending:false}),
@@ -1647,9 +2258,9 @@ async function readCnn10(){
 }
 
 /* --- her draft ------------------------------------------------------------
-   The daily-tab checkboxes are memory-only on purpose. A half-written report
-   is different: it's work she'd be upset to lose, so it's kept on the device
-   until it's turned in.                                                     */
+   Everything else she writes is saved to Supabase as she goes. A half-written
+   report isn't anyone's record yet, but it's work she'd be upset to lose, so
+   it's kept on the device until it's turned in.                                                     */
 let draft=null, draftTimer=null;
 function getDraft(){
   if(draft) return draft;
@@ -1709,53 +2320,6 @@ function field(spec, value, onInput){
 
 function busyButton(btn, said, busyText){
   btn.disabled=true; said.className="said"; said.textContent=busyText;
-}
-
-function signInCard(){
-  const box=el("form","signin");
-  box.appendChild(el("b",null,"Sign in to see current events"));
-  box.appendChild(el("p",null,
-    "Her reports and the feedback on them are private. Signing in once keeps this device signed in."));
-
-  const email=field({key:"email", label:"Email", auto:"username"}, "", ()=>{});
-  const pass =field({key:"password", label:"Password", auto:"current-password"}, "", ()=>{});
-  email.querySelector("input").type="email";
-  pass.querySelector("input").type="password";
-  box.append(email, pass);
-
-  const act=el("div","actions");
-  const go=el("button","go","Sign in"); go.type="submit";
-  const said=el("span","said");
-  said.setAttribute("aria-live","polite");
-  act.append(go, said);
-  box.appendChild(act);
-
-  box.addEventListener("submit", async ev=>{
-    ev.preventDefault();
-    const e=email.querySelector("input"), p=pass.querySelector("input");
-    if(!e.value.trim() || !p.value){
-      said.className="said needs";
-      said.textContent="Still needs "+(!e.value.trim()?"the email.":"the password.");
-      (!e.value.trim()?e:p).focus();
-      return;
-    }
-    busyButton(go, said, "Signing in…");
-    try{
-      const c=await client();
-      const {error}=await c.auth.signInWithPassword({email:e.value.trim(), password:p.value});
-      if(error) throw error;
-      cnn.state="loading";
-      await loadCnn10();
-      render();
-    }catch(err){
-      go.disabled=false;
-      said.className="said needs";
-      said.textContent = /invalid|credentials/i.test(String(err && err.message))
-        ? "That email and password don't match."
-        : "Couldn't sign in — "+plainError(err)+".";
-    }
-  });
-  return box;
 }
 
 /* Today's line: at the top, because it's the thing done every day. */
@@ -2053,26 +2617,6 @@ function turnedIn(){
   return box;
 }
 
-function cnnFoot(){
-  const box=el("p","quiet cnnfoot");
-  const out=el("button","signout","Sign out");
-  out.addEventListener("click", async ()=>{
-    out.disabled=true;
-    try{
-      const c=await client();
-      const {error}=await c.auth.signOut();
-      if(error) throw error;
-      forgetCnn();
-      render();
-    }catch(err){
-      out.disabled=false;
-      out.textContent="Couldn't sign out — "+plainError(err)+". Try again";
-    }
-  });
-  box.appendChild(out);
-  return box;
-}
-
 /* Every other view is rebuilt on each refresh. This one has half-typed words
    in it and a keyboard up, so once it's on screen it's patched in place: the
    forms stay put, and the turned-in list is only redrawn when something in it
@@ -2086,19 +2630,9 @@ function renderCnn10(host){
   if(fresh){ root=el("div","cnn"); root.dataset.mode=mode; host.appendChild(root); }
 
   const kick="B"+(cnn.cached?" · saved copy":"");
-  if(mode==="unset"){
-    setHead("B", "Current events", "");
-    if(fresh) root.appendChild(emptyCard("Current events isn't connected yet.","<p>"+NOT_CONNECTED.cnn10+"</p>"));
-    return;
-  }
   if(mode==="loading"){
     setHead("B", "Current events", "");
-    if(fresh) root.appendChild(el("p","quiet","Checking this device is signed in…"));
-    return;
-  }
-  if(mode==="signedout"){
-    setHead("B", "Current events", "");
-    if(fresh) root.appendChild(signInCard());
+    if(fresh) root.appendChild(el("p","quiet","Reading current events…"));
     return;
   }
   if(mode==="error"){
@@ -2107,7 +2641,6 @@ function renderCnn10(host){
     root.appendChild(errorCard("Can't reach current events right now.",
       "There's no saved copy on this device yet. It will load on its own when the connection is back.",
       String(cnn.error && (cnn.error.message||cnn.error) || "")));
-    root.appendChild(cnnFoot());
     return;
   }
 
@@ -2119,7 +2652,6 @@ function renderCnn10(host){
     root._daily=root.appendChild(dailyForm());
     root._report=root.appendChild(reportForm());
     root._list=root.appendChild(turnedIn());
-    root.appendChild(cnnFoot());
     root._sig=JSON.stringify(cnn.reports);
     return;
   }
@@ -2189,12 +2721,25 @@ function renderTabs(){
 
 function render(){
   const view=VIEWS.find(v=>v.id===currentView)||VIEWS[0];
+  const host=document.getElementById("view");
+  const nav=document.querySelector("nav");
+  accountFoot();
+
+  // Nothing but the sign-in until this browser is signed in.
+  if(auth.state!=="in"){
+    nav.style.display="none";
+    document.getElementById("helper").style.display="none";
+    document.getElementById("foot").textContent="";
+    host.innerHTML="";
+    renderGate(host);
+    return;
+  }
+  nav.style.display="";
   renderTabs();
   // The helper is about running a school day, so it belongs to Today alone.
   document.getElementById("helper").style.display =
     view.id==="today" ? "" : "none";
 
-  const host=document.getElementById("view");
   // CNN 10 patches itself in place so a refresh can't wipe what she's typing.
   if(!(view.id==="cnn10" && host.querySelector(":scope > .cnn"))) host.innerHTML="";
 
@@ -2224,21 +2769,24 @@ function render(){
   }
   const s=sheet[view.needs];
   if(!s || s.state==="unset" || s.state==="error") f.textContent="";
-  else if(s.cached) f.textContent="No connection — showing the last saved copy.";
+  else if(s.cached || (view.id==="today" && day.cached)) f.textContent="No connection — showing the last saved copy.";
+  else if(view.id==="today") f.textContent="Reading from the sheet · ticks saved to your account · updates on its own.";
   else f.textContent="Reading from the sheet · updates on its own.";
 }
 
 async function refresh(){
-  // The plan is loaded whatever the view: Today borrows its colours, and falls
-  // back to it when the daily tab has nothing to say. CNN 10 loads beside the
-  // sheet tabs and never throws, so it can't hold any of them up.
-  await Promise.all([load("plan"), load("daily"), load("reading"), load("wins"), loadCnn10()]);
+  if(auth.state!=="in") return;
+  // The plan is loaded whatever the view: it is Today, and the other views
+  // borrow its colours. Supabase loads beside the sheet tabs and never throws,
+  // so it can't hold any of them up.
+  await Promise.all([load("plan"), load("reading"), load("wins"), loadCnn10(), loadDay(shownDay||today())]);
+  if(auth.state!=="in") return;             // signed out while that was on its way
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
     try{ planModel=buildPlan(sheet.plan.rows); }
     catch(err){ planError=err; }
   }
-  render();
+  if(!holdToday()) render();
 }
 
 /* --- boot --------------------------------------------------------------- */
@@ -2251,9 +2799,9 @@ async function refresh(){
       if(VIEWS.some(v=>v.id===k) && k!==currentView){ currentView=k; render(); }
     });
 
-    render();                       // draw the frame before the network answers
-    refresh();
-    if(PUB_ID) setInterval(refresh, POLL_MS);
+    render();                       // "checking…", before the network answers
+    checkAuth().then(()=>{ render(); refresh(); });
+    setInterval(refresh, POLL_MS);
   }catch(err){
     document.getElementById("view").innerHTML=
       '<div class="error"><b>Something went wrong loading the page.</b>'+
