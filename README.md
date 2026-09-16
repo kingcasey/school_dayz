@@ -204,8 +204,8 @@ A refresh never redraws the day while a note or one-off is being typed.
 
 ### Setting it up
 
-In the Supabase project that already holds CNN 10, run `supabase/day.sql` in
-the SQL editor. That's all — the sign-in is the same one.
+In the Supabase project that already holds CNN 10, run `supabase/day.sql` and
+`supabase/reading.sql` in the SQL editor. That's all — the sign-in is the same one.
 
 `day_state` holds one row per task she has touched, keyed by the day (or, for a
 `By` task, that week's Monday), the subject's name, and the task's own words
@@ -238,6 +238,7 @@ order, and extra columns are ignored:
 | `Finished` | the date she closed it |
 | `Context` | the subject it counts toward — the outlined tag |
 | `Type` | Book, Podcast, Article — the filled tag |
+| `Pages` | how many pages the book has. Optional — it's what *p. 140 of 336* and the progress bar need |
 
 **The two date columns are the shelf.** There is no status column to keep in
 step with reality:
@@ -259,6 +260,17 @@ A shelf with nothing on it still shows, folded, with a `0`. The left edge of
 each book is coloured by its `Context`, using the same colours as the plan.
 
 A link in any cell becomes a tappable link, same as on the plan tab.
+
+**Pages.** On Today, the Reading row's task has *page* beside *note*. She
+types the page she read to, and the task shows *Read to p. 140 of 336 · 28
+pages* — the count is against the furthest page from an earlier day. Tap the
+line to change or clear it. A book on Reading now shows where she's got to and
+when she last read, with a bar when `Pages` is filled in.
+
+A task is matched to its book by title: the plan cell only has to contain the
+title as it's written on the reading tab (`Brown Girl Dreaming`, or `Read
+Brown Girl Dreaming ch. 3`). Only the Reading row gets pages. Pages live in
+Supabase's `reading_page` table — run `supabase/reading.sql` once.
 
 ## The `wins` tab
 
@@ -319,7 +331,7 @@ that report prints; print with none open and they all do.
 ### Setting it up
 
 1. Make a Supabase project. In its SQL editor, run `supabase/cnn10.sql`, then
-   `supabase/day.sql`.
+   `supabase/day.sql` and `supabase/reading.sql`.
 2. Under **Authentication**, switch **off** new sign-ups. The publishable key sits in
    `index.html` in a public repo, so with sign-ups on, anyone could make an
    account, open the page and read her work.

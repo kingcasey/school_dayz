@@ -114,8 +114,10 @@
         text-decoration:underline;text-underline-offset:2px}
   .notebtn:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   .row>.notebtn{margin-top:.2rem}
+  .notebtn+.notebtn{margin-left:.9rem}
   button.memo{display:block;font-family:inherit;text-align:left;background:none;border:0;
         padding:0;cursor:pointer}
+  .memo.pages{font-style:normal;font-variant-numeric:tabular-nums}
   button.memo:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   .noteedit{margin-top:.5rem}
   .noteedit .actions{margin-top:.5rem}
@@ -156,6 +158,9 @@
   .book{padding:.7rem 0;border-top:1px solid var(--rule)}
   .btitle{font-size:1.02rem;font-weight:600;letter-spacing:-.012em;overflow-wrap:anywhere}
   .bwho{font-size:.88rem;color:var(--ink-soft);margin-top:.1rem;overflow-wrap:anywhere}
+  .pbar{height:.3rem;margin-top:.35rem;background:var(--cream-deep);border-radius:.15rem;
+        overflow:hidden;max-width:16rem}
+  .pbar>span{display:block;height:100%;background:var(--edge,var(--navy))}
   .bwhen{font-size:.82rem;color:var(--ink-soft);margin-top:.25rem;
         font-variant-numeric:tabular-nums}
   .eviden{font-size:.82rem;margin-top:.3rem;overflow-wrap:anywhere}
@@ -923,6 +928,7 @@ const READ_COL = [
   ["done",    /^(finished|done|completed|ended)/],
   ["context", /^(context|subject|for|area)/],
   ["kind",    /^(type|kind|format)/],
+  ["pages",   /^(pages|page count|length)/],
 ];
 
 const SHELVES = [
@@ -961,6 +967,7 @@ function buildReading(rows){
       author: at(r,"author"),
       context:at(r,"context"),
       kind:   at(r,"kind"),
+      pages:  parseInt(at(r,"pages").replace(/[^\d]/g,""),10) || null,
       started:started,
       done:   done,
       order:  r,
@@ -1120,8 +1127,8 @@ const NOT_CONNECTED = {
         '<li><code>Evidence</code> — a share link becomes tappable; a filename is noted as on file</li></ul>',
   supabase:'Her ticks, notes and reports are saved to Supabase, and the whole page sits behind '+
         'its one family sign-in.'+
-        '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code> and '+
-        '<code>supabase/day.sql</code> in its SQL editor</li>'+
+        '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code>, '+
+        '<code>supabase/day.sql</code> and <code>supabase/reading.sql</code> in its SQL editor</li>'+
         '<li>under Authentication, switch off new sign-ups first, then add the one family '+
         'account by email and password</li>'+
         '<li>paste the project URL into <code>SB_URL</code> and the publishable key into '+
@@ -1206,7 +1213,7 @@ async function checkAuth(){
    included — except a half-written report, which is hers. */
 function signedOut(){
   auth.state="out";
-  forgetCnn(); forgetDay();
+  forgetCnn(); forgetDay(); forgetPages();
   Object.keys(GID).forEach(name=>{
     delete sheet[name];
     try{ localStorage.removeItem(CACHE+name); }catch(_){}
@@ -1440,6 +1447,106 @@ function seenOn(r, X, isHome){
   return {done:!!r.done_at, skipped:!r.done_at && !!r.skipped};
 }
 
+/* ==========================================================================
+   Pages — Supabase's reading_page. One row per book per day: the page she
+   read to. A book is known by its title's itemKey, so the plan cell and the
+   reading tab only need to agree on the title. All of it is read at once;
+   it's one small row a day.
+   ========================================================================== */
+const PAGE_KEY = CACHE+"pages";
+const pages = {rows:[], state:"idle", busy:null};
+
+function loadPages(){
+  if(auth.state!=="in") return Promise.resolve(pages);
+  if(pages.busy) return pages.busy;
+  pages.busy=(async()=>{
+    try{
+      const c=await client();
+      pages.rows=await readAll(()=>c.from("reading_page").select("book_key,day_date,page")
+        .order("day_date").order("book_key"));
+      pages.state="ok";
+      try{ localStorage.setItem(PAGE_KEY, JSON.stringify(pages.rows)); }catch(_){}
+    }catch(err){
+      if(pages.state!=="ok"){
+        let saved=null;
+        try{ saved=JSON.parse(localStorage.getItem(PAGE_KEY)||"null"); }catch(_){}
+        if(saved){ pages.rows=saved; pages.state="ok"; }
+        else pages.state="error";
+      }
+    }finally{
+      pages.busy=null;
+    }
+    return pages;
+  })();
+  return pages.busy;
+}
+function forgetPages(){
+  Object.assign(pages, {rows:[], state:"idle"});
+  try{ localStorage.removeItem(PAGE_KEY); }catch(_){}
+}
+
+/* Where a book stood on day X: the page read to that day, the furthest page
+   before it, and the latest entry of all. */
+function pagesOn(bookKey, X){
+  const mine=pages.rows.filter(r=>r.book_key===bookKey);
+  const on=mine.find(r=>r.day_date===X) || null;
+  const before=mine.filter(r=>r.day_date<X).reduce((m,r)=>(!m || r.page>m.page) ? r : m, null);
+  const last=mine.length ? mine[mine.length-1] : null;
+  return {on:on, before:before, last:last};
+}
+
+/* A page of null clears the day. */
+async function savePage(bookKey, X, page){
+  const c=await client();
+  if(page==null){
+    const {error}=await c.from("reading_page").delete().eq("book_key",bookKey).eq("day_date",X);
+    if(error) throw error;
+  } else {
+    const {error}=await c.from("reading_page")
+      .upsert({book_key:bookKey, day_date:X, page:page}, {onConflict:"book_key,day_date"});
+    if(error) throw error;
+  }
+  pages.rows=pages.rows.filter(r=>!(r.book_key===bookKey && r.day_date===X));
+  if(page!=null){
+    pages.rows.push({book_key:bookKey, day_date:X, page:page});
+    pages.rows.sort((a,b)=> a.day_date<b.day_date ? -1 : a.day_date>b.day_date ? 1 : 0);
+  }
+  try{ localStorage.setItem(PAGE_KEY, JSON.stringify(pages.rows)); }catch(_){}
+}
+
+/* Which book a Reading-row task is, if any: a title from the reading tab
+   inside the task's words ("Brown Girl Dreaming", "Read Brown Girl Dreaming
+   ch. 3"). A book that isn't on the reading tab still gets pages, known by
+   the task's own words, just without a length. Only the Reading row — ELA
+   discussing the same book isn't pages read. */
+function readingBooks(){
+  const s=sheet.reading;
+  if(!s || s.state!=="ok") return [];
+  try{ const m=buildReading(s.rows); return m.now.concat(m.later, m.finished); }
+  catch(_){ return []; }
+}
+function bookFor(t){
+  if(t.extra || itemKey(t.subject)!=="reading") return null;
+  const words=itemKey(t.detail);
+  if(!words) return null;
+  let best=null;
+  readingBooks().forEach(b=>{
+    const k=itemKey(b.title);
+    if(k.length>=4 && words.indexOf(k)>=0 && (!best || k.length>best.key.length))
+      best={key:k, title:b.title, total:b.pages};
+  });
+  return best || {key:words, title:t.detail, total:null};
+}
+
+function pageLine(p, total, before){
+  let s="Read to p. "+p+(total ? " of "+total : "");
+  if(before && p>before.page){
+    const n=p-before.page;
+    s+=" · "+n+(n===1?" page":" pages");
+  }
+  return s;
+}
+
 /* Everything on one day, in the plan's row order: one block per subject, with
    carried tasks first, then the day's own, then one-offs, then the ones she
    paces — overdue before due. Notes and evening lines come back separately. */
@@ -1540,7 +1647,7 @@ function dayView(model, idx){
 
 /* --- one block: a subject and its tasks for the day ---------------------- */
 let chkSeq=0;
-const ui={note:null, noteText:"", noteFocus:false, addOpen:false, addText:"", addSubject:""};   // survives a redraw
+const ui={note:null, noteText:"", noteFocus:false, page:null, pageText:"", pageFocus:false, addOpen:false, addText:"", addSubject:""};   // survives a redraw
 
 function blockRow(b, showTime, writable){
   const row=el("div","block"+(b.pause?" pause":"")+(showTime?"":" notime"));
@@ -1644,7 +1751,22 @@ function said(host, text){
 function taskFoot(host, t, showWho, writable, line){
   if(t.note) host.appendChild(elLinked("div","memo",t.note));
   const hers=t.row && t.row.note;
-  const edit=()=>{ ui.note=t.sid+"@"+t.onDay; ui.noteText=hers||""; ui.noteFocus=true; render(); };
+  const edit=()=>{ ui.note=t.sid+"@"+t.onDay; ui.noteText=hers||""; ui.noteFocus=true; ui.page=null; render(); };
+
+  // A book: the page she read to, and the way to put one in.
+  const book=bookFor(t), pg=book && pagesOn(book.key, t.onDay);
+  const openPage=()=>{
+    ui.page=t.sid+"@"+t.onDay; ui.pageText=pg.on ? String(pg.on.page) : ""; ui.pageFocus=true; ui.note=null; render();
+  };
+  if(pg && pg.on){
+    const line=pageLine(pg.on.page, book.total, pg.before);
+    const b=el("button","memo pages",line);
+    b.type="button";
+    b.setAttribute("aria-label","Change the page: "+line);
+    if(writable) b.addEventListener("click", openPage); else b.disabled=true;
+    host.appendChild(b);
+  }
+
   if(hers){
     const m=el("button","memo",hers);
     m.type="button";
@@ -1659,6 +1781,14 @@ function taskFoot(host, t, showWho, writable, line){
   else if(t.dueDay) tags.appendChild(el("span","tag due","due "+t.dueDay));
   if(t.skipped)     tags.appendChild(el("span","who own","skipped"));
   if(showWho && (!t.extra || t.hasWho)) tags.appendChild(el("span","who "+t.who, LABEL[t.who]));
+  if(writable && book && !pg.on){
+    const pb=el("button","notebtn","page");
+    pb.type="button";
+    pb.setAttribute("aria-label","Add the page reached in "+plainText(book.title));
+    pb.addEventListener("click", openPage);
+    tags.appendChild(pb);
+  }
+
   if(writable && !hers){
     const nb=el("button","notebtn","note");
     nb.type="button";
@@ -1669,7 +1799,59 @@ function taskFoot(host, t, showWho, writable, line){
   }
   if(tags.children.length) host.appendChild(tags);
 
+  if(writable && ui.page===t.sid+"@"+t.onDay && book) host.appendChild(pageEditor(t, book, pg));
   if(writable && ui.note===t.sid+"@"+t.onDay) host.appendChild(noteEditor(t));
+}
+
+function pageEditor(t, book, pg){
+  const box=el("form","noteedit");
+  const hint=[];
+  if(book.total) hint.push(book.total+" pages in all");
+  if(pg.before) hint.push("last time, p. "+pg.before.page+" on "+shortDate(parseDate(pg.before.day_date)));
+  const f=field({key:"page", label:"Read to page", hint:hint.join(" · ")}, ui.pageText, v=>{ ui.pageText=v; msg.textContent=""; });
+  const input=f.querySelector("input");
+  input.inputMode="numeric"; input.pattern="[0-9]*"; input.autocomplete="off";
+  box.appendChild(f);
+
+  const act=el("div","actions");
+  const go=el("button","go","Save page"); go.type="submit";
+  const msg=el("span","said");
+  msg.setAttribute("aria-live","polite");
+  act.appendChild(go);
+
+  const close=()=>{ ui.page=null; ui.pageText=""; render(); };
+  const run=async (btn, busy, page)=>{
+    busyButton(btn, msg, busy);
+    try{ await savePage(book.key, t.onDay, page); close(); }
+    catch(err){
+      btn.disabled=false;
+      msg.className="said needs";
+      msg.textContent="Didn't save — "+plainError(err)+".";
+    }
+  };
+  box.addEventListener("submit", ev=>{
+    ev.preventDefault();
+    if(go.disabled) return;
+    const n=parseInt(input.value.replace(/[^\d]/g,""),10);
+    const bad = !n ? "Still needs a page number."
+      : book.total && n>book.total ? "The book only has "+book.total+" pages."
+      : "";
+    if(bad){ msg.className="said needs"; msg.textContent=bad; input.focus(); return; }
+    run(go, "Saving…", n);
+  });
+  input.addEventListener("keydown", ev=>{ if(ev.key==="Escape"){ ev.preventDefault(); close(); } });
+
+  if(pg.on){
+    const rm=el("button","quietbtn","Clear it"); rm.type="button";
+    rm.addEventListener("click", ()=>run(rm, "Clearing…", null));
+    act.appendChild(rm);
+  }
+  const cancel=el("button","signout","Cancel"); cancel.type="button";
+  cancel.addEventListener("click", close);
+  act.append(cancel, msg);
+  box.appendChild(act);
+  if(ui.pageFocus){ ui.pageFocus=false; setTimeout(()=>{ if(input.isConnected) input.focus(); }); }
+  return box;
 }
 
 function noteEditor(t){
@@ -1828,13 +2010,13 @@ function renderToday(host){
   // as much as it does anything.
   const home=dayIndexFor(dayModel);
   stepper([
-    makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;ui.note=null;render();}),
+    makeStep("‹ Prev day","Show the previous day", dayIdx<=0, ()=>{dayIdx--;dayAuto=false;ui.note=null;ui.page=null;render();}),
     makeStep("Today",
              isToday        ? "You're on today"
              : dayIdx===home ? "Showing the nearest school day to today"
              :                 "Jump back to today",
-             dayIdx===home, ()=>{dayIdx=home;dayAuto=true;ui.note=null;render();}),
-    makeStep("Next day ›","Show the next day", dayIdx>=dayModel.days.length-1, ()=>{dayIdx++;dayAuto=false;ui.note=null;render();}),
+             dayIdx===home, ()=>{dayIdx=home;dayAuto=true;ui.note=null;ui.page=null;render();}),
+    makeStep("Next day ›","Show the next day", dayIdx>=dayModel.days.length-1, ()=>{dayIdx++;dayAuto=false;ui.note=null;ui.page=null;render();}),
   ]);
 
   if(!isToday && dayAuto){
@@ -1979,6 +2161,25 @@ function bookCard(b){
   else if(b.started) when.push("Started "+shortDate(b.started));
   if(b.done && b.started) when.push("started "+shortDate(b.started));
   if(when.length) card.appendChild(el("div","bwhen", when.join(" · ")));
+
+  // How far she's got, from the pages put in on Today. Finished is finished.
+  const last=!b.done && pagesOn(itemKey(b.title), "").last;
+  if(last){
+    const bits=["p. "+last.page+(b.pages ? " of "+b.pages : ""),
+                "last read "+shortDate(parseDate(last.day_date))];
+    card.appendChild(el("div","bwhen", bits.join(" · ")));
+    if(b.pages){
+      const bar=el("div","pbar");
+      bar.setAttribute("role","img");
+      bar.setAttribute("aria-label", Math.round(100*Math.min(last.page,b.pages)/b.pages)+"% of the way through");
+      const fill=el("span");
+      fill.style.width=(100*Math.min(last.page,b.pages)/b.pages)+"%";
+      bar.appendChild(fill);
+      card.appendChild(bar);
+    }
+  } else if(b.pages){
+    card.appendChild(el("div","bwhen", b.pages+" pages"));
+  }
 
   const tags=el("div","tags");
   if(b.context) tags.appendChild(el("span","tag", b.context));
@@ -2779,7 +2980,7 @@ async function refresh(){
   // The plan is loaded whatever the view: it is Today, and the other views
   // borrow its colours. Supabase loads beside the sheet tabs and never throws,
   // so it can't hold any of them up.
-  await Promise.all([load("plan"), load("reading"), load("wins"), loadCnn10(), loadDay(shownDay||today())]);
+  await Promise.all([load("plan"), load("reading"), load("wins"), loadCnn10(), loadDay(shownDay||today()), loadPages()]);
   if(auth.state!=="in") return;             // signed out while that was on its way
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
