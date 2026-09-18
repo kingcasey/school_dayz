@@ -313,6 +313,12 @@ flags, language, provider, credit_issuer, eoc, eoc_result, status,
 final_grade, hours, notes
 ```
 
+One more column is **optional**, and if you add it, it goes after `notes`:
+
+```
+gradebook
+```
+
 | column | holds |
 |---|---|
 | `grade` | 8, 9, 10, 11 or 12 |
@@ -334,6 +340,16 @@ final_grade, hours, notes
 | `final_grade` | `A`–`F` or `P`. Only meaningful on a `complete` row |
 | `hours` | optional. 135 per full credit is the target (Fla. Stat. 1003.436) |
 | `notes` | shown when the course is tapped |
+| `gradebook` | **optional 20th column.** A link to the provider's grade report for that course. Paste a URL and the course shows a tappable *Open gradebook →* when tapped; write anything else (`ask BJU for the printout`) and it shows as plain text instead of a broken link. A course that has one says so on its closed row — **gradebook** while it's running, **grade report** once it's complete |
+
+**Leaving `gradebook` off entirely is fine.** The page checks the first 19 headings
+strictly and stops there, so the column is something to add when you get to it. If you
+do add it, it must be spelled exactly `gradebook` and sit in position 20 — a
+misspelling or a different name there is named in the banner rather than ignored.
+
+**The published CSV is public, so anything in this column is public too.** A normal
+provider login page is fine. A tokenised "anyone with the link" URL would not be —
+that would hand out her grades to anyone who found the CSV.
 
 **One `fills` tag per row, and that's the point.** Two different half-credit
 requirements cannot be satisfied by one half-credit course, so the schema
@@ -508,6 +524,8 @@ the others.
 | `map` gid left as `""` | Dashed card naming every column the tab needs. |
 | `activities` gid left as `""` | Course Map draws in full; Bright Futures shows as a checklist. Not an error. |
 | `map` heading row wrong | Red banner naming the column number, what it should say and what it says. |
+| `map` has no `gradebook` column | Nothing. It's optional — the first 19 are what's required. |
+| `gradebook` column present but misnamed | Red banner naming it. An optional column still has to be spelled right if it's there. |
 | a single bad row on `map` | Red banner naming the tab and row number and what's wrong with it. That row is skipped; everything else still draws. |
 | `SB_URL` left as `""` | Every view shows a dashed card saying what to fill in. |
 | signed out | Every view shows the sign-in card, and nothing else. |

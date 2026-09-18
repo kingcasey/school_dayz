@@ -1252,7 +1252,8 @@ function buildWins(rows){
    is worth being rigid about. */
 const MAP_COLS = ["grade","school_year","term","area","course","course_code",
   "credit","level","fills","flags","language","provider","credit_issuer",
-  "eoc","eoc_result","status","final_grade","hours","notes"];
+  "eoc","eoc_result","status","final_grade","hours","notes","gradebook"];
+const MAP_COLS_REQUIRED = 19;          // `gradebook` (20) can be added whenever
 
 const ACT_COLS = ["grade","school_year","type","what","organization","hours",
   "documented","date","value","notes"];
@@ -1389,9 +1390,15 @@ const REQUIREMENTS = {
 /* --- reading the two tabs ----------------------------------------------- */
 /* A tab's heading row has to be exactly right. Saying which column is wrong
    is the difference between a five-second fix and a puzzle. */
-function checkHead(rows, cols, tab){
+/* `required` is how many of `cols` must actually be there. Anything past it is a
+   column added later: absent is fine, present has to be named correctly and sit in
+   the right place. That way adding `gradebook` to the sheet is something you do when
+   you get to it, not something the page waits on. */
+function checkHead(rows, cols, tab, required){
   const head=(rows[0]||[]).map(h=>String(h==null?"":h).trim());
+  const need = required==null ? cols.length : required;
   for(let i=0;i<cols.length;i++){
+    if(i>=need && !head[i]) break;              // optional tail, not filled in yet
     if(head[i]!==cols[i]) throw new Error(
       'The '+tab+' tab’s heading row isn’t what this page expects. Column '+(i+1)+
       ' should read "'+cols[i]+'" and reads '+(head[i]?'"'+head[i]+'"':"(nothing)")+
@@ -1453,7 +1460,7 @@ function readCourse(o, errs){
     eoc:o.eoc, eocResult:o.eoc_result,
     status:status, mark:o.final_grade,
     hours:o.hours===""?null:(parseFloat(o.hours)||0),
-    notes:o.notes,
+    notes:o.notes, gradebook:o.gradebook,
   };
 }
 
@@ -1748,7 +1755,7 @@ function gapsFrom(uni, dip, bf, courses){
 /* --- the whole model ----------------------------------------------------- */
 function buildCourseMap(mapRows, actRows){
   if(!mapRows || !mapRows.length) throw new Error("The map tab came back empty.");
-  checkHead(mapRows, MAP_COLS, "map");
+  checkHead(mapRows, MAP_COLS, "map", MAP_COLS_REQUIRED);
 
   const errs=[];
   const courses=tabObjects(mapRows, MAP_COLS)
@@ -1870,7 +1877,9 @@ const NOT_CONNECTED = {
   map:  'The <code>map</code> tab isn\'t connected yet. In the Sheet: '+
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>map</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. One row per course, and row 1 must read exactly:'+
-        '<ul><li><code>'+MAP_COLS.join("</code>, <code>")+'</code></li></ul>'+
+        '<ul><li><code>'+MAP_COLS.slice(0,MAP_COLS_REQUIRED).join("</code>, <code>")+'</code></li></ul>'+
+        '<p>One more is optional, and goes after those: <code>gradebook</code>, for a '+
+        'link to the provider\'s grade report.</p>'+
         '<p>Then publish the <b>activities</b> tab the same way — clubs, service, work, '+
         'tests and district registration — with these headings:</p>'+
         '<ul><li><code>'+ACT_COLS.join("</code>, <code>")+'</code></li></ul>'+
@@ -3349,6 +3358,8 @@ function courseBadges(c){
   if(c.eoc) tags.appendChild(el("span","tag eoc","EOC: "+c.eoc));
   c.flags.forEach(f=>tags.appendChild(el("span","tag flag", f)));
   if(c.provider) tags.appendChild(el("span","tag prov", c.provider));
+  if(c.gradebook) tags.appendChild(el("span","tag",
+    c.status==="complete" ? "grade report" : "gradebook"));
   return tags.children.length ? tags : null;
 }
 
@@ -3362,6 +3373,19 @@ function hoursLine(c){
          (c.hours>=want ? " — clear" : "");
 }
 
+function gradebookLine(c){
+  if(!c.gradebook) return null;
+  URL_RE.lastIndex=0;
+  const hit=URL_RE.exec(c.gradebook);
+  if(!hit) return c.gradebook;            // "in the BJU portal" — true, just not a link
+  const a=document.createElement("a");
+  a.className="link";
+  a.href = /^https?:\/\//i.test(hit[0]) ? hit[0] : "https://"+hit[0];
+  a.target="_blank"; a.rel="noopener noreferrer";
+  a.textContent="Open gradebook \u2192";
+  return a;
+}
+
 function courseDetail(c){
   const rows=[];
   if(c.code)      rows.push(["Course code", c.code]);
@@ -3372,12 +3396,16 @@ function courseDetail(c){
   if(hrs) rows.push(["Hours", hrs]);
   if(c.eoc)       rows.push(["End-of-course exam", c.eoc+(c.eocResult?" — "+c.eocResult:" — not taken yet")]);
   if(c.fills)     rows.push(["Fills", c.fills.replace(/_/g," ")]);
+  const gb=gradebookLine(c);
+  if(gb)          rows.push([c.status==="complete" ? "Grade report" : "Gradebook", gb]);
   if(!rows.length && !c.notes) return null;
   const box=el("div","cdetail");
   rows.forEach(([k,v])=>{
     const r=el("div","dline");
     r.appendChild(el("span","dk", k));
-    r.appendChild(el("span","dv", v));
+    const d=el("span","dv");
+    if(v && v.nodeType) d.appendChild(v); else d.textContent=v;
+    r.appendChild(d);
     box.appendChild(r);
   });
   if(c.notes) box.appendChild(elLinked("div","memo", c.notes));
