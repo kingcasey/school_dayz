@@ -13,7 +13,7 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
-| **Map** — subjects and credits to 12th grade | `map` tab | stub, and last in the tabs until it isn't |
+| **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
@@ -50,7 +50,7 @@ per tab. Both go at the top of `index.html`:
 
 ```js
 const PUB_ID = "2PACX-1vABC...";
-const GID = { plan: "0", map: "", reading: "789012", wins: "345678" };
+const GID = { plan: "0", map: "", activities: "", reading: "789012", wins: "345678" };
 ```
 
 A tab left as `""` is simply not connected. Its view says so and the rest of
@@ -299,6 +299,115 @@ as *On file: …* — you know the paperwork exists, and the page doesn't preten
 it can open something sitting in your own Drive. Swapping a filename for a
 share link later is the only change needed to make it tappable.
 
+## The `map` tab
+
+One row per course, 8th grade through graduation. **This tab is matched
+strictly**: row 1 must hold exactly these headings, in this order. The other
+tabs match their headings loosely because people retitle columns — this one
+carries a transcript, and a column landing one place to the left would be a
+wrong grade.
+
+```
+grade, school_year, term, area, course, course_code, credit, level, fills,
+flags, language, provider, credit_issuer, eoc, eoc_result, status,
+final_grade, hours, notes
+```
+
+| column | holds |
+|---|---|
+| `grade` | 8, 9, 10, 11 or 12 |
+| `school_year` | `2026-27`. Display only |
+| `term` | `Year`, `Fall`, `Spring`, `Summer`. Blank means `Year`. **`Summer` is the summer *following* that grade** — grade 8 + Summer is the Summer 8–9 block, and it shows under 8th grade |
+| `area` | `ELA`, `Math`, `Science`, `Social Studies`, `World Language`, `Arts/CTE`, `PE/Health`, `Bible/Religion`, `Life Skills`, `Elective`. Anything else is a validation error |
+| `course` | the display title |
+| `course_code` | the Florida course number, if you have it. Display only — better blank than guessed |
+| `credit` | `0`, `0.5` or `1`. **`0` means it appears on the map and counts toward nothing** |
+| `level` | `Standard`, `Honors`, `AP`, `DE`, `IB`, `AICE`. Blank means Standard. Drives the weighted average |
+| `fills` | **one** of `ALG1`, `GEOM`, `BIO1`, `WORLD_HIST`, `US_HIST`, `US_GOV`, `ECON`, `FIN_LIT`, `PERS_FITNESS`. Most rows leave it blank |
+| `flags` | a **semicolon** list of `lab`, `writing`, `online` — `lab;writing`, never a comma |
+| `language` | e.g. `ASL`. Required on World Language rows; sequential credits are summed per language |
+| `provider` | who teaches it — `Duval FLEX`, `Parent`, `BJU` |
+| `credit_issuer` | who puts it on a transcript |
+| `eoc` | blank, `Algebra 1`, `Geometry`, `Biology 1`, `US History` |
+| `eoc_result` | blank until taken |
+| `status` | `planned`, `in progress`, `complete`, `dropped`. Blank means planned |
+| `final_grade` | `A`–`F` or `P`. Only meaningful on a `complete` row |
+| `hours` | optional. 135 per full credit is the target (Fla. Stat. 1003.436) |
+| `notes` | shown when the course is tapped |
+
+**One `fills` tag per row, and that's the point.** Two different half-credit
+requirements cannot be satisfied by one half-credit course, so the schema
+makes that impossible to write down rather than easy to miss.
+
+**The sheet is flat and the page draws the grid.** The old wide layout — areas
+down the left, two columns per year — is a good planning view and a bad data
+layout, because there is nowhere in it for status, grade, provider, EOC or
+hours. On a wide screen and in print the page redraws that grid from these
+rows, greyed for planned, grades shown when complete, coloured by area. Keep
+one source or the other, never both.
+
+## The `activities` tab
+
+Clubs, service, work, test scores and district registration. **Optional** —
+without it the Course Map still draws in full and Bright Futures shows as a
+checklist with no numbers on it. That is not an error. Same strict headings:
+
+```
+grade, school_year, type, what, organization, hours, documented, date, value, notes
+```
+
+| column | holds |
+|---|---|
+| `grade` | 8–12 |
+| `school_year` | `2029-30` |
+| `type` | `club`, `service`, `work`, `test`, `registration`, `project`, `college` |
+| `what` | `Special Olympics`, `SAT`, `College tour — UF` |
+| `organization` | who to get the letterhead from |
+| `hours` | for `service` and `work` |
+| `documented` | `Y` / `N` — hours on agency letterhead, filed with the district |
+| `date` | `YYYY-MM-DD`, optional |
+| `value` | the test score |
+| `notes` | free text |
+
+**Hours have to be earned during high school.** Rows at grade 8 are left out of
+the Bright Futures total, and the card says how many were skipped rather than
+quietly dropping them.
+
+## The Course Map view
+
+Phone: a summary strip, the three yardsticks folded to a line each, a card per
+year with its summer block and the activities alongside it, then the gaps. The
+current school year's card opens itself. Wide screens get the grid as well,
+with the gaps above it. Everything you fold is remembered on that device.
+
+**The three yardsticks** are [state university admission](https://www.flbog.edu/regulations/active-regulations/)
+(16 academic credits), the [Florida standard diploma](https://www.fldoe.org/schools/k-12-public-schools/sss/graduation-requirements/)
+(24 credits — not binding on a home-education student, shown as the yardstick
+an evaluator recognises), and [Bright Futures](https://www.floridastudentfinancialaidsg.org/PDF/BFHandbookChapter1.pdf)
+on the home-education path, which turns on a test score, hours, two years of
+district registration and the FFAA — not on coursework or GPA.
+
+Each category reads **earned / in progress / planned / required** and one of
+three words: **Met** (earned alone clears it), **On track** (the plan clears
+it), **Gap** (short even counting the plan, and it says by how much). A credit
+is only ever spent once per card; once a category is full the rest spills into
+Electives.
+
+**The requirements live in `REQUIREMENTS` at the top of the Course Map code,
+not in the sheet.** They change with legislative sessions, not with her plan.
+Each card footers the date they were last checked — review them each August.
+
+**Two averages, each labelled.** Unweighted over every graded course, and
+weighted over the five academic areas with Honors and above worth half a point
+more — the Bright Futures method. Before anything is complete both read `—`,
+not `0.00`. On a plan this heavy in Honors and AP the weighted number runs
+above 4.0 on purpose, so the scale is printed beside it.
+
+**Print is the evaluator's copy**: landscape, the full grid, the cards
+condensed to their category rows, the gaps listed, and a footer naming the
+rules' date and the print date. Every status is a word as well as a colour, so
+it reads in black and white.
+
 ## CNN 10
 
 She watches CNN 10 every weekday morning. The view has three parts, top to
@@ -396,6 +505,10 @@ the others.
 | a `Days` cell that isn't days (`MWF`) | A quiet line at the top of Today naming the row; that subject runs every school day until it's fixed. |
 | no school day today | Today shows the nearest one ahead, and says so. The **Today** button returns to that day. |
 | `plan` tab has no `Time`/`Who`/`Days` columns yet | Today still works: every subject every school day, times blank, who from its section. |
+| `map` gid left as `""` | Dashed card naming every column the tab needs. |
+| `activities` gid left as `""` | Course Map draws in full; Bright Futures shows as a checklist. Not an error. |
+| `map` heading row wrong | Red banner naming the column number, what it should say and what it says. |
+| a single bad row on `map` | Red banner naming the tab and row number and what's wrong with it. That row is skipped; everything else still draws. |
 | `SB_URL` left as `""` | Every view shows a dashed card saying what to fill in. |
 | signed out | Every view shows the sign-in card, and nothing else. |
 | no connection, and this device was never signed in | A red banner with *Try again*. |

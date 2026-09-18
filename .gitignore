@@ -1,3 +1,12 @@
 .DS_Store
 node_modules/
 scripts/.env
+
+# Specs are working documents and some of them use her full name, which never
+# goes into this repo. Keep them local.
+*-SPEC.md
+
+# Sample exports of the sheet tabs, used to build against. The Sheet is the
+# one source — a copy in here would only ever be a stale duplicate of it.
+map-flat.csv
+activities.csv

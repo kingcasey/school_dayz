@@ -255,8 +255,176 @@
         text-underline-offset:2px}
   .signout:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
 
+
+  /* --- Course Map ------------------------------------------------------
+     Phone order: summary, yardsticks, year cards, gaps. On a wide screen
+     the gaps and the grid move above the year cards, which is the order
+     you read it in when you're planning rather than checking.           */
+  .cmap{display:flex;flex-direction:column}
+  .cmap>.error{order:-1}
+  .csum{order:0} .gpanote{order:1} .cyards{order:2} .cyears{order:3}
+  .cgaps{order:4} .cgrid{order:6;display:none} .cprintfoot{order:7}
+  .gtitle{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;margin:1.5rem 0 .1rem}
+
+  .csum{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.1rem 0 .2rem}
+  .cstat{flex:1 1 5.4rem;padding:.6rem .7rem;background:var(--cream-deep);border-radius:.2rem}
+  .cbig{font-size:1.35rem;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .csmall{font-size:.74rem;color:var(--ink-soft);margin-top:.2rem}
+  .gpanote{margin-top:.6rem}
+
+  .ycard{margin:.55rem 0;border:1.5px solid var(--rule);border-radius:.2rem;background:transparent}
+  .ycard>summary{cursor:pointer;list-style:none;padding:.7rem .8rem;display:flex;
+       align-items:center;gap:.5rem;font-weight:600}
+  .ycard>summary::-webkit-details-marker{display:none}
+  .ycard>summary::after{content:"+";margin-left:auto;font-size:1.2rem;color:var(--ink-soft)}
+  .ycard[open]>summary::after{content:"–"}
+  .ycard[open]>summary{border-bottom:1px solid var(--rule)}
+  .ycard>summary:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .ytitle{font-size:1rem}
+  .ymeta{font-size:.8rem;font-weight:400;color:var(--ink-soft)}
+  .ybody{padding:.4rem .8rem .8rem}
+  .ylede{font-size:.85rem;color:var(--ink-soft);margin:.5rem 0 .3rem}
+
+  .chip{font-size:.72rem;font-weight:600;padding:.1rem .4rem;border-radius:.15rem;
+       border:1.5px solid currentColor;white-space:nowrap}
+  .st-met{color:#2F6B4F} .st-track{color:var(--navy)} .st-gap{color:#A32B1E}
+  .st-none{color:var(--ink-soft)}
+
+  .crow{padding:.6rem 0;border-top:1px solid var(--rule)}
+  .crow.aside{opacity:.92}
+  .ybody>.crow:first-child{border-top:0}
+  .chead{display:flex;align-items:baseline;gap:.5rem}
+  .clabel{font-size:.92rem;font-weight:600;flex:1}
+  .cbar{display:flex;height:.4rem;margin:.4rem 0 .3rem;background:var(--cream-deep);
+       border-radius:.2rem;overflow:hidden}
+  .seg{display:block}
+  .seg.earned{background:#2F6B4F} .seg.inprog{background:var(--navy)}
+  .seg.planned{background:var(--cream-deep);box-shadow:inset 0 0 0 1px var(--rule)}
+  .seg.none{background:transparent}
+  .cmeta{font-size:.82rem;color:var(--ink-soft)}
+  .cnote{font-size:.78rem;color:var(--ink-soft);font-style:italic;margin-top:.2rem;display:block}
+  .cnote.extra{font-style:normal;margin-top:.7rem;padding-top:.6rem;border-top:1px solid var(--rule)}
+  .csub{display:flex;align-items:baseline;gap:.4rem;font-size:.82rem;margin-top:.3rem}
+  .csub.big{font-size:.86rem;margin-top:.45rem}
+  .cdot{width:.55rem;height:.55rem;border-radius:50%;flex:none;
+       border:1.5px solid currentColor;background:currentColor}
+  .cdot.st-none,.cdot.st-gap{background:transparent}
+  .csubst{margin-left:auto;font-size:.74rem;font-weight:600;white-space:nowrap}
+  .csource{font-size:.74rem;color:var(--ink-soft);margin-top:.7rem}
+
+  /* A course. The left edge is its curriculum area. */
+  .course{border-left:5px solid var(--edge,var(--rule));padding-left:.7rem;margin:.5rem 0}
+  .course.s-planned{opacity:.72}
+  .course.s-planned .cname{font-weight:500}
+  .course.s-dropped{opacity:.55}
+  .course.s-dropped .cname{text-decoration:line-through}
+  .course.nocredit .ccredit{color:var(--ink-soft)}
+  .cline{display:flex;align-items:baseline;gap:.6rem}
+  .cmain{flex:1;min-width:0}
+  .cname{font-size:.95rem;font-weight:600;line-height:1.25}
+  .carea{font-size:.74rem;color:var(--ink-soft);margin-top:.1rem}
+  .cright{display:flex;align-items:baseline;gap:.45rem;flex:none}
+  .cgrade{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+  .ccredit{font-size:.85rem;font-weight:600;color:var(--ink-soft);min-width:1.6rem;text-align:right}
+  .course .tags{margin-top:.3rem}
+  .tag.lvl{background:var(--ochre);border-color:var(--ochre);color:#fff}
+  .tag.eoc{border-color:var(--navy);color:var(--navy)}
+  .tag.zero{border-color:var(--rule);color:var(--ink-soft)}
+  .tag.flag,.tag.prov{border-color:var(--rule);color:var(--ink-soft);font-weight:500}
+  .copen>summary{cursor:pointer;list-style:none}
+  .copen>summary::-webkit-details-marker{display:none}
+  .copen>summary:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .copen>summary .cname::after{content:" ›";color:var(--ink-soft);font-weight:400}
+  .copen[open]>summary .cname::after{content:" ⌄"}
+  .cdetail{margin-top:.45rem;padding:.5rem .6rem;background:var(--cream-deep);border-radius:.2rem}
+  .dline{display:flex;gap:.6rem;font-size:.8rem;padding:.12rem 0}
+  .dk{color:var(--ink-soft);flex:none;min-width:8.5rem}
+  .dv{flex:1}
+  .cdetail .memo{margin-top:.35rem}
+
+  .summer{margin:.8rem 0 .2rem;padding:.55rem .7rem;background:var(--cream-deep);border-radius:.2rem}
+  .slabel{font-size:.76rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;
+       letter-spacing:.07em}
+  .summer .course{margin:.45rem 0 0}
+  .dropped{margin-top:.7rem}
+  .dropped>summary{cursor:pointer;list-style:none;font-size:.8rem;font-weight:600;
+       color:var(--ink-soft)}
+  .dropped>summary::-webkit-details-marker{display:none}
+
+  .astrip{margin-top:.9rem;padding-top:.6rem;border-top:1px solid var(--rule)}
+  .alabel{font-size:.74rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;
+       letter-spacing:.07em;margin-bottom:.35rem}
+  .alist{display:flex;flex-wrap:wrap;gap:.3rem}
+  .atag{font-size:.76rem;padding:.13rem .45rem;border-radius:.15rem;
+       border:1.5px solid var(--rule);color:var(--ink-soft)}
+  .atag.a-service,.atag.a-work{border-color:var(--ochre);color:var(--ochre)}
+  .atag.a-test{border-color:var(--navy);color:var(--navy)}
+  .atag.a-registration{border-color:var(--plum);color:var(--plum)}
+
+  .gapline{font-size:.9rem;padding:.5rem 0 .5rem .8rem;border-left:3px solid #A32B1E;
+       margin-top:.5rem}
+  .cprintfoot{display:none}
+
+  /* The grid: the planning layout, redrawn. Wide screens and print only. */
+  .gscroll{overflow-x:auto;margin-top:.5rem}
+  .gridtab{border-collapse:collapse;width:100%;font-size:.78rem}
+  .gridtab th,.gridtab td{border:1px solid var(--rule);vertical-align:top;padding:.3rem .4rem}
+  .gcorner{text-align:left;font-size:.72rem;color:var(--ink-soft);width:9rem}
+  .gyear,.gsummer{text-align:left;background:var(--cream-deep)}
+  .gsummer{width:6.5rem}
+  .gh{font-weight:800;font-size:.85rem}
+  .gs{font-weight:400;font-size:.7rem;color:var(--ink-soft)}
+  .garea{text-align:left;font-weight:600;font-size:.76rem;
+       border-left:4px solid var(--edge,var(--rule))}
+  .gcell.gsum{background:rgba(35,26,18,.035)}
+  .gitem{display:flex;gap:.35rem;align-items:baseline;padding:.12rem 0}
+  .gitem+.gitem{border-top:1px dotted var(--rule)}
+  .gitem.s-planned{color:var(--ink-soft)}
+  .gitem.s-earned .gcr{font-weight:800;color:var(--ink)}
+  .gname{flex:1;line-height:1.25}
+  .gcr{font-weight:600;white-space:nowrap}
+  .gtotal th,.gtotal td{background:var(--cream-deep);font-weight:800}
+  .gtot{text-align:right}
+
+  @media (min-width:900px){
+    .wrap:has(.cmap){max-width:74rem}
+    /* Planning, not checking: the gaps and the grid come before the years. */
+    .cgaps{order:3} .cgrid{order:4;display:block} .cyears{order:5}
+    .csum{gap:.7rem}
+    .cstat{flex:1 1 7rem}
+    .cyards{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;align-items:start}
+    .cyards .ycard{margin:0}
+  }
+
   @media print{
     nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot,.notebtn,.noteedit,.addform{display:none}
+
+    /* The Course Map prints as the evaluator's copy: the whole grid, the
+       cards condensed to their category rows, the gaps listed, and a footer
+       saying which rules it was measured against and when. No colour is
+       load-bearing — every status is a word as well as a tint. */
+    .wrap:has(.cmap){max-width:none}
+    .cmap .cgrid{display:block;order:2}
+    .cmap .cyards{order:3;display:block}
+    .cmap .cgaps{order:4}
+    .cmap .cyears,.cmap .gpanote{display:none}
+    .cmap .cprintfoot{display:block;order:9;margin-top:1rem;padding-top:.5rem;
+        border-top:1.5px solid var(--ink);font-size:.72rem;color:var(--ink-soft)}
+    .cmap .ycard{break-inside:avoid;margin:.4rem 0}
+    .cmap .ycard>summary::after,.cmap .copen>summary .cname::after{content:""}
+    .cmap .ylede,.cmap .csource,.cmap .cbar{display:none}
+    .cmap .crow{padding:.25rem 0;break-inside:avoid}
+    .cmap .gscroll{overflow:visible}
+    .cmap .gridtab{font-size:.62rem;break-inside:auto}
+    .cmap .gridtab th,.cmap .gridtab td{border-color:#999}
+    .cmap .garea{border-left-width:2px}
+    .cmap .gcell.gsum{background:#f2f2f2}
+    .cmap .gtotal th,.cmap .gtotal td{background:#e8e8e8}
+    .cmap .chip,.cmap .csubst{border-color:#666;color:#000}
+    .cmap .cstat{background:#f2f2f2;border:1px solid #ccc}
+    .cmap .gapline{border-left-color:#000;break-inside:avoid}
+    .cmap .cdot{border-color:#000}
+    .cmap .cdot.st-met{background:#000}
     body{background:#fff}
     .block,.prow{page-break-inside:avoid}
 
@@ -338,10 +506,13 @@
 const PUB_ID = "2PACX-1vRMQiMoSlVIa7yXr-SqAOC7P9QiE4-98mXm6ZkM1dRjliLYUJeRG8ss41op_URx1K57AyHWvy8UL5zO";
 
 const GID = {
-  plan:    "2064533394",      // the "plan" tab — the week, and each day's tasks in it
-  map:     "",                // Education map      — not built yet
-  reading: "1478186643",      // the "reading" tab  (see README)
-  wins:    "67138078",        // the "wins" tab     (see README)
+  plan:       "2064533394",   // the "plan" tab — the week, and each day's tasks in it
+  map:        "",             // the "map" tab  — one row per course (see README)
+  activities: "",             // the "activities" tab — clubs, service, work, tests.
+                              //   Optional: left blank, the Course Map still draws,
+                              //   and Bright Futures shows as a checklist.
+  reading:    "1478186643",   // the "reading" tab  (see README)
+  wins:       "67138078",     // the "wins" tab     (see README)
 };
 
 /* --- Supabase -----------------------------------------------------------
@@ -356,16 +527,18 @@ const CACHE   = "schooldayz.v2.";      // offline copies live here (this browser
 const SB_LIB  = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 
 /* --- the six views, in tab order ---------------------------------------- */
-/* Map is last while it's still a stub — the tabs she taps every day come
-   first, and nothing else depends on this order. CNN 10 reads Supabase
-   rather than a sheet tab, which is what needs:null says. */
+/* The Course Map is last because it is the one she looks at a few times a
+   year and you look at often — the tabs she taps every day come first, and
+   nothing else depends on this order. Its route stays #map, which is what
+   was bookmarked when it was a stub. CNN 10 reads Supabase rather than a
+   sheet tab, which is what needs:null says. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"plan"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
-  {id:"map",     tab:"Map",     title:"Education map",   needs:"map"},
+  {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
 ];
 
 /* --- colour of the left edge -------------------------------------------
@@ -1054,6 +1227,592 @@ function buildWins(rows){
 }
 
 /* ==========================================================================
+   THE MAP TAB — the course map, 8th grade through graduation.
+
+   One row per course, and the page draws the grid. The Map tab used to be a
+   wide planning grid: areas down the left, two columns per year holding a
+   name and a number. That is a good planning layout and a bad data layout,
+   because there is nowhere in it to put status, grade, provider, EOC result
+   or hours — and a transcript needs all five. So the tab goes flat, one row
+   per course, and the grid is drawn here instead, where it can be greyed for
+   planned, show grades when complete, and colour by area.
+
+   This is deliberately not what the plan tab does. The plan tab is read as a
+   grid because it only ever displays what it holds. This one has to carry a
+   transcript.
+
+   Read-only, like every other sheet tab. Grades and a GPA are on this page,
+   so it renders only behind the sign-in that already gates everything.
+   ========================================================================== */
+
+/* Exact headings, in this order. The other tabs match their headings loosely,
+   because people retitle columns and "Date " with a trailing space shouldn't
+   break a reading list. This tab is matched strictly: a column quietly
+   landing one place to the left is a wrong grade on a transcript, and that
+   is worth being rigid about. */
+const MAP_COLS = ["grade","school_year","term","area","course","course_code",
+  "credit","level","fills","flags","language","provider","credit_issuer",
+  "eoc","eoc_result","status","final_grade","hours","notes"];
+
+const ACT_COLS = ["grade","school_year","type","what","organization","hours",
+  "documented","date","value","notes"];
+
+const AREAS = ["ELA","Math","Science","Social Studies","World Language",
+               "Arts/CTE","PE/Health","Bible/Religion","Life Skills","Elective"];
+const FILL_TAGS = ["ALG1","GEOM","BIO1","WORLD_HIST","US_HIST","US_GOV","ECON",
+                   "FIN_LIT","PERS_FITNESS"];
+const COURSE_FLAGS = ["lab","writing","online"];
+const LEVELS   = ["Standard","Honors","AP","DE","IB","AICE"];
+const STATUSES = ["planned","in progress","complete","dropped"];
+const TERMS    = ["Year","Fall","Spring","Summer"];
+const ACT_TYPES= ["club","service","work","test","registration","project","college"];
+
+/* Honors and above earn the extra half point on the weighted average. */
+const WEIGHTED_LEVELS = ["Honors","AP","DE","IB","AICE"];
+const GRADE_POINTS = {A:4, B:3, C:2, D:1, F:0};
+const HOURS_PER_CREDIT = 135;          // Fla. Stat. 1003.436
+
+/* The five areas a state university counts as academic. Also the set the
+   weighted average is taken over — see gpaOf. */
+const CORE_AREAS = ["ELA","Math","Science","Social Studies","World Language"];
+
+/* The left edge of a course row, by area. Same palette as everywhere else. */
+const AREA_EDGE = {
+  "ELA":            "#4A1145",
+  "Math":           "#16394F",
+  "Science":        "#2F6B4F",
+  "Social Studies": "#9C6B2B",
+  "World Language": "#7E92E2",
+  "Arts/CTE":       "#A34B6B",
+  "PE/Health":      "#5B7A1E",
+  "Bible/Religion": "#6B5F52",
+  "Life Skills":    "#8A5A2B",
+  "Elective":       "#3C3A52",
+};
+
+/* --- the rules ----------------------------------------------------------
+   These live in code, not in the sheet. They change with legislative
+   sessions, not with her plan, and a requirement quietly edited mid-year in
+   a spreadsheet is the kind of thing nobody notices until it matters.
+   Review each August; the cards print the date below.
+
+   A category's `pick` decides which courses it can claim. Order matters on
+   the diploma card: the named half-credits claim first, then the subject
+   areas up to their cap, then everything left over falls into electives.  */
+const REQUIREMENTS = {
+  asOf: "September 2026",
+  reviewNote: "Rules as of Sept 2026 — review annually.",
+
+  university: {
+    id: "university",
+    title: "State university admission",
+    lede: "16 academic credits. This is the floor — individual universities set higher bars.",
+    source: "https://www.flbog.edu/regulations/active-regulations/",
+    sourceLabel: "BOG Regulation 6.002",
+    cats: [
+      {id:"eng",  label:"English", need:4,
+       pick:c=>c.area==="ELA",
+       subs:[{kind:"flag", flag:"writing", need:3, label:"3 with substantial writing"}]},
+      {id:"math", label:"Mathematics", need:4, note:"at or above Algebra 1",
+       pick:c=>c.area==="Math"},
+      {id:"sci",  label:"Natural science", need:3,
+       pick:c=>c.area==="Science",
+       subs:[{kind:"flag", flag:"lab", need:2, label:"2 with substantial lab"}]},
+      {id:"soc",  label:"Social science", need:3,
+       pick:c=>c.area==="Social Studies"},
+      {id:"lang", label:"World language", need:2, note:"2 sequential credits in the same language",
+       pick:c=>c.area==="World Language", byLanguage:true},
+    ],
+  },
+
+  diploma: {
+    id: "diploma",
+    title: "Florida standard diploma",
+    lede: "24 credits. Not binding on a home-education student — the parent issues the "+
+          "diploma. Shown as the yardstick an evaluator or a school would recognise.",
+    source: "https://www.fldoe.org/schools/k-12-public-schools/sss/graduation-requirements/",
+    sourceLabel: "s. 1003.4282",
+    total: 24,
+    cats: [
+      /* Financial literacy claims its row before anything else can: SB 1054
+         made it a separate half credit from Economics, and one 0.5 course
+         cannot do both jobs. Claiming first is what makes that visible. */
+      {id:"finlit", label:"Personal financial literacy", need:0.5,
+       note:"separate from Economics",
+       pick:c=>c.fills==="FIN_LIT"},
+      {id:"ela", label:"English Language Arts", need:4, pick:c=>c.area==="ELA"},
+      {id:"math", label:"Mathematics", need:4, pick:c=>c.area==="Math",
+       subs:[{kind:"named", tag:"ALG1", label:"Algebra 1"},
+             {kind:"named", tag:"GEOM", label:"Geometry"}]},
+      {id:"sci", label:"Science", need:3, pick:c=>c.area==="Science",
+       subs:[{kind:"named", tag:"BIO1", label:"Biology 1"},
+             {kind:"flag", flag:"lab", need:2, label:"2 with lab"}]},
+      {id:"soc", label:"Social studies", need:3, pick:c=>c.area==="Social Studies",
+       subs:[{kind:"named", tag:"WORLD_HIST", label:"World History"},
+             {kind:"named", tag:"US_HIST",    label:"US History"},
+             {kind:"named", tag:"US_GOV",     label:"US Government (0.5)"},
+             {kind:"named", tag:"ECON",       label:"Economics (0.5)"}]},
+      {id:"art", label:"Fine, performing or practical arts", need:1,
+       pick:c=>c.area==="Arts/CTE"},
+      {id:"pe", label:"Physical education", need:1, pick:c=>c.area==="PE/Health",
+       subs:[{kind:"named", tag:"PERS_FITNESS", label:"Personal Fitness (0.5)"}]},
+      /* Last, and takes everything the capped categories didn't. */
+      {id:"elect", label:"Electives", need:7.5, pick:()=>true, overflow:true,
+       note:"including every world language credit, and anything over a category's cap"},
+    ],
+  },
+
+  brightFutures: {
+    id: "bf",
+    title: "Bright Futures",
+    lede: "On the home-education path a student qualifies on four things — and coursework "+
+          "and GPA are not among them.",
+    source: "https://www.floridastudentfinancialaidsg.org/PDF/BFHandbookChapter1.pdf",
+    sourceLabel: "Handbook Ch. 1, 2026-27",
+    /* Stored with the graduating class they belong to. Her class's numbers
+       are set much closer to the time; these are the latest published. */
+    tests: {
+      forClass: "2027-28 graduates",
+      FAS: {label:"Florida Academic Scholars",  SAT:1350, ACT:29, CLT:96},
+      FMS: {label:"Florida Medallion Scholars", SAT:1200, ACT:25, CLT:83},
+    },
+    hours: {
+      FAS: {total:100, label:"100 service or work hours"},
+      FMS: {volunteer:75, paid:100, label:"75 volunteer, or 100 paid or combined"},
+    },
+    note: "Home-education students don't submit a transcript to Bright Futures. If she "+
+          "finishes at a public or registered private school instead, the coursework and "+
+          "GPA rules apply — and those are the same 16 credits as the university card.",
+  },
+};
+
+/* --- reading the two tabs ----------------------------------------------- */
+/* A tab's heading row has to be exactly right. Saying which column is wrong
+   is the difference between a five-second fix and a puzzle. */
+function checkHead(rows, cols, tab){
+  const head=(rows[0]||[]).map(h=>String(h==null?"":h).trim());
+  for(let i=0;i<cols.length;i++){
+    if(head[i]!==cols[i]) throw new Error(
+      'The '+tab+' tab’s heading row isn’t what this page expects. Column '+(i+1)+
+      ' should read "'+cols[i]+'" and reads '+(head[i]?'"'+head[i]+'"':"(nothing)")+
+      '. Row 1 must be exactly, in order: '+cols.join(", "));
+  }
+}
+
+function tabObjects(rows, cols){
+  const out=[];
+  for(let r=1;r<rows.length;r++){
+    const raw=rows[r]||[];
+    if(!raw.some(c=>String(c==null?"":c).trim()!=="")) continue;    // blank rows ignored
+    const o={row:r+1};
+    cols.forEach((c,i)=>{ o[c]=String(raw[i]==null?"":raw[i]).trim(); });
+    out.push(o);
+  }
+  return out;
+}
+
+function splitList(s){ return String(s||"").split(";").map(x=>x.trim()).filter(Boolean); }
+
+/* One course. Returns null and files an error when the row can't be trusted —
+   everything else on the page still renders. */
+function readCourse(o, errs){
+  const bad=[];
+  const grade=parseInt(o.grade,10);
+  if(!(grade>=8 && grade<=12)) bad.push('grade "'+o.grade+'" isn’t 8 to 12');
+  if(!AREAS.includes(o.area))  bad.push('unknown area "'+o.area+'"');
+  const term = o.term || "Year";
+  if(!TERMS.includes(term))    bad.push('unknown term "'+o.term+'"');
+  if(!["0","0.5","1"].includes(o.credit)) bad.push('credit "'+o.credit+'" isn’t 0, 0.5 or 1');
+  const level = o.level || "Standard";
+  if(!LEVELS.includes(level))  bad.push('unknown level "'+o.level+'"');
+  const status = o.status || "planned";
+  if(!STATUSES.includes(status)) bad.push('unknown status "'+o.status+'"');
+
+  const fills=splitList(o.fills);
+  if(fills.length>1) bad.push('more than one fills tag ("'+o.fills+'") — one course cannot fill two requirements');
+  fills.forEach(t=>{ if(!FILL_TAGS.includes(t)) bad.push('unknown fills tag "'+t+'"'); });
+
+  const flags=splitList(o.flags);
+  flags.forEach(f=>{ if(!COURSE_FLAGS.includes(f)) bad.push('unknown flag "'+f+'"'); });
+
+  if(o.final_grade && status!=="complete")
+    bad.push('a final grade ("'+o.final_grade+'") on a row that is "'+status+'", not complete');
+  if(o.final_grade && !(o.final_grade in GRADE_POINTS) && o.final_grade!=="P")
+    bad.push('final grade "'+o.final_grade+'" isn’t A–F or P');
+  if(o.area==="World Language" && !o.language)
+    bad.push('a World Language row with no language — sequential credits are summed per language');
+
+  if(bad.length){ errs.push({tab:"map", row:o.row, what:bad.join("; ")}); return null; }
+
+  return {
+    row:o.row, grade:grade, year:o.school_year, term:term,
+    area:o.area, course:o.course, code:o.course_code,
+    credit:parseFloat(o.credit)||0, level:level,
+    fills:fills[0]||"", flags:flags, language:o.language,
+    provider:o.provider, issuer:o.credit_issuer,
+    eoc:o.eoc, eocResult:o.eoc_result,
+    status:status, mark:o.final_grade,
+    hours:o.hours===""?null:(parseFloat(o.hours)||0),
+    notes:o.notes,
+  };
+}
+
+function readActivity(o, errs){
+  const bad=[];
+  const grade=parseInt(o.grade,10);
+  if(!(grade>=8 && grade<=12)) bad.push('grade "'+o.grade+'" isn’t 8 to 12');
+  if(!ACT_TYPES.includes(o.type)) bad.push('unknown type "'+o.type+'"');
+  if(o.documented && !/^[YN]$/i.test(o.documented))
+    bad.push('documented "'+o.documented+'" isn’t Y or N');
+  if(o.date && !parseDate(o.date)) bad.push('date "'+o.date+'" isn’t a date');
+  if(bad.length){ errs.push({tab:"activities", row:o.row, what:bad.join("; ")}); return null; }
+  return {
+    row:o.row, grade:grade, year:o.school_year, type:o.type, what:o.what,
+    org:o.organization, hours:o.hours===""?null:(parseFloat(o.hours)||0),
+    documented:/^Y$/i.test(o.documented), date:parseDate(o.date),
+    value:o.value, notes:o.notes,
+  };
+}
+
+/* --- what a course is worth ---------------------------------------------
+   Earned means complete with a grade of A–D or P. An F earns nothing, a
+   dropped course counts for nothing anywhere, and a course marked complete
+   with no grade on it yet earns nothing either — that last one is a data
+   slip rather than an error, so it surfaces in Gaps instead of the banner. */
+function creditState(c){
+  if(c.status==="dropped")  return "dropped";
+  if(c.status==="complete") return (c.mark==="P" || (c.mark in GRADE_POINTS && c.mark!=="F")) ? "earned" : "none";
+  if(c.status==="in progress") return "inprog";
+  return "planned";
+}
+function countsSomeday(c){ const s=creditState(c); return s==="earned"||s==="inprog"||s==="planned"; }
+
+/* --- allocating credit to categories -------------------------------------
+   A credit is spent once. Within one card a course's credit is handed to the
+   first category that can claim it and still has room; what's left over
+   falls through to the next, and on the diploma card the last category is
+   Electives, which takes everything.
+
+   Complete courses are offered to a category before in-progress ones, and
+   in-progress before planned, so "earned" in each category is as large as
+   the plan actually allows. Otherwise a finished credit could end up sitting
+   in Electives while its own subject area showed a gap.                    */
+const STATE_ORDER = {earned:0, inprog:1, planned:2, none:3, dropped:4};
+
+function allocate(courses, cats){
+  const pool = courses
+    .filter(c=>c.credit>0 && countsSomeday(c))
+    .map(c=>({c:c, state:creditState(c), left:c.credit}))
+    .sort((a,b)=> (STATE_ORDER[a.state]-STATE_ORDER[b.state]) ||
+                  (a.c.grade-b.c.grade) || (a.c.row-b.c.row));
+
+  return cats.map(cat=>{
+    const got={earned:0, inprog:0, planned:0};
+    const took=[];
+    let room = cat.overflow ? Infinity : cat.need;
+    for(const p of pool){
+      if(p.left<=0 || room<=0) continue;
+      if(!cat.pick(p.c)) continue;
+      const take=Math.min(p.left, room);
+      got[p.state]+=take; p.left-=take;
+      if(!cat.overflow) room-=take;
+      took.push(p.c);
+    }
+    return {cat:cat, ...got, courses:took};
+  });
+}
+
+/* World language is the one category not measured in bare credits: two
+   credits of two different languages is not two sequential credits. Each
+   language is summed on its own and the strongest one is what counts. */
+function byLanguage(courses){
+  const langs={};
+  courses.filter(c=>c.area==="World Language" && c.credit>0 && countsSomeday(c)).forEach(c=>{
+    const k=c.language||"—";
+    const l=langs[k] || (langs[k]={language:k, earned:0, inprog:0, planned:0, courses:[]});
+    l[creditState(c)]+=c.credit; l.courses.push(c);
+  });
+  const all=Object.values(langs);
+  all.sort((a,b)=> (b.earned+b.inprog+b.planned)-(a.earned+a.inprog+a.planned) || (b.earned-a.earned));
+  return {best: all[0]||null, all: all};
+}
+
+/* Met / On track / Gap, the same three words on every card. */
+function standing(earned, inprog, planned, need){
+  if(need<=0) return {key:"met", label:"Met", short:0};
+  if(earned>=need) return {key:"met", label:"Met", short:0};
+  const all=earned+inprog+planned;
+  if(all>=need) return {key:"track", label:"On track", short:0};
+  return {key:"gap", label:"Gap", short:+(need-all).toFixed(2)};
+}
+
+/* A named course either appears on the map or it doesn't. */
+function namedStanding(courses, tag){
+  const hits=courses.filter(c=>c.fills===tag && c.status!=="dropped");
+  if(!hits.length) return {key:"gap", label:"Gap", course:null};
+  const earned=hits.find(c=>creditState(c)==="earned");
+  return earned ? {key:"met", label:"Met", course:earned}
+                : {key:"track", label:"On track", course:hits[0]};
+}
+
+function flagStanding(courses, pick, flag, need){
+  const got={earned:0, inprog:0, planned:0};
+  courses.forEach(c=>{
+    if(!pick(c) || c.credit<=0 || c.flags.indexOf(flag)<0) return;
+    const s=creditState(c);
+    if(s==="earned"||s==="inprog"||s==="planned") got[s]+=c.credit;
+  });
+  return standing(got.earned, got.inprog, got.planned, need);
+}
+
+/* --- the three cards ----------------------------------------------------- */
+function universityCard(courses){
+  const spec=REQUIREMENTS.university;
+  const rows=[];
+  const lang=byLanguage(courses);
+  const alloc=allocate(courses, spec.cats.filter(c=>!c.byLanguage));
+  const byId={}; alloc.forEach(a=>byId[a.cat.id]=a);
+
+  spec.cats.forEach(cat=>{
+    let earned, inprog, planned, extra=null;
+    if(cat.byLanguage){
+      const b=lang.best;
+      earned=b?b.earned:0; inprog=b?b.inprog:0; planned=b?b.planned:0;
+      extra = b ? b.language : null;
+    } else {
+      const a=byId[cat.id]; earned=a.earned; inprog=a.inprog; planned=a.planned;
+    }
+    rows.push({
+      cat:cat, label:cat.label, need:cat.need, note:cat.note, language:extra,
+      earned:earned, inprog:inprog, planned:planned,
+      standing: standing(earned, inprog, planned, cat.need),
+      subs: (cat.subs||[]).map(s=>({
+        label:s.label,
+        standing: s.kind==="flag" ? flagStanding(courses, cat.pick, s.flag, s.need)
+                                  : namedStanding(courses, s.tag),
+      })),
+    });
+  });
+  return {spec:spec, rows:rows, languages:lang.all};
+}
+
+function diplomaCard(courses){
+  const spec=REQUIREMENTS.diploma;
+  const alloc=allocate(courses, spec.cats);
+  const rows=alloc.map(a=>({
+    cat:a.cat, label:a.cat.label, need:a.cat.need, note:a.cat.note,
+    earned:a.earned, inprog:a.inprog, planned:a.planned,
+    standing: standing(a.earned, a.inprog, a.planned, a.cat.need),
+    subs: (a.cat.subs||[]).map(s=>({
+      label:s.label,
+      standing: s.kind==="flag" ? flagStanding(courses, a.cat.pick, s.flag, s.need)
+                                : namedStanding(courses, s.tag),
+    })),
+  }));
+
+  /* Two requirements that aren't a slice of anybody's credit: the online
+     course is a property of a course counted elsewhere, and the GPA is the
+     GPA. Neither consumes credit, so neither goes through allocate(). */
+  const online=courses.filter(c=>c.flags.indexOf("online")>=0 && c.credit>0 && countsSomeday(c));
+  const onlineGot={earned:0,inprog:0,planned:0};
+  online.forEach(c=>{ onlineGot[creditState(c)]+=c.credit; });
+  const extras=[{
+    label:"Online course", need:1, aside:true,
+    note:"any course taken online — it also counts in its own subject",
+    earned:Math.min(onlineGot.earned,1), inprog:Math.min(onlineGot.inprog,1),
+    planned:Math.min(onlineGot.planned,1), subs:[],
+    standing: standing(onlineGot.earned, onlineGot.inprog, onlineGot.planned, 1),
+  }];
+  return {spec:spec, rows:rows, extras:extras};
+}
+
+/* Bright Futures, home-education path: a test score, hours, two years of
+   district registration, and the FFAA. No coursework, no GPA. */
+function brightFuturesCard(courses, activities, hasActivities){
+  const spec=REQUIREMENTS.brightFutures;
+
+  /* Hours have to be earned during high school, so 8th grade doesn't count.
+     Rows carry a grade, which is the honest test here — a date is optional. */
+  const hourRows=activities.filter(a=>a.type==="service"||a.type==="work");
+  const eligible=hourRows.filter(a=>a.grade>=9);
+  /* Counted whether or not an hours figure has been filled in yet, so the
+     card can say the 8th grade rows are there and don't count — which is the
+     question you'd otherwise ask it twice a year. */
+  const excluded=hourRows.filter(a=>a.grade<9);
+  const sum=(list,f)=>list.filter(f||(()=>true)).reduce((n,a)=>n+(a.hours||0),0);
+  const anyFigures=hourRows.some(a=>a.hours!=null);
+  const hours={
+    volunteer:  sum(eligible, a=>a.type==="service"),
+    paid:       sum(eligible, a=>a.type==="work"),
+    documented: sum(eligible, a=>a.documented),
+    undocumented: sum(eligible, a=>!a.documented),
+    total:      sum(eligible),
+    excluded:   sum(excluded),
+    excludedRows: excluded.length,
+    rows:       eligible.length,
+    anyHours:   anyFigures,
+  };
+
+  const tests=activities.filter(a=>a.type==="test" && a.value);
+  const best={};
+  tests.forEach(t=>{
+    const which=/\bSAT\b/i.test(t.what)?"SAT":/\bACT\b/i.test(t.what)?"ACT":/\bCLT\b/i.test(t.what)?"CLT":null;
+    const v=parseFloat(t.value);
+    if(which && !isNaN(v) && (best[which]==null || v>best[which])) best[which]=v;
+  });
+  const planned=activities.filter(a=>a.type==="test" && !a.value);
+
+  const regYears={};
+  activities.filter(a=>a.type==="registration").forEach(a=>{ regYears[a.grade]=a; });
+
+  /* The FFAA window is senior year: Oct 1 through Aug 31. */
+  const senior=courses.filter(c=>c.grade===12).map(c=>c.year).find(Boolean) || "";
+  const y=parseInt(String(senior).slice(0,4),10);
+  const ffaa = isNaN(y) ? null : {open:"October 1, "+y, close:"August 31, "+(y+1)};
+
+  return {spec:spec, hours:hours, best:best, plannedTests:planned,
+          registration:regYears, ffaa:ffaa, hasActivities:hasActivities};
+}
+
+/* --- the two averages ----------------------------------------------------
+   Each is labelled with its method on the page, because an unlabelled GPA
+   invites the reader to assume the other one.                             */
+function gpaOf(courses, coreOnly){
+  let points=0, credits=0;
+  courses.forEach(c=>{
+    if(c.status!=="complete" || c.credit<=0) return;
+    if(!(c.mark in GRADE_POINTS)) return;                 // P is not an average
+    if(coreOnly && CORE_AREAS.indexOf(c.area)<0) return;
+    const bonus = (coreOnly && WEIGHTED_LEVELS.indexOf(c.level)>=0) ? 0.5 : 0;
+    points += (GRADE_POINTS[c.mark]+bonus)*c.credit;
+    credits+= c.credit;
+  });
+  return credits>0 ? {value:points/credits, credits:credits} : null;
+}
+
+/* --- gaps ----------------------------------------------------------------
+   One plain sentence each. The cards say "Gap" in a column; this says what
+   to actually do about it, in the order you'd do it.                      */
+function gapsFrom(uni, dip, bf, courses){
+  const out=[], seen={};
+  const add=(key, text)=>{ if(!seen[key]){ seen[key]=1; out.push(text); } };
+  const credits=n=>n===1?"1 credit":n+" credits";
+
+  dip.rows.concat(dip.extras).forEach(r=>{
+    if(r.standing.key==="gap")
+      add("dip-"+(r.cat?r.cat.id:r.label),
+        "The diploma wants "+credits(r.need)+" of "+r.label.toLowerCase()+
+        ". Counting everything finished, running and planned, the map is "+
+        r.standing.short+" short.");
+    (r.subs||[]).forEach(s=>{
+      if(s.standing.key==="gap")
+        add("named-"+s.label, "Nothing on the map is marked as "+s.label+
+          ", which the diploma names specifically.");
+    });
+  });
+
+  uni.rows.forEach(r=>{
+    if(r.standing.key==="gap")
+      add("uni-"+r.cat.id, "University admission needs "+credits(r.need)+" of "+
+        r.label.toLowerCase()+" — "+r.standing.short+" short even counting the plan.");
+    (r.subs||[]).forEach(s=>{
+      if(s.standing.key==="gap")
+        add("unisub-"+r.cat.id+"-"+s.label,
+          "University admission wants "+s.label.toLowerCase()+" in "+r.label.toLowerCase()+
+          ", and the map doesn't show that yet.");
+    });
+  });
+
+  if(bf.hasActivities && bf.hours.rows>0 && !bf.hours.anyHours)
+    add("bf-hours", "The service and work are on the map, but no hours are filled in "+
+      "against them, so Bright Futures counts nothing toward the 100 it wants.");
+  if(bf.hasActivities && bf.hours.anyHours && bf.hours.undocumented>0)
+    add("bf-doc", bf.hours.undocumented+" of her hours aren't marked as documented. "+
+      "Bright Futures wants them on agency letterhead, filed with the district.");
+  [11,12].forEach(g=>{
+    if(bf.hasActivities && !bf.registration[g])
+      add("bf-reg-"+g, "No district home-education registration is recorded for "+g+
+        "th grade. Bright Futures wants the final two years on file.");
+  });
+
+  /* A course finished but not graded is a credit sitting in limbo: it isn't
+     planned any more, and it isn't earned yet either. */
+  courses.filter(c=>c.status==="complete" && !c.mark && c.credit>0).forEach(c=>{
+    add("ungraded-"+c.row, c.course+" is marked complete but has no final grade, "+
+      "so its "+credits(c.credit)+" counts toward nothing.");
+  });
+
+  return out;
+}
+
+/* --- the whole model ----------------------------------------------------- */
+function buildCourseMap(mapRows, actRows){
+  if(!mapRows || !mapRows.length) throw new Error("The map tab came back empty.");
+  checkHead(mapRows, MAP_COLS, "map");
+
+  const errs=[];
+  const courses=tabObjects(mapRows, MAP_COLS)
+    .map(o=>readCourse(o, errs)).filter(Boolean);
+
+  let activities=[], hasActivities=false;
+  if(actRows && actRows.length){
+    try{
+      checkHead(actRows, ACT_COLS, "activities");
+      activities=tabObjects(actRows, ACT_COLS).map(o=>readActivity(o, errs)).filter(Boolean);
+      hasActivities=true;
+    }catch(err){
+      /* A broken activities tab is not allowed to take the map down with it. */
+      errs.push({tab:"activities", row:1, what:String(err.message||err)});
+    }
+  }
+
+  /* Years, 8th up, each with the summer that follows it. A Summer row sits
+     under the grade it is tagged with — "grade 8 + Summer" is Summer 8-9,
+     which belongs to the end of 8th grade, not the start of 9th. */
+  const years=[];
+  const byGrade={};
+  courses.forEach(c=>{
+    const y = byGrade[c.grade] || (byGrade[c.grade]=
+      {grade:c.grade, year:"", courses:[], summer:[], credit:0, summerCredit:0});
+    (c.term==="Summer" ? y.summer : y.courses).push(c);
+    if(c.term!=="Summer" && !y.year) y.year=c.year;
+    if(countsSomeday(c)){
+      if(c.term==="Summer") y.summerCredit+=c.credit; else y.credit+=c.credit;
+    }
+  });
+  Object.keys(byGrade).map(Number).sort((a,b)=>a-b).forEach(g=>{
+    const y=byGrade[g];
+    if(!y.year) y.year=(y.summer[0]||{}).year||"";
+    const order=(a,b)=>(AREAS.indexOf(a.area)-AREAS.indexOf(b.area))||(a.row-b.row);
+    y.courses.sort(order); y.summer.sort(order);
+    y.activities=activities.filter(a=>a.grade===g && a.type!=="registration");
+    years.push(y);
+  });
+
+  const counted=courses.filter(c=>c.credit>0);
+  const credit={
+    earned:  counted.filter(c=>creditState(c)==="earned").reduce((n,c)=>n+c.credit,0),
+    inprog:  counted.filter(c=>creditState(c)==="inprog").reduce((n,c)=>n+c.credit,0),
+    planned: counted.filter(c=>creditState(c)==="planned").reduce((n,c)=>n+c.credit,0),
+    zero:    courses.filter(c=>c.credit===0 && c.status!=="dropped").length,
+    dropped: courses.filter(c=>c.status==="dropped").length,
+  };
+  credit.total = +(credit.earned+credit.inprog+credit.planned).toFixed(2);
+
+  const uni=universityCard(courses);
+  const dip=diplomaCard(courses);
+  const bf =brightFuturesCard(courses, activities, hasActivities);
+
+  return {
+    courses:courses, activities:activities, hasActivities:hasActivities,
+    years:years, credit:credit, errors:errs,
+    gpa:{ all:gpaOf(courses,false), core:gpaOf(courses,true) },
+    uni:uni, dip:dip, bf:bf,
+    gaps:gapsFrom(uni, dip, bf, courses),
+  };
+}
+
+/* ==========================================================================
    Loading. One published CSV per tab, cached, polled.
    ========================================================================== */
 function urlFor(name){
@@ -1108,8 +1867,15 @@ const NOT_CONNECTED = {
   plan: 'The <code>plan</code> tab isn\'t connected yet. In the Sheet: '+
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>plan</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. Then paste the id and the gid into the top of this file.',
-  map:  'This is where subjects and credits from now through 12th grade will live. '+
-        'Nothing is wired up yet — the tab and the shape of it come next.',
+  map:  'The <code>map</code> tab isn\'t connected yet. In the Sheet: '+
+        'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>map</b> tab &rsaquo; '+
+        'CSV &rsaquo; Publish. One row per course, and row 1 must read exactly:'+
+        '<ul><li><code>'+MAP_COLS.join("</code>, <code>")+'</code></li></ul>'+
+        '<p>Then publish the <b>activities</b> tab the same way — clubs, service, work, '+
+        'tests and district registration — with these headings:</p>'+
+        '<ul><li><code>'+ACT_COLS.join("</code>, <code>")+'</code></li></ul>'+
+        '<p>The activities tab is optional: without it the map still draws and Bright '+
+        'Futures shows as a checklist. Paste both gids into the top of this file.</p>',
   reading:'The <code>reading</code> tab isn\'t connected yet. In the Sheet: '+
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>reading</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. One row per book, with these headings:'+
@@ -1219,6 +1985,7 @@ function signedOut(){
     try{ localStorage.removeItem(CACHE+name); }catch(_){}
   });
   planModel=null; planError=null; dayModel=null; readModel=null; winsModel=null;
+  mapModel=null;
   render();
 }
 
@@ -2330,6 +3097,595 @@ function renderWins(host){
   });
 }
 
+
+/* --- Course Map ----------------------------------------------------------
+   Phone first: a summary strip, the three yardsticks folded to a line each,
+   then a card per year. On a wide screen the grid she planned in appears as
+   well, and in print it is the whole document — that copy is the one an
+   evaluator reads, so it has to work in black and white with nothing to tap.
+   ========================================================================== */
+let mapModel=null;
+
+const CMAP_OPEN="school.cmap.";
+function cmapFlag(id, fallback){
+  try{ const v=localStorage.getItem(CMAP_OPEN+id); return v==null?fallback:v==="1"; }
+  catch(_){ return fallback; }
+}
+function rememberCmap(id, on){
+  try{ localStorage.setItem(CMAP_OPEN+id, on?"1":"0"); }catch(_){}
+}
+
+function num(n){ return String(+Number(n).toFixed(2)); }
+function creditWord(n){ return num(n)+" "+(Number(n)===1?"credit":"credits"); }
+
+/* The school year as the sheet writes it — "2026-27" — so the current year's
+   card can open itself. */
+function currentSchoolYear(){
+  const y=schoolYear(today());
+  return y+"-"+String(y+1).slice(2);
+}
+
+function crowHead(label){
+  const h=el("div","chead");
+  h.appendChild(el("span","clabel", label));
+  return h;
+}
+
+function statusChip(st){
+  const n=el("span","chip st-"+st.key, st.label+(st.short?" · "+num(st.short)+" short":""));
+  return n;
+}
+
+/* The worst thing on a card is what the card says when it's folded. */
+function worstOf(rows){
+  let out={key:"met", label:"Met"};
+  rows.forEach(r=>{
+    const all=[r.standing].concat((r.subs||[]).map(s=>s.standing));
+    all.forEach(s=>{
+      if(s.key==="gap") out={key:"gap", label:"Gap"};
+      else if(s.key==="track" && out.key!=="gap") out={key:"track", label:"On track"};
+    });
+  });
+  return out;
+}
+
+/* A category line: what's earned, what's coming, what's wanted. */
+function catRow(r){
+  const n=el("div","crow"+(r.aside?" aside":""));
+  const head=el("div","chead");
+  head.appendChild(el("span","clabel", r.label));
+  head.appendChild(statusChip(r.standing));
+  n.appendChild(head);
+
+  const bar=el("div","cbar");
+  const seg=(cls, amount)=>{
+    if(amount<=0) return;
+    const s=el("span",cls);
+    s.style.flexGrow=String(amount);
+    bar.appendChild(s);
+  };
+  const need=Math.max(r.need, r.earned+r.inprog+r.planned);
+  seg("seg earned", r.earned); seg("seg inprog", r.inprog); seg("seg planned", r.planned);
+  const rest=need-(r.earned+r.inprog+r.planned);
+  seg("seg none", rest>0?rest:0);
+  n.appendChild(bar);
+
+  const parts=[];
+  if(r.earned)  parts.push(num(r.earned)+" earned");
+  if(r.inprog)  parts.push(num(r.inprog)+" in progress");
+  if(r.planned) parts.push(num(r.planned)+" planned");
+  if(!parts.length) parts.push("nothing yet");
+  n.appendChild(el("div","cmeta", parts.join(" · ")+" of "+creditWord(r.need)+
+    (r.language?" · "+r.language:"")));
+  if(r.note) n.appendChild(el("div","cnote", r.note));
+
+  (r.subs||[]).forEach(s=>{
+    const line=el("div","csub");
+    line.appendChild(el("span","cdot st-"+s.standing.key,""));
+    line.appendChild(el("span","",s.label));
+    line.appendChild(el("span","csubst st-"+s.standing.key, s.standing.label));
+    n.appendChild(line);
+  });
+  return n;
+}
+
+function sourceFoot(spec){
+  const f=el("div","csource");
+  const a=document.createElement("a");
+  a.className="link"; a.href=spec.source; a.target="_blank"; a.rel="noopener noreferrer";
+  a.textContent=spec.sourceLabel;
+  f.appendChild(a);
+  f.appendChild(document.createTextNode(" · "+REQUIREMENTS.reviewNote));
+  return f;
+}
+
+function yardstick(id, title, lede, rows, body, st){
+  const d=document.createElement("details");
+  d.className="ycard";
+  d.open=cmapFlag(id, false);
+  d.addEventListener("toggle",()=>rememberCmap(id, d.open));
+  const sum=document.createElement("summary");
+  sum.appendChild(el("span","ytitle", title));
+  sum.appendChild(statusChip(st));
+  d.appendChild(sum);
+  const b=el("div","ybody");
+  if(lede) b.appendChild(el("p","ylede", lede));
+  (rows||[]).forEach(r=>b.appendChild(catRow(r)));
+  if(body) body(b);
+  d.appendChild(b);
+  return d;
+}
+
+/* --- the three cards ----------------------------------------------------- */
+function uniCardNode(m){
+  const u=m.uni;
+  return yardstick("uni", u.spec.title, u.spec.lede, u.rows, b=>{
+    const t=el("div","cnote extra");
+    const best=m.bf.best;
+    const got=Object.keys(best).map(k=>k+" "+best[k]).join(" · ");
+    t.textContent="Admission also requires an SAT, ACT or CLT score"+
+      (got?" — best so far: "+got+"." : ". Nothing recorded yet.");
+    b.appendChild(t);
+    if(u.languages.length>1)
+      b.appendChild(el("div","cnote","Two credits have to be in the same language. "+
+        "Counted here: "+u.languages.map(l=>l.language+" "+num(l.earned+l.inprog+l.planned)).join(", ")+"."));
+    b.appendChild(sourceFoot(u.spec));
+  }, worstOf(u.rows));
+}
+
+function dipCardNode(m){
+  const d=m.dip;
+  const all=d.rows.concat(d.extras);
+  return yardstick("dip", d.spec.title, d.spec.lede, all, b=>{
+    const g=m.gpa.all;
+    const line=el("div","crow aside");
+    const head=el("div","chead");
+    head.appendChild(el("span","clabel","Unweighted GPA"));
+    head.appendChild(statusChip(g ? (g.value>=2 ? {key:"met",label:"Met"} : {key:"gap",label:"Gap",short:0})
+                                  : {key:"track",label:"Not yet"}));
+    line.appendChild(head);
+    line.appendChild(el("div","cmeta", g ? num(g.value)+" over "+creditWord(g.credits)
+                                         : "No course is complete yet, so there's nothing to average."));
+    line.appendChild(el("div","cnote","2.0 required"));
+    b.appendChild(line);
+    b.appendChild(el("div","cnote extra","Total planned: "+creditWord(m.credit.total)+
+      " against the "+d.spec.total+" a standard diploma asks for."));
+    b.appendChild(sourceFoot(d.spec));
+  }, worstOf(all));
+}
+
+function bfCardNode(m){
+  const bf=m.bf, spec=bf.spec, T=spec.tests, H=spec.hours;
+  const check=(ok, label, sub)=>{
+    const n=el("div","csub big");
+    n.appendChild(el("span","cdot st-"+(ok?"met":"gap"),""));
+    const t=el("span","");
+    t.appendChild(el("span","",label));
+    if(sub) t.appendChild(el("span","cnote",sub));
+    n.appendChild(t);
+    return n;
+  };
+  const st = !bf.hasActivities ? {key:"track", label:"Checklist"}
+           : (bf.hours.total>=H.FAS.total && bf.registration[11] && bf.registration[12])
+             ? {key:"met", label:"Met"} : {key:"track", label:"In progress"};
+
+  return yardstick("bf", spec.title, spec.lede, null, b=>{
+    if(!bf.hasActivities)
+      b.appendChild(el("p","cnote","The activities tab isn't connected, so this is the "+
+        "checklist without her numbers on it. Connect it and the hours, test scores and "+
+        "registration fill themselves in."));
+
+    /* 1 — test score */
+    const tests=el("div","crow");
+    tests.appendChild(crowHead("Test score"));
+    const got=Object.keys(bf.best).map(k=>k+" "+bf.best[k]).join(" · ");
+    tests.appendChild(el("div","cmeta", got ? "Best so far: "+got
+      : (bf.plannedTests.length ? "Planned, no score recorded yet." : "Nothing recorded yet.")));
+    [["FAS",T.FAS],["FMS",T.FMS]].forEach(([k,v])=>{
+      const line=el("div","csub");
+      line.appendChild(el("span","cdot st-"+
+        (bf.best.SAT>=v.SAT||bf.best.ACT>=v.ACT||bf.best.CLT>=v.CLT ? "met":"none"),""));
+      line.appendChild(el("span","",v.label+" — SAT "+v.SAT+" · ACT "+v.ACT+" · CLT "+v.CLT));
+      tests.appendChild(line);
+    });
+    tests.appendChild(el("div","cnote","Latest published, for "+T.forClass+
+      ". Her class's thresholds will be set closer to 2031."));
+    b.appendChild(tests);
+
+    /* 2 — hours */
+    const hrs=el("div","crow");
+    hrs.appendChild(crowHead("Service or work hours"));
+    hrs.appendChild(el("div","cmeta", bf.hasActivities
+      ? num(bf.hours.total)+" counted — "+num(bf.hours.volunteer)+" volunteer, "+
+        num(bf.hours.paid)+" paid"
+      : "—"));
+    hrs.appendChild(check(bf.hours.total>=H.FAS.total, H.FAS.label+" (Academic Scholars)"));
+    hrs.appendChild(check(bf.hours.volunteer>=H.FMS.volunteer || bf.hours.total>=H.FMS.paid,
+      H.FMS.label+" (Medallion Scholars)"));
+    if(bf.hasActivities){
+      hrs.appendChild(el("div","cnote", num(bf.hours.documented)+" documented · "+
+        num(bf.hours.undocumented)+" not yet — hours need agency letterhead, filed with the district."));
+      if(bf.hours.excludedRows)
+        hrs.appendChild(el("div","cnote","Hours have to be earned during high school, so "+
+          bf.hours.excludedRows+(bf.hours.excludedRows===1?" row":" rows")+" from before 9th grade"+
+          (bf.hours.excluded?" ("+num(bf.hours.excluded)+" hours)":"")+" are left out of that total."));
+    }
+    b.appendChild(hrs);
+
+    /* 3 — registration */
+    const reg=el("div","crow");
+    reg.appendChild(crowHead("District home-education registration"));
+    reg.appendChild(el("div","cmeta","Wanted for the current and the prior academic year."));
+    [11,12].forEach(g=>{
+      const r=bf.registration[g];
+      reg.appendChild(check(!!r, g+"th grade"+(r&&r.year?" ("+r.year+")":""),
+        r&&r.what?r.what:null));
+    });
+    b.appendChild(reg);
+
+    /* 4 — the FFAA, which is a date, not a tick */
+    const ff=el("div","crow");
+    ff.appendChild(crowHead("FFAA"));
+    ff.appendChild(el("div","cmeta", bf.ffaa
+      ? "Submit between "+bf.ffaa.open+" and "+bf.ffaa.close+", her senior year."
+      : "Submit between October 1 and August 31 of her senior year."));
+    b.appendChild(ff);
+
+    b.appendChild(el("div","cnote extra", spec.note));
+    b.appendChild(sourceFoot(spec));
+  }, st);
+}
+
+/* --- a course on the map -------------------------------------------------
+   Planned is outlined and muted, in progress is normal weight, complete puts
+   the grade where the eye lands first, and dropped is struck through behind a
+   toggle. A zero-credit row is always shown and always says so: it is real
+   instruction that counts toward nothing, and hiding it would make the map a
+   worse record than the sheet it replaced.                                 */
+function courseBadges(c){
+  const tags=el("div","tags");
+  if(c.level && c.level!=="Standard") tags.appendChild(el("span","tag lvl", c.level));
+  if(c.credit===0) tags.appendChild(el("span","tag zero","no credit"));
+  if(c.eoc) tags.appendChild(el("span","tag eoc","EOC: "+c.eoc));
+  c.flags.forEach(f=>tags.appendChild(el("span","tag flag", f)));
+  if(c.provider) tags.appendChild(el("span","tag prov", c.provider));
+  return tags.children.length ? tags : null;
+}
+
+/* Hours are hand-entered for now. If the daily tab ever carries a course they
+   get summed instead, and this is the only place that has to change. */
+function hoursLine(c){
+  if(c.hours==null) return null;
+  const want=c.credit*HOURS_PER_CREDIT;
+  if(c.credit<=0) return num(c.hours)+" logged";
+  return num(c.hours)+" of "+num(want)+" for "+creditWord(c.credit)+
+         (c.hours>=want ? " — clear" : "");
+}
+
+function courseDetail(c){
+  const rows=[];
+  if(c.code)      rows.push(["Course code", c.code]);
+  if(c.issuer)    rows.push(["Credit issued by", c.issuer]);
+  if(c.provider && c.provider!==c.issuer) rows.push(["Taught through", c.provider]);
+  if(c.language)  rows.push(["Language", c.language]);
+  const hrs=hoursLine(c);
+  if(hrs) rows.push(["Hours", hrs]);
+  if(c.eoc)       rows.push(["End-of-course exam", c.eoc+(c.eocResult?" — "+c.eocResult:" — not taken yet")]);
+  if(c.fills)     rows.push(["Fills", c.fills.replace(/_/g," ")]);
+  if(!rows.length && !c.notes) return null;
+  const box=el("div","cdetail");
+  rows.forEach(([k,v])=>{
+    const r=el("div","dline");
+    r.appendChild(el("span","dk", k));
+    r.appendChild(el("span","dv", v));
+    box.appendChild(r);
+  });
+  if(c.notes) box.appendChild(elLinked("div","memo", c.notes));
+  return box;
+}
+
+function courseRow(c){
+  const state=creditState(c);
+  const wrap=el("div","course s-"+state+(c.credit===0?" nocredit":""));
+  wrap.style.setProperty("--edge", AREA_EDGE[c.area]||OTHER_EDGE);
+
+  const line=el("div","cline");
+  const main=el("div","cmain");
+  main.appendChild(el("div","cname", c.course));
+  main.appendChild(el("div","carea", c.area));
+  line.appendChild(main);
+
+  const right=el("div","cright");
+  if(state==="earned" || (c.status==="complete" && c.mark))
+    right.appendChild(el("div","cgrade", c.mark));
+  right.appendChild(el("div","ccredit", c.credit===0 ? "—" : num(c.credit)));
+  line.appendChild(right);
+
+  const detail=courseDetail(c);
+  const badges=courseBadges(c);
+
+  if(!detail){
+    wrap.appendChild(line);
+    if(badges) wrap.appendChild(badges);
+    return wrap;
+  }
+  const d=document.createElement("details");
+  d.className="copen";
+  const sum=document.createElement("summary");
+  sum.appendChild(line);
+  if(badges) sum.appendChild(badges);
+  d.appendChild(sum);
+  d.appendChild(detail);
+  wrap.appendChild(d);
+  return wrap;
+}
+
+/* Clubs, service and work sit under the year they happened in — compact,
+   because they are context for the courses rather than the point of the page. */
+const ACT_WORD = {club:"Club", service:"Service", work:"Work", test:"Test",
+                  registration:"Registered", project:"Project", college:"College"};
+function activityStrip(list){
+  if(!list.length) return null;
+  const n=el("div","astrip");
+  n.appendChild(el("div","alabel","Alongside the courses"));
+  const row=el("div","alist");
+  list.forEach(a=>{
+    const bits=[a.what];
+    if(a.hours!=null) bits.push(num(a.hours)+"h");
+    if(a.value) bits.push(a.value);
+    const t=el("span","atag a-"+a.type, bits.join(" · "));
+    t.title=ACT_WORD[a.type]+(a.org?" · "+a.org:"")+(a.notes?" — "+a.notes:"");
+    row.appendChild(t);
+  });
+  n.appendChild(row);
+  return n;
+}
+
+function yearCard(y, openNow){
+  const live=y.courses.filter(c=>c.status!=="dropped");
+  const dropped=y.courses.concat(y.summer).filter(c=>c.status==="dropped");
+  const summer=y.summer.filter(c=>c.status!=="dropped");
+
+  const d=document.createElement("details");
+  d.className="ycard year";
+  d.open=cmapFlag("year"+y.grade, openNow);
+  d.addEventListener("toggle",()=>rememberCmap("year"+y.grade, d.open));
+
+  const sum=document.createElement("summary");
+  sum.appendChild(el("span","ytitle", y.grade+"th grade"));
+  const meta=el("span","ymeta",
+    (y.year?y.year+" · ":"")+creditWord(y.credit+y.summerCredit));
+  sum.appendChild(meta);
+  d.appendChild(sum);
+
+  const b=el("div","ybody");
+  live.forEach(c=>b.appendChild(courseRow(c)));
+
+  if(summer.length){
+    const s=el("div","summer");
+    s.appendChild(el("div","slabel","Summer "+y.grade+"–"+(y.grade+1)+
+      " · "+creditWord(y.summerCredit)));
+    summer.forEach(c=>s.appendChild(courseRow(c)));
+    b.appendChild(s);
+  }
+
+  if(dropped.length){
+    const dd=document.createElement("details");
+    dd.className="dropped";
+    const ds=document.createElement("summary");
+    ds.textContent="Show dropped ("+dropped.length+")";
+    dd.appendChild(ds);
+    dropped.forEach(c=>dd.appendChild(courseRow(c)));
+    b.appendChild(dd);
+  }
+
+  const strip=activityStrip(y.activities);
+  if(strip) b.appendChild(strip);
+
+  d.appendChild(b);
+  return d;
+}
+
+/* --- the grid she planned in --------------------------------------------
+   Wide screens and print only. Areas down the left, years across, each
+   summer as its own narrow column beside the grade it follows.            */
+function gridNode(m){
+  const cols=[];
+  m.years.forEach(y=>{
+    cols.push({key:"g"+y.grade, label:y.grade+"th", sub:y.year, summer:false, grade:y.grade});
+    if(y.summer.length) cols.push({key:"s"+y.grade, label:"Summer",
+      sub:y.grade+"–"+(y.grade+1), summer:true, grade:y.grade});
+  });
+  const areas=AREAS.filter(a=>m.courses.some(c=>c.area===a && c.status!=="dropped"));
+
+  const t=document.createElement("table");
+  t.className="gridtab";
+  const thead=document.createElement("thead");
+  const hr=document.createElement("tr");
+  hr.appendChild(el("th","gcorner","Curriculum area"));
+  cols.forEach(c=>{
+    const th=el("th", c.summer?"gsummer":"gyear");
+    th.appendChild(el("div","gh", c.label));
+    th.appendChild(el("div","gs", c.sub));
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr); t.appendChild(thead);
+
+  const tb=document.createElement("tbody");
+  areas.forEach(area=>{
+    const tr=document.createElement("tr");
+    const th=el("th","garea", area);
+    th.style.setProperty("--edge", AREA_EDGE[area]||OTHER_EDGE);
+    tr.appendChild(th);
+    cols.forEach(col=>{
+      const td=el("td", col.summer?"gcell gsum":"gcell");
+      m.courses.filter(c=>c.area===area && c.grade===col.grade &&
+                          (c.term==="Summer")===col.summer && c.status!=="dropped")
+        .forEach(c=>{
+          const cell=el("div","gitem s-"+creditState(c));
+          cell.appendChild(el("span","gname", c.course));
+          const tail=el("span","gcr", c.credit===0 ? "—" : num(c.credit));
+          if(c.status==="complete" && c.mark) tail.textContent=c.mark+" · "+tail.textContent;
+          cell.appendChild(tail);
+          cell.title=c.course+" — "+c.area+" · "+(c.level||"Standard")+" · "+
+            (c.credit===0?"no credit":creditWord(c.credit))+" · "+c.status;
+          td.appendChild(cell);
+        });
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+
+  const tr=document.createElement("tr");
+  tr.className="gtotal";
+  tr.appendChild(el("th","garea","Credits"));
+  cols.forEach(col=>{
+    const n=m.courses.filter(c=>c.grade===col.grade && (c.term==="Summer")===col.summer &&
+                                countsSomeday(c)).reduce((s,c)=>s+c.credit,0);
+    tr.appendChild(el("td","gcell gtot", num(n)));
+  });
+  tb.appendChild(tr);
+  t.appendChild(tb);
+
+  const box=el("div","cgrid");
+  box.appendChild(el("h2","gtitle","The map, year by year"));
+  const scroll=el("div","gscroll");
+  scroll.appendChild(t);
+  box.appendChild(scroll);
+  return box;
+}
+
+/* --- the view ------------------------------------------------------------ */
+/* Landscape is set only while the Course Map is on screen — @page can't be
+   scoped by a class, so the rule is swapped in and out instead. */
+function setLandscape(on){
+  let s=document.getElementById("pagesize");
+  if(!s){ s=document.createElement("style"); s.id="pagesize"; document.head.appendChild(s); }
+  s.textContent = on ? "@page{size:landscape;margin:12mm}" : "";
+}
+
+/* Every fold is opened for the print and put back afterwards: a details
+   element can't be forced open from CSS, and a printed card that says only
+   "Standard diploma — On track" is not the document an evaluator needs. */
+(function printFolds(){
+  let shut=[];
+  window.addEventListener("beforeprint",()=>{
+    const root=document.querySelector(".cmap");
+    if(!root) return;
+    shut=Array.prototype.slice.call(root.querySelectorAll("details:not([open])"));
+    shut.forEach(d=>d.open=true);
+  });
+  window.addEventListener("afterprint",()=>{
+    shut.forEach(d=>d.open=false);
+    shut=[];
+  });
+})();
+
+function renderCourseMap(host){
+  const s=sheet.map||{state:"unset"};
+  const a=sheet.activities||{state:"unset"};
+  const kick="B"+(s.cached?" · saved copy":"");
+  setHead(kick, "Course Map", "");
+  stepper([]);
+
+  if(s.state==="unset"){
+    host.appendChild(emptyCard("The map tab isn't connected yet.","<p>"+NOT_CONNECTED.map+"</p>"));
+    return;
+  }
+  if(s.state==="error"){
+    host.appendChild(errorCard("Can't reach the course map right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    return;
+  }
+
+  let m;
+  try{ m=mapModel=buildCourseMap(s.rows, a.state==="ok" ? a.rows : null); }
+  catch(err){
+    host.appendChild(s.rows && s.rows.length>1
+      ? errorCard("The map tab can't be read.",
+          "It's reachable, but the format isn't what this page expects. Here's the problem:",
+          String(err.message||err))
+      : emptyCard("The map tab is published, but empty.",
+          "<p>"+NOT_CONNECTED.map+"</p>"+
+          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
+    return;
+  }
+
+  setHead(kick, "Course Map",
+    creditWord(m.credit.total)+" across "+m.years.length+
+    (m.years.length===1?" year":" years")+" · 8th to 12th");
+
+  const root=el("div","cmap");
+
+  /* Bad rows are named and skipped; everything else still draws. */
+  if(m.errors.length){
+    const box=el("div","error");
+    box.appendChild(el("b","", m.errors.length===1
+      ? "One row on the sheet couldn't be read, and was left out."
+      : m.errors.length+" rows on the sheet couldn't be read, and were left out."));
+    const ul=document.createElement("ul");
+    m.errors.forEach(e=>{
+      const li=document.createElement("li");
+      li.textContent=e.tab+" tab, row "+e.row+" — "+e.what;
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    root.appendChild(box);
+  }
+
+  /* 1 — the summary strip */
+  const sumStrip=el("div","csum");
+  const stat=(big, small)=>{
+    const n=el("div","cstat");
+    n.appendChild(el("div","cbig", big));
+    n.appendChild(el("div","csmall", small));
+    return n;
+  };
+  sumStrip.appendChild(stat(num(m.credit.earned), "earned"));
+  sumStrip.appendChild(stat(num(m.credit.inprog+m.credit.planned), "still to come"));
+  sumStrip.appendChild(stat(num(m.credit.total)+" / "+REQUIREMENTS.diploma.total, "credits planned"));
+  sumStrip.appendChild(stat(m.gpa.all ? num(m.gpa.all.value) : "—", "GPA unweighted"));
+  sumStrip.appendChild(stat(m.gpa.core ? num(m.gpa.core.value)+" / 5.0" : "—", "weighted, core"));
+  root.appendChild(sumStrip);
+  if(m.gpa.core)
+    root.appendChild(el("p","quiet gpanote","The weighted average covers the five academic "+
+      "areas only, with Honors and above worth half a point more — the Bright Futures method. "+
+      "On a plan this heavy in Honors and AP it runs above 4.0 on purpose."));
+
+  /* 2 — the three yardsticks */
+  const yards=el("div","cyards");
+  yards.appendChild(uniCardNode(m));
+  yards.appendChild(dipCardNode(m));
+  yards.appendChild(bfCardNode(m));
+  root.appendChild(yards);
+
+  /* 3 — the grid, on a wide screen and in print */
+  root.appendChild(gridNode(m));
+
+  /* 4 — a card per year, the current one open */
+  const now=currentSchoolYear();
+  const years=el("div","cyears");
+  years.appendChild(el("h2","gtitle","Year by year"));
+  m.years.forEach(y=>years.appendChild(yearCard(y, y.year===now)));
+  root.appendChild(years);
+
+  /* 5 — the gaps, in plain sentences */
+  const gaps=el("div","cgaps");
+  gaps.appendChild(el("h2","gtitle","Gaps"));
+  if(!m.gaps.length) gaps.appendChild(el("p","quiet",
+    "Nothing is short against any of the three — every named course is on the map."));
+  else m.gaps.forEach(g=>gaps.appendChild(el("p","gapline", g)));
+  root.appendChild(gaps);
+
+  const pf=el("div","cprintfoot");
+  pf.textContent="Requirements as of "+REQUIREMENTS.asOf+". Printed "+longDate(today())+
+    ", "+today().getFullYear()+".";
+  root.appendChild(pf);
+
+  host.appendChild(root);
+}
+
 /* ==========================================================================
    CNN 10 — current events. A line a day about the episode, and one written
    report a week on a story she picks from those lines.
@@ -2928,6 +4284,7 @@ function render(){
 
   // Nothing but the sign-in until this browser is signed in.
   if(auth.state!=="in"){
+    setLandscape(false);
     nav.style.display="none";
     document.getElementById("helper").style.display="none";
     document.getElementById("foot").textContent="";
@@ -2937,6 +4294,8 @@ function render(){
   }
   nav.style.display="";
   renderTabs();
+  // The Course Map prints as a landscape document; nothing else does.
+  setLandscape(view.id==="map");
   // The helper is about running a school day, so it belongs to Today alone.
   document.getElementById("helper").style.display =
     view.id==="today" ? "" : "none";
@@ -2948,6 +4307,7 @@ function render(){
   else if(view.id==="plan")    renderPlan(host);
   else if(view.id==="reading") renderReading(host);
   else if(view.id==="wins")    renderWins(host);
+  else if(view.id==="map")     renderCourseMap(host);
   else if(view.id==="cnn10"){
     // Whatever goes wrong in here stays in here.
     try{ renderCnn10(host); }
@@ -2980,7 +4340,8 @@ async function refresh(){
   // The plan is loaded whatever the view: it is Today, and the other views
   // borrow its colours. Supabase loads beside the sheet tabs and never throws,
   // so it can't hold any of them up.
-  await Promise.all([load("plan"), load("reading"), load("wins"), loadCnn10(), loadDay(shownDay||today()), loadPages()]);
+  await Promise.all([load("plan"), load("reading"), load("wins"), load("map"),
+                     load("activities"), loadCnn10(), loadDay(shownDay||today()), loadPages()]);
   if(auth.state!=="in") return;             // signed out while that was on its way
   planModel=null; planError=null;
   if(sheet.plan && sheet.plan.state==="ok"){
