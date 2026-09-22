@@ -142,6 +142,13 @@
   .link:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   .evening .link{font-weight:600;padding:.15rem 0;display:inline-block}
 
+  .card>.link.more{display:inline-block;margin-top:.45rem;font-size:.85rem;font-weight:600}
+  .mgroup{margin-top:.4rem}
+  .mgroup .step{margin-top:1.1rem}
+  .mtask{padding:.6rem 0;border-bottom:1px solid var(--rule)}
+  .mtask .row{align-items:baseline}
+  .mtask .what{font-size:.96rem;color:var(--ink);margin-top:0;flex:1}
+
   /* Reading: one collapsible shelf per state. */
   .shelf{margin:.9rem 0;border-bottom:1px solid var(--rule)}
   .shelf summary{cursor:pointer;list-style:none;padding:.7rem 0;display:flex;
@@ -526,12 +533,15 @@ const POLL_MS = 60000;                 // how often to check the sheet for chang
 const CACHE   = "schooldayz.v2.";      // offline copies live here (this browser)
 const SB_LIB  = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 
-/* --- the six views, in tab order ---------------------------------------- */
+/* --- the views, in tab order ------------------------------------------- */
 /* The Course Map is last because it is the one she looks at a few times a
    year and you look at often — the tabs she taps every day come first, and
    nothing else depends on this order. Its route stays #map, which is what
    was bookmarked when it was a stub. CNN 10 reads Supabase rather than a
-   sheet tab, which is what needs:null says. */
+   sheet tab, which is what needs:null says.
+   Math has no tab of its own: it is the page for whoever works through math
+   with her, bookmarked as #math and linked from the Math row on Today and
+   the plan. A seventh tab wouldn't fit across a phone. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"plan"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
@@ -539,6 +549,7 @@ const VIEWS = [
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
   {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
+  {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true},
 ];
 
 /* --- colour of the left edge -------------------------------------------
@@ -1048,6 +1059,7 @@ function buildDays(rows){
       order:  subjects.length,
       kind:   /^notes?$/.test(low) ? "note" : /^evenings?$/.test(low) ? "evening"
             : DAY_SPECIAL.test(low) ? "pause" : "task",
+      source: cell(r,head.sourceCol),
       time:   time,
       who:    who || secWho,
       edge:   secEdge,
@@ -1252,8 +1264,8 @@ function buildWins(rows){
    is worth being rigid about. */
 const MAP_COLS = ["grade","school_year","term","area","course","course_code",
   "credit","level","fills","flags","language","provider","credit_issuer",
-  "eoc","eoc_result","status","final_grade","hours","notes","gradebook"];
-const MAP_COLS_REQUIRED = 19;          // `gradebook` (20) can be added whenever
+  "eoc","eoc_result","status","final_grade","hours","notes","gradebook","syllabus"];
+const MAP_COLS_REQUIRED = 19;          // `gradebook` (20) and `syllabus` (21) can be added whenever
 
 const ACT_COLS = ["grade","school_year","type","what","organization","hours",
   "documented","date","value","notes"];
@@ -1460,7 +1472,7 @@ function readCourse(o, errs){
     eoc:o.eoc, eocResult:o.eoc_result,
     status:status, mark:o.final_grade,
     hours:o.hours===""?null:(parseFloat(o.hours)||0),
-    notes:o.notes, gradebook:o.gradebook,
+    notes:o.notes, gradebook:o.gradebook, syllabus:o.syllabus,
   };
 }
 
@@ -1878,8 +1890,9 @@ const NOT_CONNECTED = {
         'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>map</b> tab &rsaquo; '+
         'CSV &rsaquo; Publish. One row per course, and row 1 must read exactly:'+
         '<ul><li><code>'+MAP_COLS.slice(0,MAP_COLS_REQUIRED).join("</code>, <code>")+'</code></li></ul>'+
-        '<p>One more is optional, and goes after those: <code>gradebook</code>, for a '+
-        'link to the provider\'s grade report.</p>'+
+        '<p>Two more are optional, and go after those: <code>gradebook</code>, for a '+
+        'link to the provider\'s grade report, then <code>syllabus</code>, for a link to '+
+        'the course syllabus.</p>'+
         '<p>Then publish the <b>activities</b> tab the same way — clubs, service, work, '+
         'tests and district registration — with these headings:</p>'+
         '<ul><li><code>'+ACT_COLS.join("</code>, <code>")+'</code></li></ul>'+
@@ -2477,6 +2490,7 @@ function blockRow(b, showTime, writable){
     }
     syncBlock();
   }
+  if(!b.loose && MATH_ROW.test(b.subject)) card.appendChild(mathPageLink());
 
   row.appendChild(card);
   return row;
@@ -2859,6 +2873,7 @@ function planWeekBody(host, wi){
       if(r.source){ const sp=el("span","psrc",r.source); nm.appendChild(sp); }
       card.appendChild(nm);
       card.appendChild(elLinked("div","what", r.cells[wi]));
+      if(MATH_ROW.test(r.name)) card.appendChild(mathPageLink());
       prow.appendChild(card);
       host.appendChild(prow);
     });
@@ -2920,6 +2935,142 @@ function renderPlan(host){
   ]);
 
   planWeekBody(host, weekIdx);
+}
+
+/* --- Math ---------------------------------------------------------------
+   The page for whoever sits with her for math: the course — what it is, its
+   gradebook and its syllabus, both from the map tab — then the week's
+   assignments, straight from the plan. Nothing on it is kept anywhere but
+   the Sheet. The plan tab's row whose name starts "Math" is the one it follows. */
+const MATH_ROW = /^math/i;
+let mathWeek = null;               // which week the Math page is showing
+
+function mathPageLink(){
+  const a=el("a","link more","Math page →");
+  a.href="#math";
+  a.addEventListener("click",()=>window.scrollTo({top:0,behavior:"instant"}));
+  return a;
+}
+
+function mathWeekIndex(model){
+  const t=today(); let idx=0;
+  model.weeks.forEach((w,i)=>{ if(w.monday<=t) idx=i; });
+  return idx;
+}
+
+/* This year's math course on the map tab, for its title, gradebook and syllabus. */
+function mathCourse(){
+  const s=sheet.map;
+  if(!s || s.state!=="ok") return null;
+  try{
+    const cs=buildCourseMap(s.rows, null).courses.filter(c=>c.area==="Math" && c.status!=="dropped");
+    return cs.find(c=>c.status==="in progress") || cs.find(c=>c.year===currentSchoolYear()) || null;
+  }catch(_){ return null; }
+}
+
+function mathTask(host, subj, l, chip){
+  const p=readCell(l.rest, subj.time, subj.who) || {detail:"", note:""};
+  const what=p.detail || subj.name;
+  const n=el("div","mtask");
+  const line=el("div","row");
+  line.appendChild(withLinks(el("div","what"), what));
+  if(chip) line.appendChild(el("span","tag due",chip));
+  n.appendChild(line);
+  if(p.note) n.appendChild(elLinked("div","memo",p.note));
+  host.appendChild(n);
+}
+
+function renderMath(host){
+  const s=sheet.plan||{state:GID.plan?"loading":"unset"};
+  const stop=card=>{ setHead("B", "Math", ""); stepper([]); host.appendChild(card); };
+
+  if(s.state==="loading") return stop(el("p","quiet","Reading the plan…"));
+  if(s.state==="unset") return stop(emptyCard("The plan tab isn't connected yet.","<p>"+NOT_CONNECTED.plan+"</p>"));
+  if(s.state==="error") return stop(errorCard("Can't reach the plan right now.",
+    "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+    String(s.error && s.error.message || s.error)));
+
+  let model;
+  try{ model=buildDays(s.rows); }
+  catch(err){
+    return stop(errorCard("The plan tab can't be read.",
+      "This page couldn't work out the weeks from it. Here's the problem:", String(err.message||err)));
+  }
+  const subj=model.subjects.find(x=>x.kind==="task" && MATH_ROW.test(x.name));
+  if(!subj) return stop(emptyCard("There's no Math row on the plan.",
+    "<p>This page follows the plan tab's row whose name starts with <b>Math</b>. "+
+    "Add one, or rename it, and it shows up here.</p>"));
+
+  if(mathWeek===null) mathWeek=mathWeekIndex(model);
+  mathWeek=Math.max(0, Math.min(mathWeek, model.weeks.length-1));
+  const wi=mathWeek, w=model.weeks[wi];
+
+  setHead("B · week "+w.num+(s.cached?" · saved copy":""), subj.name, weekRange(w.monday));
+  const pick=el("select","jump");
+  pick.setAttribute("aria-label","Jump to a week");
+  model.weeks.forEach((wk,i)=>{
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent="Week "+wk.num+" · "+shortDate(wk.monday);
+    if(i===wi) o.selected=true;
+    pick.appendChild(o);
+  });
+  pick.addEventListener("change",()=>{ mathWeek=+pick.value; render(); });
+  const now=mathWeekIndex(model);
+  stepper([
+    makeStep("‹","Show the previous week", wi<=0, ()=>{mathWeek--;render();}),
+    pick,
+    makeStep("This week", wi===now ? "You're on this week" : "Jump back to this week", wi===now, ()=>{mathWeek=now;render();}),
+    makeStep("›","Show the next week", wi>=model.weeks.length-1, ()=>{mathWeek++;render();}),
+  ]);
+
+  // The course: all year, whichever week is on screen.
+  host.appendChild(el("h2","sect","The course"));
+  const course=mathCourse();
+  const cc=el("div","prow"), card=el("div","card");
+  card.style.setProperty("--edge", edgeFor(subj.name, subj.edge));
+  const nm=el("div","pname", course ? course.course : subj.name);
+  const src=subj.source || (course && course.provider);
+  if(src) nm.appendChild(el("span","psrc",src));
+  card.appendChild(nm);
+  [course && syllabusLine(course), course && gradebookLine(course)].forEach(v=>{
+    if(!v) return;
+    const g=el("div","what");
+    if(typeof v==="string") g.textContent=v; else g.appendChild(v);
+    card.appendChild(g);
+  });
+  if(!course || !course.syllabus) card.appendChild(el("div","memo",
+    "No syllabus yet — paste its link into the syllabus column of this course's row on the map tab."));
+  cc.appendChild(card);
+  host.appendChild(cc);
+
+  // The week: what runs every day, then each day's own, then hers to pace.
+  host.appendChild(el("h2","sect","Week "+w.num));
+  const lines=subj.lines[wi]||[];
+  if(!lines.length){
+    host.appendChild(el("p","quiet","Nothing on the plan for "+subj.name+" this week."));
+    return;
+  }
+  const group=title=>{ const g=el("div","mgroup"); g.appendChild(el("div","step",title)); host.appendChild(g); return g; };
+
+  const daily=lines.filter(l=>l.kind==="daily");
+  if(daily.length){
+    const on=[1,2,3,4,5,6,0].filter(d=>runsOn(subj,d)).map(d=>WEEKDAY[d].slice(0,3));
+    const g=group("Every day it runs"+(on.length && on.length<5 ? " · "+on.join(", ") : ""));
+    daily.forEach(l=>mathTask(g, subj, l));
+  }
+  for(let off=0;off<7;off++){
+    const date=addDays(w.monday, off), wd=date.getDay();
+    const own=lines.filter(l=>l.kind==="pinned" && l.days.indexOf(wd)>=0);
+    if(!own.length) continue;
+    const g=group(WEEKDAY[wd]+" · "+shortDate(date));
+    own.forEach(l=>mathTask(g, subj, l));
+  }
+  const by=lines.filter(l=>l.kind==="by");
+  if(by.length){
+    const g=group("Any day this week");
+    by.forEach(l=>mathTask(g, subj, l, "due "+WEEKDAY[l.due].slice(0,3)));
+  }
 }
 
 /* --- the three that aren't built yet ------------------------------------ */
@@ -3373,18 +3524,20 @@ function hoursLine(c){
          (c.hours>=want ? " — clear" : "");
 }
 
-function gradebookLine(c){
-  if(!c.gradebook) return null;
+function linkLine(value, words){
+  if(!value) return null;
   URL_RE.lastIndex=0;
-  const hit=URL_RE.exec(c.gradebook);
-  if(!hit) return c.gradebook;            // "in the BJU portal" — true, just not a link
+  const hit=URL_RE.exec(value);
+  if(!hit) return value;                  // "in the BJU portal" — true, just not a link
   const a=document.createElement("a");
   a.className="link";
   a.href = /^https?:\/\//i.test(hit[0]) ? hit[0] : "https://"+hit[0];
   a.target="_blank"; a.rel="noopener noreferrer";
-  a.textContent="Open gradebook \u2192";
+  a.textContent=words+" \u2192";
   return a;
 }
+function gradebookLine(c){ return linkLine(c.gradebook, "Open gradebook"); }
+function syllabusLine(c){ return linkLine(c.syllabus, "Open syllabus"); }
 
 function courseDetail(c){
   const rows=[];
@@ -3398,6 +3551,8 @@ function courseDetail(c){
   if(c.fills)     rows.push(["Fills", c.fills.replace(/_/g," ")]);
   const gb=gradebookLine(c);
   if(gb)          rows.push([c.status==="complete" ? "Grade report" : "Gradebook", gb]);
+  const sy=syllabusLine(c);
+  if(sy)          rows.push(["Syllabus", sy]);
   if(!rows.length && !c.notes) return null;
   const box=el("div","cdetail");
   rows.forEach(([k,v])=>{
@@ -4284,13 +4439,13 @@ function renderStub(host, view){
 
 /* --- the frame ---------------------------------------------------------- */
 function renderTabs(){
-  const host=document.getElementById("viewtabs");
-  if(host.children.length===VIEWS.length){
-    VIEWS.forEach((v,i)=>host.children[i].setAttribute("aria-selected",String(v.id===currentView)));
+  const host=document.getElementById("viewtabs"), tabs=VIEWS.filter(v=>!v.hidden);
+  if(host.children.length===tabs.length){
+    tabs.forEach((v,i)=>host.children[i].setAttribute("aria-selected",String(v.id===currentView)));
     return;
   }
   host.innerHTML="";
-  VIEWS.forEach(v=>{
+  tabs.forEach(v=>{
     const b=el("button","tab",v.tab);
     b.setAttribute("role","tab");
     b.setAttribute("aria-selected",String(v.id===currentView));
@@ -4336,6 +4491,7 @@ function render(){
   else if(view.id==="reading") renderReading(host);
   else if(view.id==="wins")    renderWins(host);
   else if(view.id==="map")     renderCourseMap(host);
+  else if(view.id==="math")    renderMath(host);
   else if(view.id==="cnn10"){
     // Whatever goes wrong in here stays in here.
     try{ renderCnn10(host); }

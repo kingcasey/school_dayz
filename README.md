@@ -17,7 +17,8 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
-fixed, so tab order can change without breaking a bookmark.
+fixed, so tab order can change without breaking a bookmark. One more page,
+`#math`, has no tab: it's for whoever works through math with her (below).
 
 **Every view asks for the family sign-in first**, once per browser. Anyone
 helping on the day needs it on their device too. Signing out (at the foot of
@@ -313,10 +314,10 @@ flags, language, provider, credit_issuer, eoc, eoc_result, status,
 final_grade, hours, notes
 ```
 
-One more column is **optional**, and if you add it, it goes after `notes`:
+Two more columns are **optional**, and if you add them, they go after `notes`:
 
 ```
-gradebook
+gradebook, syllabus
 ```
 
 | column | holds |
@@ -342,12 +343,16 @@ gradebook
 | `notes` | shown when the course is tapped |
 | `gradebook` | **optional 20th column.** A link to the provider's grade report for that course. Paste a URL and the course shows a tappable *Open gradebook →* when tapped; write anything else (`ask BJU for the printout`) and it shows as plain text instead of a broken link. A course that has one says so on its closed row — **gradebook** while it's running, **grade report** once it's complete |
 
-**Leaving `gradebook` off entirely is fine.** The page checks the first 19 headings
-strictly and stops there, so the column is something to add when you get to it. If you
-do add it, it must be spelled exactly `gradebook` and sit in position 20 — a
-misspelling or a different name there is named in the banner rather than ignored.
+| `syllabus` | **optional 21st column.** A link to the course syllabus. Shown as *Open syllabus →* when the course is tapped, and at the top of the Math page. Same rules as `gradebook`: a URL is a link, anything else is plain text |
 
-**The published CSV is public, so anything in this column is public too.** A normal
+**Leaving `gradebook` and `syllabus` off entirely is fine.** The page checks the first
+19 headings strictly and stops there, so they're something to add when you get to
+them. If you add them, they must be spelled exactly `gradebook` and `syllabus` and
+sit in positions 20 and 21 — a misspelling or a different name there is named in the
+banner rather than ignored. `syllabus` needs the `gradebook` heading in front of it,
+even if that column is empty.
+
+**The published CSV is public, so anything in these columns is public too.** A normal
 provider login page is fine. A tokenised "anyone with the link" URL would not be —
 that would hand out her grades to anyone who found the CSV.
 
@@ -503,6 +508,24 @@ It files a report only once `selected_at` is set, and never twice:
 filed work sample, never writes to `Log/`, `Student Log/` or the reading list,
 never makes a folder and never deletes anything. It prints one line saying what
 it filed, for the day's log.
+
+## Math
+
+`#math` is the page for whoever sits with her for math — bookmark it on
+Dad's phone. It has no tab (a seventh wouldn't fit across a phone); the Math
+row on Today and on the Plan view ends with *Math page →* instead, and
+`#math` in any plan cell links to it. He signs in with the family login like
+anyone helping.
+
+Nothing is kept for it anywhere but the Sheet:
+
+- **The course** — this year's math course from the `map` tab, with
+  *Open syllabus →* and *Open gradebook →* from its `syllabus` and
+  `gradebook` columns. No syllabus link yet, and it says where to paste one.
+- **The week** — the plan tab's row whose name starts with **Math**, that
+  week's cell grouped the way each line starts: *Every day it runs*, each
+  day's pinned lines, then *Any day this week* for `By Fri` lines. Arrows and
+  *This week* move between weeks.
 
 ## When a tab is missing or empty
 
