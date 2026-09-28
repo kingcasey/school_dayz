@@ -2423,15 +2423,16 @@ function pagesOn(bookKey, X){
   return {on:on, before:before, last:last};
 }
 
-/* A page of null clears the day. */
-async function savePage(bookKey, X, page){
+/* A page of null clears the day. The title goes beside the key, so the day
+   can be read back by name (scripts/export-day.mjs). */
+async function savePage(bookKey, X, page, title){
   const c=await client();
   if(page==null){
     const {error}=await c.from("reading_page").delete().eq("book_key",bookKey).eq("day_date",X);
     if(error) throw error;
   } else {
     const {error}=await c.from("reading_page")
-      .upsert({book_key:bookKey, day_date:X, page:page}, {onConflict:"book_key,day_date"});
+      .upsert({book_key:bookKey, day_date:X, page:page, book_title:title||null}, {onConflict:"book_key,day_date"});
     if(error) throw error;
   }
   pages.rows=pages.rows.filter(r=>!(r.book_key===bookKey && r.day_date===X));
@@ -2652,7 +2653,10 @@ function checkbox(t, target, host, syncBlock, writable){
     box.disabled=true;
     said(host, "");
     try{
-      t.row=await saveState(t, on ? {done_at:new Date().toISOString(), done_on:t.onDay, skipped:false}
+      // The words go with a tick, so a day's ticks can be read back as written
+      // (scripts/export-day.mjs); the key alone can't give them back.
+      t.row=await saveState(t, on ? {done_at:new Date().toISOString(), done_on:t.onDay, skipped:false,
+                                     item_text:t.detail||t.subject}
                                   : {done_at:null, done_on:null});
       t.done=on; t.skipped=false;
       if(wasSkipped) render();
@@ -2751,7 +2755,7 @@ function pageEditor(t, book, pg){
   const close=()=>{ ui.page=null; ui.pageText=""; render(); };
   const run=async (btn, busy, page)=>{
     busyButton(btn, msg, busy);
-    try{ await savePage(book.key, t.onDay, page); close(); }
+    try{ await savePage(book.key, t.onDay, page, book.title); close(); }
     catch(err){
       btn.disabled=false;
       msg.className="said needs";
@@ -4892,9 +4896,11 @@ function planTally(P, u){
 
 /* Only the tick is sent; the row is keyed by the item. Like Today's boxes, it
    changes on screen at once and changes back if the save doesn't take. */
-async function savePlanTick(P, key, week, on){
+async function savePlanTick(P, key, week, on, text){
   const before=P.prog[key] || null;
   const row={plan:P.id, week:week, item_key:key, checked_at:on ? new Date().toISOString() : null};
+  // The words go with a tick, as on Today: the hash can't give them back.
+  if(on && text) row.item_text=text;
   P.prog[key]=P.pending[key]=row;
   try{
     const c=await client();
@@ -4918,7 +4924,9 @@ async function planTick(P, box){
   const root=box.closest(".lp");
   const same=[...root.querySelectorAll('input.check[data-key="'+key+'"]')];
   same.forEach(b=>{ b.checked=on; b.disabled=true; const li=b.closest("li"); if(li) said(li, ""); });
-  const saving=savePlanTick(P, key, week, on);   // records the tick before its first await
+  const words=box.parentNode.querySelector(":scope > .etext");
+  const text=words ? words.textContent.replace(/\s+/g," ").trim() : "";
+  const saving=savePlanTick(P, key, week, on, text);   // records the tick before its first await
   applyPlanMarks(P, root);
   try{
     await saving;

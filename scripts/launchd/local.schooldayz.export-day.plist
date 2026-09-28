@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Runs scripts/export-day.mjs Monday to Friday at 3:15 PM, writing that day's
+  ticks into Planning/App Export/. If the Mac is asleep then, launchd runs it
+  on waking, and before 3 PM the script exports the school day it missed.
+  Install, stop and uninstall: see "Exporting a day into the vault" in the README.
+  Log: ~/Library/Logs/school-dayz-export.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.schooldayz.export-day</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/caseyking/Repos/school_dayz/scripts/export-day.mjs</string>
+    <string>--scheduled</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/caseyking/Repos/school_dayz/scripts</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>15</integer></dict>
+  </array>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>/Users/caseyking/Library/Logs/school-dayz-export.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/caseyking/Library/Logs/school-dayz-export.log</string>
+</dict>
+</plist>

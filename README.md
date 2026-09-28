@@ -658,6 +658,58 @@ opening on this week. The differences are all in the file:
 The watcher uploads this file too — the two plans, and nothing else in the
 vault.
 
+## Exporting a day into the vault
+
+`scripts/export-day.mjs` writes a school day's ticks into the vault, for
+writing the daily log from: `Planning/App Export/YYYY-MM-DD.md`, with
+frontmatter (`date`, `generated_at`) and a section per subject — each ticked
+item as it read, and when. #ela and #history ticks come under *ELA (lesson
+plan)* and *U.S. History (lesson plan)*; pages read under *Pages read*; CNN 10
+says only whether a daily entry was written or a report turned in, never what
+they say. A day with nothing ticked still gets its file, saying so.
+
+It reads only the tables that hold ticks — `day_state` (with `day_extra` for a
+one-off's words), `plan_progress`, `reading_page`, and just the dates of the
+two CNN 10 tables — and writes only in `Planning/App Export/`. It never reads
+the vault.
+
+```bash
+node scripts/export-day.mjs
+```
+
+That's today (New York time). `--date 2026-09-28` for one day, `--from
+2026-09-01 --to 2026-09-25` for a run of them. An export that exists is left
+alone unless `--force` is given. Something ticked and then unticked has no
+tick left, so an export is the tables as they stand when it runs.
+
+The item's words come from `item_text` (and a book's from `book_title`),
+which the page sends with each tick since `supabase/item_text.sql`. Anything
+ticked before then shows its key instead.
+
+It runs Monday to Friday at 3:15 PM as a launchd agent. If the Mac is asleep
+then, it runs on waking, and before 3 PM it exports the school day it missed
+rather than the new one. To install it:
+
+```bash
+cp scripts/launchd/local.schooldayz.export-day.plist ~/Library/LaunchAgents/
+```
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.schooldayz.export-day.plist
+```
+
+Its log is `~/Library/Logs/school-dayz-export.log`. To stop it:
+
+```bash
+launchctl bootout gui/$(id -u)/local.schooldayz.export-day
+```
+
+To uninstall it, stop it as above, then:
+
+```bash
+rm ~/Library/LaunchAgents/local.schooldayz.export-day.plist
+```
+
 ## When a tab is missing or empty
 
 Nothing ever shows a blank screen, and a problem with one tab never takes down
