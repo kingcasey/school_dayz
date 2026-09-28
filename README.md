@@ -533,14 +533,23 @@ Nothing is kept for it anywhere but the Sheet:
 ## ELA — the literature plan
 
 `#ela` shows the year's literature lesson plan: a Markdown note in the
-homeschool vault, where it's written and where its boxes are ticked. The page
-only displays it — the boxes are drawn, not clickable — and the note never
-goes in this repo, because everything here is public.
+homeschool vault, where it's written, and the note never goes in this repo,
+because everything here is public. **It's ticked here, not in the vault**:
+every `- [ ]` line is a box on the page, saved to Supabase's `plan_progress`
+the moment it's tapped, the same way Today's boxes are. The note's own `[ ]`
+and `[x]` are ignored — the table is the only record of what's been covered.
+
+A tick belongs to an item by a hash of its week ("Week 9") and its words, so
+editing anything else in the note leaves it in place. Reword an item and it
+starts unticked; a line shown twice (a check-in, in its week and in its own
+section) is one item, and ticks in both places.
 
 **It's for a parent, and Supabase enforces that.** The tab shows only when the
 signed-in account has `app_metadata.role = "parent"`, but hiding a tab
 protects nothing: the plan sits in a private Storage bucket that only that
-role can read. Any other account opening `#ela` gets *Parents only*.
+role can read, and the ticks are in a table only that role can read or
+write. Any other account opening `#ela` gets *Parents only*. Her own ticks, in
+`day_state`, are nothing to do with it.
 
 What it shows:
 
@@ -554,20 +563,24 @@ What it shows:
 - **The whole plan** — each unit folded, with how many of its boxes are
   ticked.
 
-A week is done when `- [x] **Week done**` is ticked under its heading. The
+A week is done when its **Week done** box is ticked — that's what puts
+*Done* on its heading and counts it in the table. The
 instruction weeks are `ELA_TERMS` at the top of `index.html` — change them
 each August, along with `ELA_FILE` (and `OBJECT` in the script) for the new
 year's note.
 
-It reads the plan fresh every time the view opens and every minute while it's
-open, with the browser cache told to stay out of it. Nothing is kept on the
-device, so offline there's nothing to show.
+It reads the plan and the ticks fresh every time the view opens, whenever
+the page comes back into focus, and every minute while it's open, with the
+browser cache told to stay out of the plan. Nothing is kept on the device, so
+offline there's nothing to show. If the ticks can't be read, the plan still
+shows, with its boxes locked.
 
 ### Setting it up
 
 1. Run `supabase/literature.sql` in the SQL editor: a private `literature`
-   bucket, and one read policy on it for role `parent`. It changes no
-   existing table or policy.
+   bucket, and one read policy on it for role `parent`. Then
+   `supabase/plan_progress.sql`: the ticks table, readable and writable only
+   by role `parent`. Neither changes an existing table or policy.
 2. Give the parent account the role — in the SQL editor, with that account's
    email:
 

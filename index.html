@@ -201,8 +201,9 @@
 
   .foot{margin-top:1.6rem;font-size:.8rem;color:var(--ink-soft)}
 
-  /* ELA: the literature plan, as written in the vault. Its boxes are for
-     show — they're ticked in the vault — so they're drawn, not live. */
+  /* ELA: the literature plan, as written in the vault, ticked here. Its boxes
+     are Today's .check, and a ticked line is struck through and faded the
+     same way — the words only, not the box. */
   .ela .emd{font-size:.94rem;line-height:1.45}
   .ela .emd>*+*{margin-top:.55rem}
   .ela .emd ul,.ela .emd ol{padding-left:1.2rem}
@@ -214,22 +215,17 @@
   .ela .emd hr{display:none}
   .ela .emd a{color:var(--navy)}
   .ela ul.tasks{list-style:none;padding-left:0}
-  .ela li.task{position:relative;padding:.35rem 0 .35rem 1.6rem;margin:0;
-        border-top:1px dotted var(--rule)}
+  .ela li.task{position:relative;padding:.5rem 0 .5rem 2.2rem;margin:0;
+        border-top:1px dotted var(--rule);min-height:2.4rem}
   .ela li.task>p{margin:0}
-  .ela li.task input[type=checkbox]{appearance:none;-webkit-appearance:none;
-        position:absolute;left:0;top:.53rem;width:1rem;height:1rem;margin:0;
-        border:1.5px solid var(--ink-soft);border-radius:.15rem;background:transparent;
-        opacity:1;cursor:default}
-  .ela li.task input[type=checkbox]:checked{background:var(--plum);border-color:var(--plum)}
-  .ela li.task input[type=checkbox]:checked::after{content:"";position:absolute;left:.26rem;
-        top:.06rem;width:.24rem;height:.5rem;border:solid var(--cream);border-width:0 2px 2px 0;
-        transform:rotate(45deg)}
-  .ela li.task.done{color:var(--ink-soft);text-decoration:line-through;
-        text-decoration-color:rgba(35,26,18,.45)}
+  .ela li.task .check{position:absolute;left:0;top:.45rem;margin:0}
+  .ela li.task .check:disabled:not([data-key]){opacity:.35}
+  .ela li.task.done .etext{text-decoration:line-through;opacity:.42}
+  .ela li.task .said{margin-top:.2rem}
   .edone{display:inline-block;margin-left:.45rem;padding:.06rem .4rem;border-radius:.15rem;
         background:var(--plum);color:var(--cream);font-size:.66rem;font-weight:600;
         letter-spacing:.08em;text-transform:uppercase;vertical-align:.18em;white-space:nowrap}
+  .edone[hidden]{display:none}
 
   .ewk{margin-top:1rem;padding-left:.85rem;border-left:4px solid var(--ochre)}
   .ekick{font-size:.82rem;color:var(--ink-soft)}
@@ -550,8 +546,9 @@
     body.ela-printing .ela>:not(.ewk),body.ela-printing .eprint{display:none}
     .ewk{border-left:0;padding-left:0}
     .ela li.task{break-inside:avoid}
-    .ela li.task input[type=checkbox]{border-color:#000}
-    .ela li.task input[type=checkbox]:checked{background:#000;border-color:#000}
+    .ela .check{display:block;border-color:#000}
+    .ela .check:checked{background:#000;border-color:#000}
+    .ela .said{display:none}
     .ela .emd blockquote{background:none;border-left-color:#000}
     .edone{background:none;color:#000;border:1px solid #000}
   }
@@ -635,8 +632,9 @@ const MD_LIB     = "https://cdn.jsdelivr.net/npm/marked@18.0.14/+esm";      // #
 const PURIFY_LIB = "https://cdn.jsdelivr.net/npm/dompurify@3.4.16/+esm";    // and what it may contain
 
 /* --- the literature plan (#ela) -------------------------------------------
-   Written and ticked in the vault; scripts/publish-literature.mjs copies it
-   into this private bucket, which only a parent account can read.
+   Written in the vault; scripts/publish-literature.mjs copies it into this
+   private bucket, which only a parent account can read. It's ticked on the
+   page, into plan_progress (supabase/plan_progress.sql).
    ELA_TERMS is the school year's instruction weeks — change it each August.
    A term's weeks run on from its first Monday, a week at a time, stepping
    over any Monday listed as a break. The gap between terms is a break too. */
@@ -4565,25 +4563,35 @@ window.addEventListener("afterprint", ()=>{
 
 /* ==========================================================================
    ELA — the literature plan, for a parent.
-   The plan is a Markdown file in the vault; the vault is where it is written
-   and where its boxes are ticked. This view only displays it, read fresh from
-   the private `literature` bucket each time the view is opened and every
-   minute while it stays open. Nothing is kept on the device: an edit in the
-   vault is never hidden behind a saved copy.
+   The plan's text is a Markdown file in the vault, where it is written; this
+   view reads it fresh from the private `literature` bucket. What's been
+   covered is ticked here and kept in Supabase's plan_progress — the file's
+   own [ ] and [x] are ignored, and the table is the only record. Both are
+   read when the view opens, when the page comes back into focus, and every
+   minute while it's open. Nothing is kept on the device.
 
    What the view relies on in the file, and nothing more:
    * "# Unit N — Title (Weeks a–b)" or "(Week a)" starts a unit;
    * "### Week N — …" is a week; in a one-week unit "### Questions" is that week;
-   * "- [x] **Week done**" under a week's heading marks it complete;
+   * a "- [ ] **Week done**" line under a week's heading, ticked, marks it complete;
    * "### Check-in: Title (Weeks a–b)" holds "- [ ] **Wk N:** …" lines, one per
      week, or, covering one week, is that week's check-in as a whole.
    Anything else is shown as written.
+
+   Every "- [ ]" line is an item, known by a hash of "Week N" and its text —
+   so a tick survives any edit elsewhere in the file, and rewording an item
+   starts it unticked. The week is the number, not the heading: the one-week
+   units all head theirs "Questions", and a heading's typo shouldn't reset a
+   whole week.
    ========================================================================== */
-const ela = {text:null, state:"idle", error:null, at:null, busy:null};
+const ela = {text:null, state:"idle", error:null, at:null, busy:null,
+             prog:{}, progState:"idle", progError:null};
+const elaPending = {};           // ticks on their way, laid over any read that lands first
 let elaLib = null;               // {marked, purify}, once imported
 let elaLibImport = null;
 let elaWeek = null;              // the week on screen, by number
 let elaModelFor = null, elaModelCache = null;
+let elaWritable = false;         // whether the boxes being drawn can be ticked
 const elaOpen = new Set();       // units opened in "The whole plan", by number
 let lastShown = null;            // the view drawn last, so arriving at ELA can reread
 
@@ -4598,51 +4606,85 @@ function libsForEla(){
   return elaLibImport;
 }
 
-/* Read by hand rather than with the storage client's download, so the request
-   can say no-store: the browser's cache must never answer for the bucket. */
+/* The plan and its ticks, side by side. Either can fail without the other:
+   no plan, nothing to show; no ticks, the plan shows with its boxes locked.
+   The plan is read by hand rather than with the storage client's download,
+   so the request can say no-store: the browser's cache must never answer for
+   the bucket. */
 function loadEla(){
   if(auth.state!=="in" || auth.role!=="parent") return Promise.resolve(ela);
   if(ela.busy) return ela.busy;
   if(ela.state==="idle") ela.state="loading";
   ela.busy=(async()=>{
-    try{
-      const [c]=await Promise.all([client(), libsForEla()]);
-      const {data, error}=await c.auth.getSession();
-      if(error) throw error;
-      if(!data || !data.session) throw new Error("This device isn't signed in.");
-      const url=SB_URL+"/storage/v1/object/authenticated/"+ELA_BUCKET+"/"+encodeURIComponent(ELA_FILE);
-      const r=await fetch(url, {cache:"no-store", headers:{
-        Authorization:"Bearer "+data.session.access_token, apikey:SB_KEY}});
-      if(!r.ok){
-        let msg=""; try{ const j=await r.json(); msg=j.message||j.error||""; }catch(_){}
-        const e=new Error((msg||"HTTP "+r.status)+" ("+r.status+")");
-        e.missing=/not.?found/i.test(msg) || r.status===404 || r.status===400;
-        throw e;
-      }
-      ela.text=await r.text();
-      ela.state="ok"; ela.error=null; ela.at=new Date();
-    }catch(err){
-      ela.error=err;
-      // A reread that fails leaves the last good read on screen, and says so.
-      ela.state=ela.text!=null ? "stale" : "error";
-    }finally{
-      ela.busy=null;
-    }
+    const c=await client().catch(err=>err);
+    await Promise.all([
+      (async()=>{
+        try{
+          if(c instanceof Error) throw c;
+          await libsForEla();
+          const {data, error}=await c.auth.getSession();
+          if(error) throw error;
+          if(!data || !data.session) throw new Error("This device isn't signed in.");
+          const url=SB_URL+"/storage/v1/object/authenticated/"+ELA_BUCKET+"/"+encodeURIComponent(ELA_FILE);
+          const r=await fetch(url, {cache:"no-store", headers:{
+            Authorization:"Bearer "+data.session.access_token, apikey:SB_KEY}});
+          if(!r.ok){
+            let msg=""; try{ const j=await r.json(); msg=j.message||j.error||""; }catch(_){}
+            const e=new Error((msg||"HTTP "+r.status)+" ("+r.status+")");
+            e.missing=/not.?found/i.test(msg) || r.status===404 || r.status===400;
+            throw e;
+          }
+          const text=await r.text();
+          if(text!==elaModelFor){ elaModelCache=await keyEla(buildEla(text)); elaModelFor=text; }
+          ela.text=text;
+          ela.state="ok"; ela.error=null; ela.at=new Date();
+        }catch(err){
+          ela.error=err;
+          // A reread that fails leaves the last good read on screen, and says so.
+          ela.state=ela.text!=null ? "stale" : "error";
+        }
+      })(),
+      (async()=>{
+        try{
+          if(c instanceof Error) throw c;
+          const rows=await readAll(()=>c.from("plan_progress")
+            .select("plan,week,item_key,checked_at").eq("plan","ela").order("item_key"));
+          const prog={};
+          rows.forEach(r=>{ prog[r.item_key]=r; });
+          Object.keys(elaPending).forEach(k=>{ prog[k]=elaPending[k]; });
+          ela.prog=prog; ela.progState="ok"; ela.progError=null;
+        }catch(err){
+          ela.progError=err;
+          if(ela.progState!=="ok") ela.progState="error";
+        }
+      })(),
+    ]);
+    ela.busy=null;
     return ela;
   })();
   return ela.busy;
 }
 function forgetEla(){
-  Object.assign(ela, {text:null, state:"idle", error:null, at:null});
+  Object.assign(ela, {text:null, state:"idle", error:null, at:null,
+                      prog:{}, progState:"idle", progError:null});
+  Object.keys(elaPending).forEach(k=>{ delete elaPending[k]; });
   elaModelFor=null; elaModelCache=null; elaWeek=null; elaOpen.clear();
 }
+
+/* Coming back to the page — another app, another tab — reads both again. */
+function elaRefocus(){
+  if(document.hidden || currentView!=="ela" || auth.state!=="in" || auth.role!=="parent") return;
+  loadEla().then(()=>{ if(currentView==="ela") render(); });
+}
+window.addEventListener("focus", elaRefocus);
+document.addEventListener("visibilitychange", elaRefocus);
 
 function elaFoot(){
   if(auth.role!=="parent" || !ela.at) return "";
   const t=ela.at.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
-  return ela.state==="stale"
-    ? "Couldn't reread the plan — showing the copy read at "+t+"."
-    : "Read from the vault's copy at "+t+" · rereads every minute while open.";
+  if(ela.state==="stale") return "Couldn't reread the plan — showing the copy read at "+t+".";
+  if(ela.progState==="ok" && ela.progError) return "Couldn't reread the ticks — showing the ones read earlier.";
+  return "Plan read from the vault's copy at "+t+" · ticks saved to your account · updates on its own.";
 }
 
 /* --- the school year's weeks -------------------------------------------- */
@@ -4667,8 +4709,7 @@ function elaThisWeek(cal){
 }
 
 /* --- reading the file --------------------------------------------------- */
-const TASK_RE = /^\s*[-*+] \[([ xX])\]/;
-const DONE_RE = /^\s*[-*+] \[[xX]\] \*\*Week done\*\*/m;
+const TASK_RE = /^\s*[-*+] \[[ xX]\]/;
 const WK_RE   = /^\s*[-*+] \[[ xX]\] \*\*Wk (\d+)\b/;
 
 /* "(Weeks 1–4)", "(Week 9)" or ", Weeks 1–4" at the end of a heading. */
@@ -4677,17 +4718,19 @@ function weeksIn(s){
   const m=String(s).match(WEEKS_END);
   return m ? [+m[1], +(m[2]||m[1])] : null;
 }
-function tasksIn(lines){
-  let done=0, total=0;
-  lines.forEach(l=>{ const m=l.match(TASK_RE); if(m){ total++; if(m[1]!==" ") done++; } });
-  return {done, total};
-}
 function trimRule(lines){
   const out=lines.slice();
   while(out.length && /^\s*(---+)?\s*$/.test(out[out.length-1])) out.pop();
   while(out.length && /^\s*$/.test(out[0])) out.shift();
   return out;
 }
+
+/* An item's words, as they're hashed: the box's [ ] or [x] gone, spacing
+   evened out. The same line always gives the same words. */
+function itemWords(line){
+  return String(line).replace(/^\s*[-*+] \[[ xX]\]\s*/,"").replace(/\s+/g," ").trim();
+}
+function itemId(week, line){ return week+"|"+itemWords(line); }
 
 function buildEla(text){
   let lines=text.replace(/\r\n?/g,"\n").split("\n");
@@ -4735,8 +4778,9 @@ function buildEla(text){
       } else if(u) u.lines.push(l);
     });
   }
-  const weeks={};             // week number -> {unit, section, extra:[sections]}
-  const checkins=[];          // {book, range, items:[{week, line}], whole}
+  const weeks={};             // week number -> {unit, section, extra:[sections], doneId}
+  const checkins=[];          // {book, range, items:[{week, line}], whole, section}
+  const items=new Map();      // itemId -> week, every item in the plan
   units.forEach(u=>{
     u.intro=[]; u.sections=[];
     let s=null;
@@ -4747,7 +4791,8 @@ function buildEla(text){
     });
     u.intro=trimRule(u.intro);
     u.sections.forEach(s=>{ s.lines=trimRule(s.lines); });
-    u.tally=tasksIn(u.lines);
+    const first=u.range ? u.range[0] : 0;
+    u.introWeek=()=>first;
 
     const single=u.range && u.range[0]===u.range[1];
     let owner=null;           // in a one-week unit, the week the later sections belong to
@@ -4766,36 +4811,167 @@ function buildEla(text){
         checkins.push(c);
       } else s.kind=/^(big questions|before you start)$/i.test(s.head) ? "about" : "other";
 
+      // Which week each of the section's items belongs to.
       if(s.kind==="week"){
-        s.done=DONE_RE.test(s.lines.join("\n"));
-        weeks[s.week]={unit:u, section:s, extra:[]};
-        owner=single ? s.week : null;
-      } else if(s.kind==="other" && owner!=null) weeks[owner].extra.push(s);
+        const wk=s.week; s.weekFor=()=>wk;
+        weeks[wk]={unit:u, section:s, extra:[], doneId:null};
+        owner=single ? wk : null;
+      } else if(s.kind==="checkin"){
+        const dflt=weeksIn(s.head) ? weeksIn(s.head)[0] : first;
+        s.weekFor=l=>{ const w=String(l).match(WK_RE); return w ? +w[1] : dflt; };
+      } else {
+        const wk=owner!=null ? owner : first; s.weekFor=()=>wk;
+        if(s.kind==="other" && owner!=null) weeks[owner].extra.push(s);
+      }
     });
+
+    // Every item in the unit, once — its count and the week-done lines.
+    u.ids=new Set();
+    const note=(l, week)=>{
+      if(!TASK_RE.test(l)) return;
+      const id=itemId(week, l);
+      u.ids.add(id); items.set(id, week);
+      if(/^\*\*Week done\*\*$/i.test(itemWords(l)) && weeks[week] && !weeks[week].doneId
+         && weeks[week].unit===u) weeks[week].doneId=id;
+    };
+    u.intro.forEach(l=>note(l, first));
+    u.sections.forEach(s=>s.lines.forEach(l=>note(l, s.weekFor(l))));
   });
-  return {title, howto, glance, units, weeks, checkins};
+  return {title, howto, glance, units, weeks, checkins, items, keyOf:new Map()};
 }
 
-function elaModel(){
-  if(elaModelFor!==ela.text){ elaModelCache=buildEla(ela.text); elaModelFor=ela.text; }
-  return elaModelCache;
+/* The hash for each item: sha-256 of "Week N", a newline, and its words. */
+async function sha256hex(s){
+  const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function keyEla(model){
+  await Promise.all([...model.items].map(async ([id, week])=>{
+    model.keyOf.set(id, await sha256hex("Week "+week+"\n"+id.slice(id.indexOf("|")+1)));
+  }));
+  return model;
+}
+
+/* --- what's ticked ------------------------------------------------------ */
+function elaOn(key){ const r=key && ela.prog[key]; return !!(r && r.checked_at); }
+function elaIdOn(model, id){ return elaOn(model.keyOf.get(id)); }
+function elaWeekDone(model, n){ const w=model.weeks[n]; return !!(w && w.doneId && elaIdOn(model, w.doneId)); }
+function elaTally(model, u){
+  let done=0; u.ids.forEach(id=>{ if(elaIdOn(model, id)) done++; });
+  return {done:done, total:u.ids.size};
+}
+
+/* Only the tick is sent; the row is keyed by the item. Like Today's boxes, it
+   changes on screen at once and changes back if the save doesn't take. */
+async function saveElaTick(key, week, on){
+  const before=ela.prog[key] || null;
+  const row={plan:"ela", week:week, item_key:key, checked_at:on ? new Date().toISOString() : null};
+  ela.prog[key]=elaPending[key]=row;
+  try{
+    const c=await client();
+    const {data, error}=await c.from("plan_progress")
+      .upsert(row, {onConflict:"plan,item_key"}).select().single();
+    if(error) throw error;
+    ela.prog[key]=data;
+    return data;
+  }catch(err){
+    if(before) ela.prog[key]=before; else delete ela.prog[key];
+    throw err;
+  }finally{
+    delete elaPending[key];
+  }
+}
+
+/* One box, ticked or unticked. A line shown twice — a check-in in its week
+   and in its own section — is one item, so every box for it follows. */
+async function elaTick(box){
+  const key=box.dataset.key, week=+box.dataset.week, on=box.checked;
+  const root=box.closest(".ela");
+  const same=[...root.querySelectorAll('input.check[data-key="'+key+'"]')];
+  same.forEach(b=>{ b.checked=on; b.disabled=true; const li=b.closest("li"); if(li) said(li, ""); });
+  const saving=saveElaTick(key, week, on);   // records the tick before its first await
+  applyElaMarks(root);
+  try{
+    await saving;
+  }catch(err){
+    const li=box.closest("li");
+    if(li) said(li, "Didn't save — "+plainError(err)+".");
+  }finally{
+    same.forEach(b=>{ b.disabled=false; });
+    applyElaMarks(root);
+  }
+}
+
+/* Everything drawn from the ticks, brought up to date where it stands — the
+   boxes, Done on the week headings, the year at a glance, each unit's count
+   and the week picker — without redrawing the plan around them. */
+function applyElaMarks(root){
+  const model=elaModelCache;
+  if(!root || !model) return;
+  root.querySelectorAll("input.check[data-key]").forEach(b=>{
+    const on=elaOn(b.dataset.key);
+    if(!b.disabled) b.checked=on;
+    const li=b.closest("li"); if(li) li.classList.toggle("done", b.checked);
+  });
+  root.querySelectorAll("[data-done-week]").forEach(n=>{
+    n.hidden=!elaWeekDone(model, +n.dataset.doneWeek);
+  });
+  root.querySelectorAll("tr[data-from]").forEach(tr=>{
+    const a=+tr.dataset.from, z=+tr.dataset.to, all=z-a+1;
+    let done=0; for(let k=a; k<=z; k++) if(elaWeekDone(model, k)) done++;
+    tr.classList.toggle("alldone", done===all);
+    const mark=tr.querySelector(".gmark");
+    mark.className="gmark "+(done===all ? "gdone" : "gpart");
+    mark.textContent=done===all ? " ✓" : done ? " "+done+"/"+all : "";
+  });
+  root.querySelectorAll("[data-unit]").forEach(p=>{
+    const u=model.units[+p.dataset.unit-1], t=elaTally(model, u);
+    p.querySelector(".count").textContent=t.done+"/"+t.total;
+    p.querySelector(".pbar>span").style.width=(t.total ? Math.round(100*t.done/t.total) : 0)+"%";
+    p.setAttribute("aria-label", t.done+" of "+t.total+" ticked");
+  });
+  document.querySelectorAll("#stepper .jump option[data-week]").forEach(o=>{
+    o.textContent=o.dataset.label+(elaWeekDone(model, +o.dataset.week) ? " ✓" : "");
+  });
 }
 
 /* --- drawing it --------------------------------------------------------- */
-/* Markdown in, a fragment out: sanitised, links opening elsewhere, and the
-   task-list boxes marked up for show. They're disabled — ticking happens in
-   the vault, never here. */
-function mdBlock(md, cls){
-  const n=el("div","emd"+(cls?" "+cls:""));
+/* Markdown in, a fragment out: sanitised, links opening elsewhere, and each
+   task-list box made one of the page's own boxes, known by its item's hash.
+   weekFor says which week a line's item belongs to; without it (the front
+   matter) boxes stay locked. The file's [x] is ignored — elaTick and
+   applyElaMarks decide what's ticked. */
+function mdBlock(md, weekFor){
+  const n=el("div","emd");
   // breaks:true because Obsidian shows a single line break as a break.
   n.innerHTML=elaLib.purify.sanitize(elaLib.marked.parse(md, {gfm:true, breaks:true}));
-  n.querySelectorAll('input[type="checkbox"]').forEach(box=>{
-    box.disabled=true; box.tabIndex=-1;
+  const lines=md.split("\n").filter(l=>TASK_RE.test(l));
+  const boxes=[...n.querySelectorAll('input[type="checkbox"]')];
+  const model=elaModelCache;
+  boxes.forEach((box,i)=>{
+    box.className="check";
+    box.checked=false;
+    box.removeAttribute("checked");
+    // The words after the box, in a span of their own, so they can be struck
+    // through and faded without fading the box.
+    const words=el("span","etext");
+    while(box.nextSibling) words.appendChild(box.nextSibling);
+    box.after(words);
     const li=box.closest("li");
-    if(!li) return;
-    li.classList.add("task");
-    if(box.checked) li.classList.add("done");
-    if(li.parentElement) li.parentElement.classList.add("tasks");
+    if(li){ li.classList.add("task"); if(li.parentElement) li.parentElement.classList.add("tasks"); }
+
+    // The markdown's boxes and the rendered ones pair up in order; if they
+    // ever didn't, no box would be trusted with a tick.
+    const line=weekFor && boxes.length===lines.length ? lines[i] : null;
+    const week=line!=null ? weekFor(line) : null;
+    const key=line!=null ? model.keyOf.get(itemId(week, line)) : null;
+    if(key){
+      box.dataset.key=key; box.dataset.week=String(week);
+      box.disabled=!elaWritable;
+      box.setAttribute("aria-label", "Tick: "+words.textContent.trim());
+    } else {
+      box.disabled=true; box.tabIndex=-1;
+    }
   });
   n.querySelectorAll("a[href]").forEach(a=>{
     if(/^https?:/i.test(a.getAttribute("href"))){ a.target="_blank"; a.rel="noopener"; }
@@ -4810,14 +4986,18 @@ function mdInline(md, tag, cls){
   n.innerHTML=elaLib.purify.sanitize(elaLib.marked.parseInline(md, {gfm:true, breaks:true}));
   return n;
 }
-function doneChip(){ return el("span","edone","Done"); }
+function doneChip(week){
+  const c=el("span","edone","Done");
+  c.dataset.doneWeek=String(week); c.hidden=true;
+  return c;
+}
 
 function weekHeading(s, tag){
   const h=el(tag||"h3","ewhead");
   if(s.week!=null) h.id="ela-w"+s.week;
   const label=s.kind==="week" ? "Week "+s.week+(s.sub?" — "+s.sub:" — "+s.head) : s.head;
   h.appendChild(mdInline(label));
-  if(s.done) h.appendChild(doneChip());
+  if(s.kind==="week") h.appendChild(doneChip(s.week));
   return h;
 }
 
@@ -4844,7 +5024,7 @@ function renderEla(host){
           "when the connection is back.", String(e && e.message || e)));
   }
 
-  const model=elaModel();
+  const model=elaModelCache;
   const cal=elaCalendar(), now=elaThisWeek(cal);
   if(elaWeek===null){ elaWeek=now; const w=model.weeks[now]; if(w) elaOpen.add(w.unit.num); }
   const wi=Math.max(0, cal.findIndex(w=>w.num===elaWeek)), cw=cal[wi];
@@ -4858,7 +5038,9 @@ function renderEla(host){
   cal.forEach(w=>{
     const o=document.createElement("option");
     o.value=String(w.num);
-    o.textContent="Week "+w.num+" · "+shortDate(w.monday)+(model.weeks[w.num]&&model.weeks[w.num].section.done?" ✓":"");
+    o.dataset.week=String(w.num);
+    o.dataset.label="Week "+w.num+" · "+shortDate(w.monday);
+    o.textContent=o.dataset.label;
     if(w.num===cw.num) o.selected=true;
     pick.appendChild(o);
   });
@@ -4870,15 +5052,32 @@ function renderEla(host){
     makeStep("›","Show the next week", wi>=cal.length-1, ()=>go(cal[wi+1].num)),
   ]);
 
-  // Redraw only when the plan or the week changed, so a minute's reread
-  // doesn't fold what's open or move the page.
+  // Redraw only when the plan, the week or whether ticking works changed, so a
+  // reread doesn't fold what's open or move the page: new ticks are laid onto
+  // what's already drawn.
+  const writable=ela.progState==="ok";
+  const sig=cw.num+"|"+writable;
   const was=host.querySelector(":scope > .ela");
-  if(was && was._text===ela.text && was._week===cw.num) return;
+  if(was && was._text===ela.text && was._sig===sig){ applyElaMarks(was); return; }
   const keepY=was && was._week===cw.num ? window.scrollY : null;
   host.innerHTML="";
   const root=el("div","ela");
-  root._text=ela.text; root._week=cw.num;
+  root._text=ela.text; root._sig=sig; root._week=cw.num;
   host.appendChild(root);
+  elaWritable=writable;
+  root.addEventListener("change", ev=>{
+    const b=ev.target;
+    if(b.matches && b.matches("input.check[data-key]")) elaTick(b);
+  });
+
+  if(!writable){
+    const e=ela.progError;
+    root.appendChild(errorCard("The ticks can't be read right now, so the boxes are locked.",
+      /plan_progress|PGRST205|42P01/.test(String(e && (e.message+" "+e.code)))
+        ? "The plan_progress table isn't there yet — run supabase/plan_progress.sql."
+        : "They'll unlock on their own when Supabase answers.",
+      String(e && e.message || e || "")));
+  }
 
   // Three blocks, in phone order: the week, the year beside it, the whole
   // plan. On a wide screen the year becomes a column at the side.
@@ -4896,6 +5095,7 @@ function renderEla(host){
   plan.appendChild(el("h2","sect","The whole plan"));
   model.units.forEach(u=>plan.appendChild(elaUnit(u, cw.num)));
   root.appendChild(plan);
+  applyElaMarks(root);
   if(keepY!=null) window.scrollTo({top:keepY, behavior:"instant"});
 }
 
@@ -4911,26 +5111,27 @@ function elaWeekPanel(model, n){
   p.appendChild(kick);
   const h=el("h2","ewtitle");
   h.appendChild(mdInline(w.section.sub || w.section.head));
-  if(w.section.done) h.appendChild(doneChip());
+  h.appendChild(doneChip(n));
   p.appendChild(h);
-  p.appendChild(mdBlock(w.section.lines.join("\n")));
+  p.appendChild(mdBlock(w.section.lines.join("\n"), w.section.weekFor));
   w.extra.forEach(s=>{
     p.appendChild(mdInline(s.head, "h3", "esub"));
-    p.appendChild(mdBlock(s.lines.join("\n")));
+    p.appendChild(mdBlock(s.lines.join("\n"), s.weekFor));
   });
 
   // Check-ins for this week, whichever unit they're written under.
   const ins=model.checkins.map(c=>{
-    if(c.whole) return c.range[0]===n ? {book:c.book, md:c.section.lines.join("\n")} : null;
+    const f=c.section.weekFor;
+    if(c.whole) return c.range[0]===n ? {book:c.book, md:c.section.lines.join("\n"), f:f} : null;
     const mine=c.items.filter(i=>i.week===n);
-    return mine.length ? {book:c.book, md:mine.map(i=>i.line).join("\n")} : null;
+    return mine.length ? {book:c.book, md:mine.map(i=>i.line).join("\n"), f:f} : null;
   }).filter(Boolean);
   if(ins.length){
     p.appendChild(el("h3","esub","Check-ins"));
     ins.forEach(c=>{
       const b=el("div","echeck");
       b.appendChild(mdInline(c.book, "div", "ebook"));
-      b.appendChild(mdBlock(c.md));
+      b.appendChild(mdBlock(c.md, c.f));
       p.appendChild(b);
     });
   }
@@ -4939,10 +5140,10 @@ function elaWeekPanel(model, n){
   if(w.unit.intro.length || about.length){
     const d=el("details","eabout");
     d.appendChild(el("summary",null,"About this unit"));
-    if(w.unit.intro.length) d.appendChild(mdBlock(w.unit.intro.join("\n")));
+    if(w.unit.intro.length) d.appendChild(mdBlock(w.unit.intro.join("\n"), w.unit.introWeek));
     about.forEach(s=>{
       d.appendChild(mdInline(s.head, "h3", "esub"));
-      d.appendChild(mdBlock(s.lines.join("\n")));
+      d.appendChild(mdBlock(s.lines.join("\n"), s.weekFor));
     });
     p.appendChild(d);
   }
@@ -4954,7 +5155,7 @@ function elaWeekPanel(model, n){
 }
 
 /* Year at a glance, with each row's weeks done. A row covering several weeks
-   reads "2/4" until every one of them is done. */
+   reads "2/4" until every one of them is done. applyElaMarks fills them in. */
 function elaGlance(model, n){
   const box=el("div","eglance");
   if(!model.glance) return box;
@@ -4964,11 +5165,9 @@ function elaGlance(model, n){
     const cell=tr.cells[0];
     const r=cell && weeksIn("("+cell.textContent.trim().replace(/^(\d)/,"Weeks $1")+")");
     if(!r) return;
-    let done=0; const all=r[1]-r[0]+1;
-    for(let k=r[0]; k<=r[1]; k++) if(model.weeks[k] && model.weeks[k].section.done) done++;
+    tr.dataset.from=String(r[0]); tr.dataset.to=String(r[1]);
     if(n>=r[0] && n<=r[1]) tr.classList.add("now");
-    if(done===all){ tr.classList.add("alldone"); cell.appendChild(el("span","gdone"," ✓")); }
-    else if(done) cell.appendChild(el("span","gpart"," "+done+"/"+all));
+    cell.appendChild(el("span","gmark"));
   });
   box.appendChild(md);
   return box;
@@ -4981,21 +5180,20 @@ function elaUnit(u, n){
   const s=el("summary");
   s.appendChild(mdInline(u.head, "span", "euname"));
   const prog=el("span","eprog");
-  prog.appendChild(el("span","count",u.tally.done+"/"+u.tally.total));
-  const bar=el("span","pbar"); const fill=el("span");
-  fill.style.width=(u.tally.total ? Math.round(100*u.tally.done/u.tally.total) : 0)+"%";
-  bar.appendChild(fill); prog.appendChild(bar);
-  prog.setAttribute("aria-label", u.tally.done+" of "+u.tally.total+" ticked");
+  prog.dataset.unit=String(u.num);
+  prog.appendChild(el("span","count"));
+  const bar=el("span","pbar"); bar.appendChild(el("span"));
+  prog.appendChild(bar);
   s.appendChild(prog);
   d.appendChild(s);
 
   const body=el("div","body");
-  if(u.intro.length) body.appendChild(mdBlock(u.intro.join("\n")));
+  if(u.intro.length) body.appendChild(mdBlock(u.intro.join("\n"), u.introWeek));
   u.sections.forEach(sec=>{
     const h=weekHeading(sec);
     if(sec.kind==="week" && sec.week===n) h.classList.add("now");
     body.appendChild(h);
-    if(sec.lines.length) body.appendChild(mdBlock(sec.lines.join("\n")));
+    if(sec.lines.length) body.appendChild(mdBlock(sec.lines.join("\n"), sec.weekFor));
   });
   d.appendChild(body);
   return d;
