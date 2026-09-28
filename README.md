@@ -666,7 +666,8 @@ frontmatter (`date`, `generated_at`) and a section per subject — each ticked
 item as it read, and when. #ela and #history ticks come under *ELA (lesson
 plan)* and *U.S. History (lesson plan)*; pages read under *Pages read*; CNN 10
 says only whether a daily entry was written or a report turned in, never what
-they say. A day with nothing ticked still gets its file, saying so.
+they say. A weekday with nothing ticked still gets its file, saying so; a
+weekend day gets one only if something was ticked.
 
 It reads only the tables that hold ticks — `day_state` (with `day_extra` for a
 one-off's words), `plan_progress`, `reading_page`, and just the dates of the
@@ -686,9 +687,11 @@ The item's words come from `item_text` (and a book's from `book_title`),
 which the page sends with each tick since `supabase/item_text.sql`. Anything
 ticked before then shows its key instead.
 
-It runs Monday to Friday at 3:15 PM as a launchd agent. If the Mac is asleep
-then, it runs on waking, and before 3 PM it exports the school day it missed
-rather than the new one. To install it:
+It runs Monday to Friday at 6 PM as a launchd agent, writing that day — a
+snapshot of the ticks at 6, so anything ticked later needs `--date … --force`.
+Each run also writes any weekday of the last two weeks that has no file yet,
+so if the Mac was asleep or away, the next run catches up; if it's asleep at
+6, launchd runs it on waking. To install it:
 
 ```bash
 cp scripts/launchd/local.schooldayz.export-day.plist ~/Library/LaunchAgents/

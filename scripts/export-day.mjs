@@ -6,14 +6,20 @@
      node scripts/export-day.mjs --date 2026-09-28        one day
      node scripts/export-day.mjs --from 2026-09-01 --to 2026-09-25
      node scripts/export-day.mjs --force                  replace an export that exists
-     node scripts/export-day.mjs --scheduled              what the 3:15 agent runs (below)
+     node scripts/export-day.mjs --scheduled              what the 6 PM agent runs (below)
 
    One file per day, Planning/App Export/YYYY-MM-DD.md: frontmatter, then a
    section per subject listing what was ticked that day — the item as it read,
    and the time. Something ticked and then unticked has no tick left, so it
-   isn't there; an export is the tables as they stand when it runs. A day with
-   nothing ticked still gets its file, saying so. An existing export is never
-   replaced without --force.
+   isn't there; an export is the tables as they stand when it runs. A weekday
+   with nothing ticked still gets its file, saying so; a Saturday or Sunday
+   gets one only if something was ticked (or it was asked for by --date). An
+   existing export is never replaced without --force.
+
+   --scheduled, run by the agent each weekday at 6 PM: writes every weekday of
+   the last two weeks that has no file yet, then today if it's a weekday and
+   past 6 PM. So a Mac that was asleep or away catches up on its next run,
+   and a day already written is never touched.
 
    What it reads, and nothing else:
    * day_state — Today's ticks (done_at set), counted on done_on, the school
@@ -92,17 +98,15 @@ const force = argv.includes("--force");
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 let days;
+const isWeekend = day => [0, 6].includes(new Date(day + "T12:00:00Z").getUTCDay());
+const CATCH_UP_DAYS = 14;     // how far back a scheduled run fills in missing weekdays
+const DAY_ENDS_AT   = 18;     // a scheduled run writes today only from 6 PM
+
 if(argv.includes("--scheduled")){
-  // At 3:15 on a weekday that's today. If the Mac was asleep and the run
-  // catches up later — the next morning, say — before 3 PM it's the school day
-  // just missed that wants writing, not a today that's barely begun.
-  const now = new Date(), p = nyParts(now);
-  let day = nyDate(now);
-  if(+p.hour < 15){
-    day = addDay(day, -1);
-    while([0, 6].includes(new Date(day + "T12:00:00Z").getUTCDay())) day = addDay(day, -1);
-  }
-  days = [day];
+  const now = new Date(), today = nyDate(now);
+  days = [];
+  for(let d = addDay(today, -CATCH_UP_DAYS); d < today; d = addDay(d, 1)) if(!isWeekend(d)) days.push(d);
+  if(!isWeekend(today) && +nyParts(now).hour >= DAY_ENDS_AT) days.push(today);
 } else if(opt("--from") || opt("--to")){
   const from = opt("--from"), to = opt("--to");
   if(!DAY_RE.test(from || "") || !DAY_RE.test(to || "") || from > to){
@@ -161,6 +165,16 @@ async function readDay(day){
 /* --- writing it --------------------------------------------------------- */
 function oneLine(s){ return String(s).replace(/\s+/g, " ").trim(); }
 
+/* When it was ticked. A tick counts on the school day it was ticked for,
+   which isn't always the day it was ticked — Monday's work ticked on Tuesday
+   morning, or a day ticked ahead — so then the date is given too. */
+function when(day, iso){
+  if(nyDate(new Date(iso)) === day) return nyTime(iso);
+  const d = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" })
+    .format(new Date(iso));
+  return d + ", " + nyTime(iso);
+}
+
 function render(day, r){
   const sections = new Map();       // subject -> [{at, line}]
   const add = (subject, at, line) => {
@@ -172,17 +186,17 @@ function render(day, r){
     const words = t.item_text
       || (/^x-/.test(t.item_key) ? r.extraText[t.item_key.slice(2)] : null)
       || t.item_key + " (words not recorded)";
-    add(t.subject || "One-offs", t.done_at, "- " + oneLine(words) + " — ticked " + nyTime(t.done_at));
+    add(t.subject || "One-offs", t.done_at, "- " + oneLine(words) + " — ticked " + when(day, t.done_at));
   });
   r.plan.forEach(t => {
     const words = t.item_text || "(words not recorded)";
     add((PLAN_NAMES[t.plan] || t.plan) + " (lesson plan)", t.checked_at,
-        "- Week " + t.week + ": " + oneLine(words) + " — ticked " + nyTime(t.checked_at));
+        "- Week " + t.week + ": " + oneLine(words) + " — ticked " + when(day, t.checked_at));
   });
   r.pages.forEach(p => {
     const n = p.before != null && p.page > p.before ? p.page - p.before : null;
     add("Pages read", p.updated_at, "- " + oneLine(p.book_title || p.book_key) + " — read to p. " + p.page +
-        (n ? " (" + n + (n === 1 ? " page" : " pages") + ")" : "") + " — saved " + nyTime(p.updated_at));
+        (n ? " (" + n + (n === 1 ? " page" : " pages") + ")" : "") + " — saved " + when(day, p.updated_at));
   });
   const cnnLines = [];
   if(r.cnn.daily) cnnLines.push("- Daily entry written");
@@ -220,10 +234,18 @@ for(const day of days){
   const file = path.join(EXPORT_DIR, day + ".md");
   if(!force){
     const exists = await access(file).then(() => true, () => false);
-    if(exists){ log(day + ": already exported, left as it is (--force to replace)"); continue; }
+    if(exists){
+      // A scheduled run looks at two weeks each time; saying so for every
+      // day already written would bury the log.
+      if(!argv.includes("--scheduled")) log(day + ": already exported, left as it is (--force to replace)");
+      continue;
+    }
   }
   try{
-    const body = render(day, await readDay(day));
+    const r = await readDay(day);
+    const empty = !r.ticks.length && !r.plan.length && !r.pages.length && !r.cnn.daily && !r.cnn.reports;
+    if(empty && isWeekend(day) && !opt("--date")){ log(day + ": weekend, nothing ticked, no file"); continue; }
+    const body = render(day, r);
     await writeFile(file, body, { flag: force ? "w" : "wx" });
     log(day + ": wrote " + path.basename(file));
   }catch(err){
