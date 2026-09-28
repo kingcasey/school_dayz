@@ -514,8 +514,9 @@ it filed, for the day's log.
 ## Math
 
 `#math` is the page for whoever sits with her for math — bookmark it on
-Dad's phone. It has no tab (a seventh wouldn't fit across a phone); the Math
-row on Today and on the Plan view ends with *Math page →* instead, and
+Dad's phone. It has no tab on her account (a seventh wouldn't fit across a
+phone); a parent's account shows it as a tab, beside ELA. Either way, the Math
+row on Today and on the Plan view ends with *Math page →*, and
 `#math` in any plan cell links to it. He signs in with the family login like
 anyone helping.
 

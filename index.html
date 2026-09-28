@@ -54,9 +54,9 @@
   nav{position:sticky;top:0;z-index:10;background:var(--cream);padding:.85rem 0 .6rem;
       margin-top:1.1rem;border-bottom:1px solid var(--rule)}
   .tabs{display:flex;gap:.3rem}
-  /* A parent's row has ELA as a seventh tab: closer together, and on a phone
-     narrower still it scrolls sideways within itself, never the page. */
-  .tabs.many{gap:0;overflow-x:auto;scrollbar-width:none}
+  /* A parent's row adds Math and ELA: closer together, and where it still
+     doesn't fit it scrolls sideways within itself, never the page. */
+  .tabs.many{gap:0;overflow-x:auto;scrollbar-width:none;position:relative}
   .tabs.many::-webkit-scrollbar{display:none}
   .tab{flex:1;font-family:inherit;font-size:.82rem;font-weight:600;padding:.55rem .1rem;
        background:transparent;color:var(--ink-soft);border:1.5px solid transparent;
@@ -469,6 +469,19 @@
   .gtotal th,.gtotal td{background:var(--cream-deep);font-weight:800}
   .gtot{text-align:right}
 
+  /* ELA on a wide screen: the week and the whole plan in a reading column,
+     the year at a glance in a column beside them that stays in view. Screen
+     only — a printed week is the phone layout. */
+  @media screen and (min-width:900px){
+    .wrap:has(.ela){max-width:74rem}
+    .ela{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,25rem);column-gap:3rem;
+         grid-template-areas:"week side" "plan side";align-items:start}
+    .ela>.ewk{grid-area:week}
+    .ela>.eplan{grid-area:plan}
+    .ela>.eside{grid-area:side;position:sticky;top:4.6rem;max-height:calc(100vh - 5.2rem);
+         overflow-y:auto;scrollbar-width:thin;padding-bottom:1rem}
+    .ela>.eside .sect:first-child{margin-top:1rem}
+  }
   @media (min-width:900px){
     .wrap:has(.cmap){max-width:74rem}
     /* Planning, not checking: the gaps and the grid come before the years. */
@@ -643,7 +656,8 @@ const ELA_TERMS  = [
    sheet tab, which is what needs:null says.
    Math has no tab of its own: it is the page for whoever works through math
    with her, bookmarked as #math and linked from the Math row on Today and
-   the plan. A seventh tab wouldn't fit across a phone.
+   the plan. A seventh tab wouldn't fit across her phone; a parent's account
+   gets it as a tab anyway (parentTab), in a row that scrolls sideways.
    ELA is the literature plan, for a parent: its tab shows only to an account
    whose app_metadata.role is "parent", and Supabase is what actually keeps
    the plan from anyone else — hiding the tab protects nothing. */
@@ -654,7 +668,7 @@ const VIEWS = [
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
   {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
-  {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true},
+  {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true, parentTab:true},
   {id:"ela",     tab:"ELA",     title:"Literature",      needs:null, parent:true},
 ];
 
@@ -4866,16 +4880,22 @@ function renderEla(host){
   root._text=ela.text; root._week=cw.num;
   host.appendChild(root);
 
+  // Three blocks, in phone order: the week, the year beside it, the whole
+  // plan. On a wide screen the year becomes a column at the side.
   root.appendChild(elaWeekPanel(model, cw.num));
-  root.appendChild(elaGlance(model, cw.num));
+  const side=el("div","eside");
+  side.appendChild(elaGlance(model, cw.num));
   if(model.howto){
     const d=el("details","eabout");
     d.appendChild(el("summary",null,"How to use this plan"));
     d.appendChild(mdBlock(model.howto));
-    root.appendChild(d);
+    side.appendChild(d);
   }
-  root.appendChild(el("h2","sect","The whole plan"));
-  model.units.forEach(u=>root.appendChild(elaUnit(u, cw.num)));
+  root.appendChild(side);
+  const plan=el("div","eplan");
+  plan.appendChild(el("h2","sect","The whole plan"));
+  model.units.forEach(u=>plan.appendChild(elaUnit(u, cw.num)));
+  root.appendChild(plan);
   if(keepY!=null) window.scrollTo({top:keepY, behavior:"instant"});
 }
 
@@ -4996,9 +5016,19 @@ function renderStub(host, view){
 /* --- the frame ---------------------------------------------------------- */
 function renderTabs(){
   const host=document.getElementById("viewtabs"),
-        tabs=VIEWS.filter(v=>!v.hidden && (!v.parent || auth.role==="parent"));
+        parent=auth.role==="parent",
+        tabs=VIEWS.filter(v=>(!v.hidden || (v.parentTab && parent)) && (!v.parent || parent));
+  // In a row that scrolls sideways, keep the current tab in view.
+  const reveal=()=>{
+    const on=host.querySelector('[aria-selected="true"]');
+    if(!on || host.scrollWidth<=host.clientWidth) return;
+    if(on.offsetLeft<host.scrollLeft) host.scrollLeft=on.offsetLeft;
+    else if(on.offsetLeft+on.offsetWidth>host.scrollLeft+host.clientWidth)
+      host.scrollLeft=on.offsetLeft+on.offsetWidth-host.clientWidth;
+  };
   if(host.children.length===tabs.length){
     tabs.forEach((v,i)=>host.children[i].setAttribute("aria-selected",String(v.id===currentView)));
+    reveal();
     return;
   }
   host.innerHTML="";
@@ -5015,6 +5045,7 @@ function renderTabs(){
     });
     host.appendChild(b);
   });
+  reveal();
 }
 
 function render(){
