@@ -1,6 +1,6 @@
--- Ticks on the literature plan (#ela) — what a parent has covered.
+-- Ticks on the lesson plans (#ela, #history) — what a parent has covered.
 --
--- The plan's text still comes from the vault, through the private
+-- A plan's text still comes from the vault, through the private
 -- `literature` bucket (literature.sql). Its [ ] and [x] are ignored now: this
 -- table is the only record of what's been ticked.
 --
@@ -11,7 +11,7 @@
 -- checked_at null, the way day_state keeps done_at null; an item with no row
 -- reads as not ticked.
 create table plan_progress (
-  plan       text not null,          -- 'ela' for the literature plan
+  plan       text not null,          -- 'ela' (literature) or 'history' (U.S. History)
   week       int  not null,          -- the item's week, for reading rows in the dashboard
   item_key   text not null,          -- sha-256 of "Week N", a newline, and the item's text
   checked_at timestamptz,            -- null = unticked

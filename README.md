@@ -15,12 +15,13 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
 | **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
 | **ELA** — the year's literature plan, parent only | the vault's plan, via a private Supabase bucket | built |
+| **History** — the year's U.S. History plan, parent only | the same, a second file | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
-`#ela` has a tab only for a parent's account (below).
+`#ela` and `#history` have tabs only for a parent's account (below).
 
 **Every view asks for the family sign-in first**, once per browser. Anyone
 helping on the day needs it on their device too. Signing out (at the foot of
@@ -565,9 +566,9 @@ What it shows:
 
 A week is done when its **Week done** box is ticked — that's what puts
 *Done* on its heading and counts it in the table. The
-instruction weeks are `ELA_TERMS` at the top of `index.html` — change them
-each August, along with `ELA_FILE` (and `OBJECT` in the script) for the new
-year's note.
+instruction weeks are `SCHOOL_TERMS` at the top of `index.html` — change
+them each August, along with `LESSON_FILES` (and `FILES` in the script) for
+the new year's notes.
 
 It reads the plan and the ticks fresh every time the view opens, whenever
 the page comes back into focus, and every minute while it's open, with the
@@ -598,10 +599,12 @@ shows, with its boxes locked.
 
 ### Publishing from the vault
 
-`scripts/publish-literature.mjs` watches the one note and uploads it to the
-bucket a few seconds after it stops changing (iCloud writes in bursts), and
-once when it starts. It looks at that one path and nothing else in the vault:
-it never lists a folder, never opens another note, never writes there.
+`scripts/publish-literature.mjs` watches the two plans (literature and U.S.
+History) and uploads each to the bucket a few seconds after it stops changing
+(iCloud writes in bursts), and both once when it starts. It looks at those two
+paths and nothing else in the vault: it never lists a folder, never opens
+another note, never writes there. After changing its list of files, restart
+it: `launchctl kickstart -k gui/$(id -u)/local.schooldayz.publish-literature`.
 
 By hand, once: `node scripts/publish-literature.mjs --once`
 
@@ -636,6 +639,24 @@ rm ~/Library/LaunchAgents/local.schooldayz.publish-literature.plist
 If the log says macOS is blocking iCloud Drive, give `/opt/homebrew/bin/node`
 Full Disk Access (System Settings › Privacy & Security), then stop and
 bootstrap it again.
+
+## History — the U.S. History plan
+
+`#history` is the same view as ELA, for the year's U.S. History lesson plan —
+one module draws both, and everything above applies: parent only, read from
+the same private bucket, ticked into `plan_progress` (with `plan = 'history'`),
+opening on this week. The differences are all in the file:
+
+- the plan covers weeks 5–34, so the week picker offers only those, and
+  before week 5 or after week 34 it opens on the nearest;
+- `# Week 34 — Year-end project` is a week on its own, not inside a unit, and
+  `# Weeks 35–36 — Buffer` is shown as written;
+- *Field trips at a glance* sits with *Year at a glance*, open, beside the
+  week on a wide screen; Trip lines carry a small map pin;
+- *A note on …* sections go in *About this unit*, with *Big questions*.
+
+The watcher uploads this file too — the two plans, and nothing else in the
+vault.
 
 ## When a tab is missing or empty
 

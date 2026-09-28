@@ -1,8 +1,8 @@
--- The literature plan — the #ela view, for the parent only.
+-- The lesson plans — the #ela and #history views, for the parent only.
 --
--- The plan itself never goes in this repo (everything here is public). It
--- lives in the Obsidian vault, and scripts/publish-literature.mjs copies that
--- one file into the private bucket below whenever it changes.
+-- The plans themselves never go in this repo (everything here is public).
+-- They live in the Obsidian vault, and scripts/publish-literature.mjs copies
+-- those two files into the private bucket below whenever they change.
 --
 -- Run once in the Supabase SQL editor. Nothing here touches an existing table
 -- or policy: it is one new bucket and one new policy on storage.objects,
