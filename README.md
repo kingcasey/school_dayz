@@ -9,7 +9,7 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | view | reads | state |
 |---|---|---|
 | **Today** (opens here) | `plan` tab, plus what's been done from Supabase | built |
-| **Plan** — the week at a glance | `plan` tab | built |
+| **Plan** — the week at a glance | `plan` tab | built · no tab since 2026-09-28; `#plan` still opens it |
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
@@ -21,7 +21,9 @@ Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
-`#ela` and `#history` have tabs only for a parent's account (below).
+`#ela` and `#history` have tabs only for a parent's account (below): a
+parent sees a second, smaller row of tabs, *Teaching* — Math, ELA, History —
+under hers, which stays as it is.
 
 **Every view asks for the family sign-in first**, once per browser. Anyone
 helping on the day needs it on their device too. Signing out (at the foot of
@@ -516,7 +518,8 @@ it filed, for the day's log.
 
 `#math` is the page for whoever sits with her for math — bookmark it on
 Dad's phone. It has no tab on her account (a seventh wouldn't fit across a
-phone); a parent's account shows it as a tab, beside ELA. Either way, the Math
+phone); a parent's account shows it in its second row of tabs, *Teaching*,
+beside ELA and History. Either way, the Math
 row on Today and on the Plan view ends with *Math page →*, and
 `#math` in any plan cell links to it. He signs in with the family login like
 anyone helping.

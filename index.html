@@ -54,10 +54,13 @@
   nav{position:sticky;top:0;z-index:10;background:var(--cream);padding:.85rem 0 .6rem;
       margin-top:1.1rem;border-bottom:1px solid var(--rule)}
   .tabs{display:flex;gap:.3rem}
-  /* A parent's row adds Math and ELA: closer together, and where it still
-     doesn't fit it scrolls sideways within itself, never the page. */
-  .tabs.many{gap:0;overflow-x:auto;scrollbar-width:none;position:relative}
-  .tabs.many::-webkit-scrollbar{display:none}
+  /* A parent's own pages — Math, ELA, History — get a second, smaller row
+     under hers, so hers stays exactly as it is and neither row is crowded. */
+  .tabs2{align-items:center;margin-top:.45rem;padding-top:.45rem;border-top:1px dotted var(--rule)}
+  .tabs2[hidden]{display:none}
+  .tabs2 .tlabel{flex:0 0 auto;font-size:.68rem;font-weight:600;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--ink-soft);margin-right:.35rem}
+  .tabs2 .tab{font-size:.78rem;padding:.4rem .1rem}
   .tab{flex:1;font-family:inherit;font-size:.82rem;font-weight:600;padding:.55rem .1rem;
        background:transparent;color:var(--ink-soft);border:1.5px solid transparent;
        border-radius:.2rem;cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
@@ -268,7 +271,7 @@
   .eprog .pbar>span{background:var(--plum)}
   .eunit .body{padding-bottom:1rem}
   .ewhead{font-size:1rem;font-weight:800;letter-spacing:-.015em;margin:1.1rem 0 .35rem;
-        scroll-margin-top:4.5rem}
+        scroll-margin-top:calc(var(--navh,4.5rem) + .5rem)}
   .ewhead.now{box-shadow:inset 3px 0 var(--ochre);padding-left:.5rem}
 
 
@@ -477,7 +480,8 @@
          grid-template-areas:"week side" "plan side";align-items:start}
     .lp>.ewk{grid-area:week}
     .lp>.eplan{grid-area:plan}
-    .lp>.eside{grid-area:side;position:sticky;top:4.6rem;max-height:calc(100vh - 5.2rem);
+    .lp>.eside{grid-area:side;position:sticky;top:calc(var(--navh,4.6rem) + .6rem);
+         max-height:calc(100vh - var(--navh,4.6rem) - 1.2rem);
          overflow-y:auto;scrollbar-width:thin;padding-bottom:1rem}
     .lp>.eside .sect:first-child{margin-top:1rem}
   }
@@ -571,18 +575,9 @@
   <div class="weekstep" id="stepper"></div>
 </header>
 
-<details class="helper" id="helper">
-  <summary>If you're helping today, read this</summary>
-  <div class="body">
-    <p>School runs <b>9:00 to 3:00</b>. The times are a guide, not a bell schedule — if something runs long, shift the rest.</p>
-    <p><b>Ochre tags</b> mean an adult sits with her. <b>Plain tags</b> mean she works alone — check in, don't hover.</p>
-    <p>A <b>ticked box is saved</b>, on every device — tick it again to undo. Anything crossed out is done.</p>
-    <p><b>Carried from Monday</b> means it's from an earlier day and still not done. A <b>due Fri</b> chip means it's hers to fit in any day before then.</p>
-  </div>
-</details>
-
 <nav>
   <div class="tabs" id="viewtabs" role="tablist"></div>
+  <div class="tabs tabs2" id="parenttabs" role="tablist" aria-label="Teaching" hidden></div>
 </nav>
 
 <div id="view" class="day"></div>
@@ -663,13 +658,16 @@ const SCHOOL_TERMS  = [
    Math has no tab of its own: it is the page for whoever works through math
    with her, bookmarked as #math and linked from the Math row on Today and
    the plan. A seventh tab wouldn't fit across her phone; a parent's account
-   gets it as a tab anyway (parentTab), in a row that scrolls sideways.
+   gets it anyway (parentTab), in the second row of tabs that only a parent
+   sees, beside ELA and History.
+   Plan (the week at a glance) is retired from the tabs, not removed: nobody
+   was using it, but #plan still opens it and the code is all still here.
    ELA and History are lesson plans, for a parent: their tabs show only to an
    account whose app_metadata.role is "parent", and Supabase is what actually keeps
    the plan from anyone else — hiding the tab protects nothing. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"plan"},
-  {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan"},
+  {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan", hidden:true},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
@@ -5265,27 +5263,33 @@ function renderStub(host, view){
 }
 
 /* --- the frame ---------------------------------------------------------- */
+/* Her pages in the first row; a parent's own (Math, ELA, History) in a row of
+   their own under it, shown only to a parent's account. */
 function renderTabs(){
-  const host=document.getElementById("viewtabs"),
-        parent=auth.role==="parent",
-        tabs=VIEWS.filter(v=>(!v.hidden || (v.parentTab && parent)) && (!v.parent || parent));
-  // In a row that scrolls sideways, keep the current tab in view.
-  const reveal=()=>{
-    const on=host.querySelector('[aria-selected="true"]');
-    if(!on || host.scrollWidth<=host.clientWidth) return;
-    if(on.offsetLeft<host.scrollLeft) host.scrollLeft=on.offsetLeft;
-    else if(on.offsetLeft+on.offsetWidth>host.scrollLeft+host.clientWidth)
-      host.scrollLeft=on.offsetLeft+on.offsetWidth-host.clientWidth;
-  };
-  if(host.children.length===tabs.length){
-    tabs.forEach((v,i)=>host.children[i].setAttribute("aria-selected",String(v.id===currentView)));
-    reveal();
+  const parent=auth.role==="parent";
+  const hers=VIEWS.filter(v=>!v.hidden && !v.parent);
+  const mine=parent ? VIEWS.filter(v=>v.parent || (v.hidden && v.parentTab)) : [];
+  fillTabs(document.getElementById("viewtabs"), hers, null);
+  const second=document.getElementById("parenttabs");
+  second.hidden=!mine.length;
+  fillTabs(second, mine, "Teaching");
+  // The sticky header is taller with the second row; what sticks beneath it
+  // (a plan's side column) reads its height from here.
+  const nav=document.querySelector("nav");
+  if(nav.offsetHeight) document.documentElement.style.setProperty("--navh", nav.offsetHeight+"px");
+}
+
+function fillTabs(host, tabs, label){
+  const buttons=host.querySelectorAll(".tab");
+  if(buttons.length===tabs.length && tabs.every((v,i)=>buttons[i].dataset.view===v.id)){
+    tabs.forEach((v,i)=>buttons[i].setAttribute("aria-selected",String(v.id===currentView)));
     return;
   }
   host.innerHTML="";
-  host.classList.toggle("many", tabs.length>6);
+  if(label && tabs.length) host.appendChild(el("span","tlabel",label));
   tabs.forEach(v=>{
     const b=el("button","tab",v.tab);
+    b.dataset.view=v.id;
     b.setAttribute("role","tab");
     b.setAttribute("aria-selected",String(v.id===currentView));
     b.addEventListener("click",()=>{
@@ -5296,7 +5300,6 @@ function renderTabs(){
     });
     host.appendChild(b);
   });
-  reveal();
 }
 
 function render(){
@@ -5309,7 +5312,6 @@ function render(){
   if(auth.state!=="in"){
     setLandscape(false);
     nav.style.display="none";
-    document.getElementById("helper").style.display="none";
     document.getElementById("foot").textContent="";
     host.innerHTML="";
     renderGate(host);
@@ -5319,9 +5321,6 @@ function render(){
   renderTabs();
   // The Course Map prints as a landscape document; nothing else does.
   setLandscape(view.id==="map");
-  // The helper is about running a school day, so it belongs to Today alone.
-  document.getElementById("helper").style.display =
-    view.id==="today" ? "" : "none";
 
   // CNN 10 patches itself in place so a refresh can't wipe what she's typing,
   // and a lesson plan so a refresh can't fold a unit you opened or lose your place.
