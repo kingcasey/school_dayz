@@ -14,11 +14,13 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
 | **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
+| **ELA** — the year's literature plan, parent only | the vault's plan, via a private Supabase bucket | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
+`#ela` has a tab only for a parent's account (below).
 
 **Every view asks for the family sign-in first**, once per browser. Anyone
 helping on the day needs it on their device too. Signing out (at the foot of
@@ -526,6 +528,100 @@ Nothing is kept for it anywhere but the Sheet:
   week's cell grouped the way each line starts: *Every day it runs*, each
   day's pinned lines, then *Any day this week* for `By Fri` lines. Arrows and
   *This week* move between weeks.
+
+## ELA — the literature plan
+
+`#ela` shows the year's literature lesson plan: a Markdown note in the
+homeschool vault, where it's written and where its boxes are ticked. The page
+only displays it — the boxes are drawn, not clickable — and the note never
+goes in this repo, because everything here is public.
+
+**It's for a parent, and Supabase enforces that.** The tab shows only when the
+signed-in account has `app_metadata.role = "parent"`, but hiding a tab
+protects nothing: the plan sits in a private Storage bucket that only that
+role can read. Any other account opening `#ela` gets *Parents only*.
+
+What it shows:
+
+- **The week** — it opens on this week (in a break, the next one), with
+  arrows, a week picker and *This week*. The week's questions, that week's
+  lines from any check-in (Hidden Figures, Bethune, Long Walk, the Diary —
+  whichever unit they're written under), and *About this unit*, folded.
+  *Print this week* (or printing from this view) prints just that.
+- **Year at a glance** — the plan's table, each row marked `2/4` until all
+  its weeks are done, then ✓.
+- **The whole plan** — each unit folded, with how many of its boxes are
+  ticked.
+
+A week is done when `- [x] **Week done**` is ticked under its heading. The
+instruction weeks are `ELA_TERMS` at the top of `index.html` — change them
+each August, along with `ELA_FILE` (and `OBJECT` in the script) for the new
+year's note.
+
+It reads the plan fresh every time the view opens and every minute while it's
+open, with the browser cache told to stay out of it. Nothing is kept on the
+device, so offline there's nothing to show.
+
+### Setting it up
+
+1. Run `supabase/literature.sql` in the SQL editor: a private `literature`
+   bucket, and one read policy on it for role `parent`. It changes no
+   existing table or policy.
+2. Give the parent account the role — in the SQL editor, with that account's
+   email:
+
+   ```sql
+   update auth.users
+   set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"parent"}'
+   where email = 'YOUR-EMAIL-HERE';
+   ```
+
+   It's `app_metadata`, never `user_metadata`, which anyone can edit on their
+   own account. The role travels in the sign-in token, so sign out and back in
+   on each of the parent's devices to pick it up.
+3. `SB_URL` and `SB_SERVICE_KEY` in `scripts/.env` (the same file
+   `vault-sync` uses; git ignores it), and `cd scripts && npm install` once.
+
+### Publishing from the vault
+
+`scripts/publish-literature.mjs` watches the one note and uploads it to the
+bucket a few seconds after it stops changing (iCloud writes in bursts), and
+once when it starts. It looks at that one path and nothing else in the vault:
+it never lists a folder, never opens another note, never writes there.
+
+By hand, once: `node scripts/publish-literature.mjs --once`
+
+It runs at login as a launchd agent. To install it:
+
+```bash
+cp scripts/launchd/local.schooldayz.publish-literature.plist ~/Library/LaunchAgents/
+```
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.schooldayz.publish-literature.plist
+```
+
+Its log is `~/Library/Logs/school-dayz-literature.log`:
+
+```bash
+tail -f ~/Library/Logs/school-dayz-literature.log
+```
+
+To stop it until the next login:
+
+```bash
+launchctl bootout gui/$(id -u)/local.schooldayz.publish-literature
+```
+
+To uninstall it, stop it as above, then:
+
+```bash
+rm ~/Library/LaunchAgents/local.schooldayz.publish-literature.plist
+```
+
+If the log says macOS is blocking iCloud Drive, give `/opt/homebrew/bin/node`
+Full Disk Access (System Settings › Privacy & Security), then stop and
+bootstrap it again.
 
 ## When a tab is missing or empty
 
