@@ -28,8 +28,17 @@
    * reading_page — the page she read to, per book
    * cnn10_daily_log and cnn10_reports — only whether one exists for the day:
      log_date, and a report's id and created_at. Never a word of either.
-   Items ticked before supabase/item_text.sql have no words stored; they show
-   as their key.
+   * the published `plan` and `reading` tabs of the Sheet — the same public
+     CSVs the page reads — only to name ticks from before supabase/item_text.sql
+     (below), and books saved without a title.
+
+   Each item reads as the app shows it: the plan cell's words, with a link
+   shown without its https:// and a view's #hash as its tab name ("CNN 10 →").
+   Ticks from before item_text.sql stored only a squashed key ("day11"); for
+   those the words are found again in the plan tab, in that subject's cell
+   for that week, as the stretch of the line whose squashed form is the key —
+   which is the label the app drew. One that can't be found (the cell has
+   since changed) shows its key.
 
    What it touches in the vault: files in Planning/App Export/, and nothing
    else — it doesn't read the vault, and it creates only that one folder.
@@ -38,7 +47,7 @@
    ========================================================================== */
 
 import { createClient } from "@supabase/supabase-js";
-import { writeFile, mkdir, access } from "node:fs/promises";
+import { writeFile, mkdir, access, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -47,6 +56,7 @@ const TZ = "America/New_York";
 const PLAN_NAMES = { ela: "ELA", history: "U.S. History" };
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const PAGE = path.join(HERE, "..", "index.html");     // where the Sheet's ids and the tab names live
 function log(...a){ console.log(new Date().toISOString(), ...a); }
 
 try{ process.loadEnvFile(path.join(HERE, ".env")); }
@@ -120,7 +130,125 @@ if(argv.includes("--scheduled")){
   days = [opt("--date")];
 } else days = [nyDate(new Date())];
 
+/* --- labels, as the app shows them ------------------------------------- */
+/* The page's own squashing: lowercase, letters and digits only. */
+function itemKey(text){
+  return String(text == null ? "" : text).toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/* The Sheet's ids and the tab names, read from the page so they can't drift. */
+const pageSrc = await readFile(PAGE, "utf8");
+const PUB_ID = (pageSrc.match(/const PUB_ID = "([^"]+)"/) || [])[1];
+const GID = Object.fromEntries(["plan", "reading"].map(k =>
+  [k, (pageSrc.match(new RegExp("\\b" + k + ":\\s*\"(\\d+)\"")) || [])[1]]));
+const TAB_NAMES = Object.fromEntries([...pageSrc.matchAll(/\{id:"([a-z0-9]+)",\s*tab:"([^"]+)"/g)].map(m => [m[1], m[2]]));
+
+/* What the app draws for a line's words: a link without its https:// or a
+   trailing /, and a view's own #hash as that tab's name. */
+const URL_RE = /(?:https?:\/\/|www\.)[^\s<>"']+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s<>"']*/gi;
+function asShown(text){
+  let s = String(text).replace(URL_RE, raw => {
+    const t = raw.match(/[.,;:!?)]+$/), trail = t ? t[0] : "";
+    const u = trail ? raw.slice(0, -trail.length) : raw;
+    return u.replace(/^https?:\/\//i, "").replace(/\/$/, "") + trail;
+  });
+  s = s.replace(new RegExp("(^|[\\s(])#(" + Object.keys(TAB_NAMES).join("|") + ")\\b", "g"),
+                (m, pre, id) => pre + TAB_NAMES[id] + " →");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function parseCSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(q){
+      if(c === '"'){ if(text[i + 1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if(c === '"') q = true;
+    else if(c === ","){ row.push(cell); cell = ""; }
+    else if(c === "\n"){ row.push(cell); rows.push(row); row = []; cell = ""; }
+    else if(c !== "\r") cell += c;
+  }
+  if(cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+const sheetCache = {};
+async function sheet(name){
+  if(!(name in sheetCache)){
+    sheetCache[name] = (async () => {
+      if(!PUB_ID || !GID[name]) return null;
+      const r = await fetch("https://docs.google.com/spreadsheets/d/e/" + PUB_ID + "/pub?gid=" + GID[name] +
+                            "&single=true&output=csv", { cache: "no-store" });
+      if(!r.ok) throw new Error("the Sheet's " + name + " tab answered " + r.status);
+      return parseCSV(await r.text());
+    })();
+  }
+  return sheetCache[name];
+}
+
+/* Where in a line its key's words are: the stretch whose squashed form is the
+   key, standing on its own (not "Day 1" inside "Day 11"). */
+function findWords(line, key){
+  const stream = [], at = [];
+  for(let i = 0; i < line.length; i++){
+    for(const ch of itemKey(line[i])){ stream.push(ch); at.push(i); }
+  }
+  const flat = stream.join(""), alnum = c => /[\p{L}\p{N}]/u.test(c || "");
+  for(let p = flat.indexOf(key); p >= 0; p = flat.indexOf(key, p + 1)){
+    let a = at[p], z = at[p + key.length - 1];
+    if(alnum(line[a - 1]) || alnum(line[z + 1])) continue;
+    // Brackets and quotes belong to the words: "HW 1E (Honors)", not "(Honors".
+    while(a > 0 && /[(\["'“‘]/.test(line[a - 1])) a--;
+    while(z + 1 < line.length && /[)\]"'”’.!?]/.test(line[z + 1])) z++;
+    return line.slice(a, z + 1);
+  }
+  return null;
+}
+
+function mondayOf(day){
+  const d = new Date(day + "T12:00:00Z"), back = (d.getUTCDay() + 6) % 7;
+  return addDay(day, -back);
+}
+function sheetDate(s){
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(!m) return null;
+  const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+  return y + "-" + String(m[1]).padStart(2, "0") + "-" + String(m[2]).padStart(2, "0");
+}
+
+/* A Today tick's words, found again in the plan tab: that subject's row, that
+   week's cell first, then its other weeks, nearest first. */
+async function planWords(subject, key, dayDate){
+  const rows = await sheet("plan");
+  if(!rows) return null;
+  const dateRow = rows.find(r => /^date$/i.test((r[0] || "").trim())) || [];
+  const row = rows.find(r => itemKey(r[0]) === itemKey(subject));
+  if(!row) return null;
+  if(itemKey(subject) === key) return subject;          // a task with no words of its own is its subject
+  const want = mondayOf(dayDate);
+  const cols = [];
+  dateRow.forEach((v, i) => { const d = sheetDate(v); if(d) cols.push({ i, d }); });
+  cols.sort((a, b) => Math.abs(Date.parse(a.d) - Date.parse(want)) - Math.abs(Date.parse(b.d) - Date.parse(want)));
+  for(const { i } of cols){
+    for(const line of String(row[i] || "").split("\n")){
+      const w = findWords(line, key);
+      if(w) return w;
+    }
+  }
+  return null;
+}
+
+/* A book's title from the reading tab, by its key. */
+async function bookTitle(bookKey){
+  const rows = await sheet("reading");
+  if(!rows) return null;
+  const col = (rows[0] || []).findIndex(h => /^title$/i.test(h.trim()));
+  const hit = col >= 0 ? rows.slice(1).find(r => itemKey(r[col]) === bookKey) : null;
+  return hit ? hit[col].trim() : null;
+}
+
 /* --- reading one day ---------------------------------------------------- */
+let sheetWarned = false;
 async function must(q){ const { data, error } = await q; if(error) throw error; return data || []; }
 
 async function readDay(day){
@@ -128,7 +256,7 @@ async function readDay(day){
 
   // Today's ticks: counted on done_on; a row without one (none the page
   // writes) falls back to when it was ticked.
-  const cols = "subject,item_key,item_text,done_at,done_on";
+  const cols = "subject,item_key,item_text,done_at,done_on,day_date";
   const [onDay, undated] = await Promise.all([
     must(sb.from("day_state").select(cols).not("done_at", "is", null).eq("done_on", day)),
     must(sb.from("day_state").select(cols).not("done_at", "is", null).is("done_on", null)
@@ -159,11 +287,37 @@ async function readDay(day){
     must(sb.from("cnn10_reports").select("id,created_at").gte("created_at", start).lt("created_at", end)),
   ]);
 
+  // Words for the ticks that were saved without them. A Sheet that can't be
+  // reached leaves those showing their key, and says so in the log.
+  for(const t of ticks){
+    if(t.item_text || /^x-/.test(t.item_key)) continue;
+    try{ t.found = await planWords(t.subject, t.item_key, t.day_date); }
+    catch(err){ if(!sheetWarned){ sheetWarned = true; log("couldn't read the Sheet —", err.message); } }
+  }
+  for(const p of pages){
+    if(p.book_title) continue;
+    try{ p.found = await bookTitle(p.book_key); }
+    catch(err){ if(!sheetWarned){ sheetWarned = true; log("couldn't read the Sheet —", err.message); } }
+  }
+
   return { ticks, extraText, plan, pages, cnn: { daily: daily.length > 0, reports: reports.length } };
 }
 
 /* --- writing it --------------------------------------------------------- */
 function oneLine(s){ return String(s).replace(/\s+/g, " ").trim(); }
+
+/* A one-off's words as the app shows them: its text less a leading time, an
+   @who tag and a // note, the way the page reads a cell. */
+function oneOffWords(text){
+  if(text == null) return null;
+  let s = String(text).trim().replace(/^(\d{1,2}:\d{2}\s*(?:am|pm)?)(\s+|$)/i, "");
+  s = s.replace(/@(adult|own|dad|mom|me)\b/i, "").replace(/\s{2,}/g, " ").trim();
+  for(let i = s.indexOf("//"); i >= 0; i = s.indexOf("//", i + 2)){
+    if(i > 0 && s[i - 1] === ":") continue;
+    s = s.slice(0, i).trim(); break;
+  }
+  return s;
+}
 
 /* When it was ticked. A tick counts on the school day it was ticked for,
    which isn't always the day it was ticked — Monday's work ticked on Tuesday
@@ -183,19 +337,20 @@ function render(day, r){
   };
 
   r.ticks.forEach(t => {
-    const words = t.item_text
-      || (/^x-/.test(t.item_key) ? r.extraText[t.item_key.slice(2)] : null)
-      || t.item_key + " (words not recorded)";
-    add(t.subject || "One-offs", t.done_at, "- " + oneLine(words) + " — ticked " + when(day, t.done_at));
+    const words = t.item_text || t.found
+      || (/^x-/.test(t.item_key) ? oneOffWords(r.extraText[t.item_key.slice(2)]) : null);
+    add(t.subject || "One-offs", t.done_at,
+        "- " + (words ? asShown(words) : t.item_key + " (words not found: the plan cell has changed since)") +
+        " — ticked " + when(day, t.done_at));
   });
   r.plan.forEach(t => {
-    const words = t.item_text || "(words not recorded)";
+    const words = t.item_text ? asShown(t.item_text) : "(words not recorded)";
     add((PLAN_NAMES[t.plan] || t.plan) + " (lesson plan)", t.checked_at,
-        "- Week " + t.week + ": " + oneLine(words) + " — ticked " + when(day, t.checked_at));
+        "- Week " + t.week + ": " + words + " — ticked " + when(day, t.checked_at));
   });
   r.pages.forEach(p => {
     const n = p.before != null && p.page > p.before ? p.page - p.before : null;
-    add("Pages read", p.updated_at, "- " + oneLine(p.book_title || p.book_key) + " — read to p. " + p.page +
+    add("Pages read", p.updated_at, "- " + oneLine(p.book_title || p.found || p.book_key) + " — read to p. " + p.page +
         (n ? " (" + n + (n === 1 ? " page" : " pages") + ")" : "") + " — saved " + when(day, p.updated_at));
   });
   const cnnLines = [];

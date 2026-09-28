@@ -674,8 +674,9 @@ weekend day gets one only if something was ticked.
 
 It reads only the tables that hold ticks — `day_state` (with `day_extra` for a
 one-off's words), `plan_progress`, `reading_page`, and just the dates of the
-two CNN 10 tables — and writes only in `Planning/App Export/`. It never reads
-the vault.
+two CNN 10 tables — plus the published `plan` and `reading` tabs, the same
+public CSVs the page reads, to name older ticks (below). It writes only in
+`Planning/App Export/`, and never reads the vault.
 
 ```bash
 node scripts/export-day.mjs
@@ -686,9 +687,14 @@ That's today (New York time). `--date 2026-09-28` for one day, `--from
 alone unless `--force` is given. Something ticked and then unticked has no
 tick left, so an export is the tables as they stand when it runs.
 
-The item's words come from `item_text` (and a book's from `book_title`),
-which the page sends with each tick since `supabase/item_text.sql`. Anything
-ticked before then shows its key instead.
+Each item reads as the app shows it — a link without its `https://`, a
+`#cnn10` as *CNN 10 →*. The words come from `item_text` (a book's from
+`book_title`), which the page sends with each tick since
+`supabase/item_text.sql`. Ticks from before then stored only a squashed key
+(`day11`), so for those the words are found again in the plan tab — that
+subject's cell for that week, the stretch of the line the key was made from.
+If the cell has been edited since, the words can't be found, and the key
+shows with a note saying so.
 
 It runs Monday to Friday at 6 PM as a launchd agent, writing that day — a
 snapshot of the ticks at 6, so anything ticked later needs `--date … --force`.
