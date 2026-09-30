@@ -614,6 +614,7 @@ const GID = {
                               //   and Bright Futures shows as a checklist.
   reading:    "1478186643",   // the "reading" tab  (see README)
   wins:       "67138078",     // the "wins" tab     (see README)
+  links:      "1541920721",   // the "links" tab    — work samples and other links
 };
 
 /* --- Supabase -----------------------------------------------------------
@@ -672,6 +673,7 @@ const VIEWS = [
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
   {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
+  {id:"links",   tab:"Links",   title:"Links",           needs:"links"},
   {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true, parentTab:true},
   {id:"ela",     tab:"ELA",     title:"Literature",      needs:null, parent:true},
   {id:"history", tab:"History", title:"U.S. History",    needs:null, parent:true},
@@ -727,6 +729,7 @@ let dayIdx  = null;            // which day the Today view is showing
 let dayAuto = true;            // true while Today is on the day it picked itself
 let readModel = null;          // the reading tab, sorted onto its three shelves
 let winsModel = null;          // the wins tab, bucketed by year
+let linksModel = null;         // the links tab, grouped by its Group column
 
 /* Which shelves are open. Remembered per device, so Finished stays folded
    away for whoever likes it folded away. */
@@ -1307,6 +1310,55 @@ const WIN_COL = [
   ["notes",    /^(note|result|outcome|detail)/],
   ["evidence", /^(evidence|proof|file|document|certificate|link)/],
 ];
+
+/* ==========================================================================
+   The links tab. Work samples, mostly — a Drive folder, a Doc, a provider's
+   page of graded work — and anything else worth a tap. One row per link,
+   grouped under its Group, in the order the sheet has them.
+   ========================================================================== */
+const LINK_COL = [
+  ["title", /^(title|name|what)/],
+  ["link",  /^(link|url|address|href)/],
+  ["group", /^(group|section|kind|type|category)/],
+  ["note",  /^(note|detail|description)/],
+];
+
+function buildLinks(rows){
+  if(!rows.length) throw new Error("The links tab came back empty.");
+  const cell=(r,c)=> (rows[r]&&rows[r][c]!=null) ? String(rows[r][c]).trim() : "";
+
+  let head=-1, col={};
+  for(let r=0;r<Math.min(rows.length,10) && head<0;r++){
+    const found={};
+    for(let c=0;c<rows[r].length;c++){
+      const h=cell(r,c).toLowerCase().replace(/\s+/g," ").trim();
+      if(!h) continue;
+      for(const [key,re] of LINK_COL) if(found[key]==null && re.test(h)) found[key]=c;
+    }
+    if(found.link!=null){ head=r; col=found; }
+  }
+  if(head<0) throw new Error(
+    'Could not find the heading row. One row near the top needs a column called '+
+    '"Link", with "Title", "Group" and "Note" beside it.');
+
+  const at=(r,key)=> col[key]==null ? "" : cell(r,col[key]);
+  const groups=[], byName={};
+  let total=0;
+  for(let r=head+1;r<rows.length;r++){
+    const link=at(r,"link");
+    if(!link || blank(link)) continue;
+    const name=at(r,"group")||"Links";
+    const key=name.toLowerCase();
+    if(!byName[key]){
+      byName[key]={id:key.replace(/[^a-z0-9]+/g,"-"), title:name, items:[]};
+      groups.push(byName[key]);
+    }
+    byName[key].items.push({title:at(r,"title")||link, link:link, note:at(r,"note")});
+    total++;
+  }
+  if(!total) throw new Error("The links tab has its headings, but no links under them yet.");
+  return {groups, total};
+}
 
 function buildWins(rows){
   if(!rows.length) throw new Error("The wins tab came back empty.");
@@ -2038,6 +2090,13 @@ const NOT_CONNECTED = {
         '<li><code>Type</code> — certification, competition, performance, project, milestone</li>'+
         '<li>the issuing or awarding body, and <code>Notes/Results</code></li>'+
         '<li><code>Evidence</code> — a share link becomes tappable; a filename is noted as on file</li></ul>',
+  links:'The <code>links</code> tab isn\'t connected yet. In the Sheet: '+
+        'File &rsaquo; Share &rsaquo; Publish to web &rsaquo; choose the <b>links</b> tab &rsaquo; '+
+        'CSV &rsaquo; Publish. One row per link, with these headings:'+
+        '<ul><li><code>Title</code> — the words you tap</li>'+
+        '<li><code>Link</code> — a Drive folder, a Doc, or any web address</li>'+
+        '<li><code>Group</code> — optional; links sharing one sit under it as a heading</li>'+
+        '<li><code>Note</code> — optional; a line under the link</li></ul>',
   supabase:'Her ticks, notes and reports are saved to Supabase, and the whole page sits behind '+
         'its one family sign-in.'+
         '<ul><li>make a Supabase project and run <code>supabase/cnn10.sql</code>, '+
@@ -2144,7 +2203,7 @@ function signedOut(){
     try{ localStorage.removeItem(CACHE+name); }catch(_){}
   });
   planModel=null; planError=null; dayModel=null; readModel=null; winsModel=null;
-  mapModel=null;
+  mapModel=null; linksModel=null;
   render();
 }
 
@@ -3352,6 +3411,65 @@ function winCard(w){
 
   n.appendChild(card);
   return n;
+}
+
+/* --- Links --------------------------------------------------------------- */
+function linkCard(x){
+  const n=el("div","book");
+  const t=el("div","btitle");
+  URL_RE.lastIndex=0;
+  const hit=URL_RE.exec(x.link);
+  if(hit){
+    const a=document.createElement("a");
+    a.className="link";
+    a.href = /^https?:\/\//i.test(hit[0]) ? hit[0] : "https://"+hit[0];
+    a.target="_blank"; a.rel="noopener noreferrer";
+    a.textContent=x.title+" \u2192";
+    t.appendChild(a);
+  } else {
+    t.textContent=x.title;                 // not an address — shown, not tappable
+  }
+  n.appendChild(t);
+  if(x.note) n.appendChild(elLinked("div","memo", x.note));
+  return n;
+}
+
+function renderLinks(host){
+  const s=sheet.links||{state:"unset"};
+  const kick="B"+(s.cached?" · saved copy":"");
+  setHead(kick, "Links", "");
+  stepper([]);
+
+  if(s.state==="unset"){
+    host.appendChild(emptyCard("The links tab isn't connected yet.","<p>"+NOT_CONNECTED.links+"</p>"));
+    return;
+  }
+  if(s.state==="error"){
+    host.appendChild(errorCard("Can't reach the links right now.",
+      "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+      String(s.error && s.error.message || s.error)));
+    return;
+  }
+
+  let model;
+  try{ model=linksModel=buildLinks(s.rows); }
+  catch(err){
+    host.appendChild(s.rows && s.rows.length>1
+      ? errorCard("The links tab can't be read.",
+          "It's reachable, but the format isn't what this page expects. Here's the problem:",
+          String(err.message||err))
+      : emptyCard("The links tab is published, but empty.",
+          "<p>"+NOT_CONNECTED.links+"</p>"+
+          "<p><code>"+esc(String(err.message||err))+"</code></p>"));
+    return;
+  }
+
+  setHead(kick, "Links", model.total+(model.total===1?" link":" links"));
+  model.groups.forEach(g=>{
+    host.appendChild(shelfBlock(
+      {id:"link-"+g.id, title:g.title, empty:"Nothing here yet."},
+      g.items, linkCard));
+  });
 }
 
 function renderWins(host){
@@ -5336,6 +5454,7 @@ function render(){
   else if(view.id==="plan")    renderPlan(host);
   else if(view.id==="reading") renderReading(host);
   else if(view.id==="wins")    renderWins(host);
+  else if(view.id==="links")   renderLinks(host);
   else if(view.id==="map")     renderCourseMap(host);
   else if(view.id==="math")    renderMath(host);
   else if(lesson){

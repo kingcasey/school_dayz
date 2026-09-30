@@ -14,11 +14,12 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
 | **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
+| **Links** — work samples and other links, by group | `links` tab | built |
 | **ELA** — the year's literature plan, parent only | the vault's plan, via a private Supabase bucket | built |
 | **History** — the year's U.S. History plan, parent only | the same, a second file | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
-`#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map` — the hashes are
+`#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map`, `#links` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
 `#ela` and `#history` have tabs only for a parent's account (below): a
@@ -304,6 +305,27 @@ shows *View evidence →*, tappable. Leave a bare filename and it shows quietly
 as *On file: …* — you know the paperwork exists, and the page doesn't pretend
 it can open something sitting in your own Drive. Swapping a filename for a
 share link later is the only change needed to make it tappable.
+
+## The `links` tab
+
+Work samples, mostly — a Drive folder, a Google Doc or Slides deck, a
+provider's page of graded work — and any other link worth keeping to hand.
+One row per link; headings are matched loosely, in any order:
+
+| column | holds |
+|---|---|
+| `Title` | the words you tap. Left blank, the address itself shows |
+| `Link` | any web address. Required — the heading row is found by looking for it |
+| `Group` | optional. Links with the same group sit together under it as a heading; no group lands under **Links** |
+| `Note` | optional. A line under the link |
+
+Groups appear in the order the sheet first mentions them, links in sheet
+order, each group collapsible with its count. Every link opens in a new tab.
+
+**The tab is published, so its addresses are public**, like every other tab.
+What protects a Drive file is its own sharing setting — keep work samples
+shared with named people, not "anyone with the link" — and the title is what
+shows on the page, so write it the way the rest of the page is written.
 
 ## The `map` tab
 
