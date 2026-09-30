@@ -5500,7 +5500,7 @@ async function refresh(){
   // borrow its colours. Supabase loads beside the sheet tabs and never throws,
   // so it can't hold any of them up.
   await Promise.all([load("plan"), load("reading"), load("wins"), load("map"),
-                     load("activities"), loadCnn10(), loadDay(shownDay||today()), loadPages(),
+                     load("activities"), load("links"), loadCnn10(), loadDay(shownDay||today()), loadPages(),
                      PLANS[currentView] ? loadPlan(PLANS[currentView]) : null]);
   if(auth.state!=="in") return;             // signed out while that was on its way
   planModel=null; planError=null;
