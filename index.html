@@ -69,7 +69,7 @@
   .tab:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   @media (max-width:23rem){ .tab{font-size:.74rem} }
 
-  /* On a phone the tab rows don't fit (seven of hers, three more for a parent),
+  /* On a phone the tab rows don't fit (six of hers, four more for a parent),
      so the nav is the current page's name and a Menu button, which opens every
      page in a sheet. Both are drawn from VIEWS; wider screens keep the rows. */
   .navbar{display:none;align-items:center;gap:.6rem}
@@ -745,21 +745,22 @@ const SCHOOL_TERMS  = [
    Teaching row that only a parent sees, beside ELA and History.
    Plan (the week at a glance) is retired from the tabs, not removed: nobody
    was using it, but #plan still opens it and the code is all still here.
-   ELA and History are lesson plans, for a parent: their tabs show only to an
-   account whose app_metadata.role is "parent", and Supabase is what actually keeps
-   the plan from anyone else — hiding the tab protects nothing. */
+   ELA and History are lesson plans, and the Log is her log; all three are for
+   a parent: their tabs show only to an account whose app_metadata.role is
+   "parent", and Supabase is what actually keeps them from anyone else —
+   hiding the tab protects nothing. */
 const VIEWS = [
   {id:"today",   tab:"Today",   title:"Today",           needs:"plan"},
   {id:"plan",    tab:"Plan",    title:"Lesson plan",     needs:"plan", hidden:true},
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
-  {id:"log",     tab:"Log",     title:"Log",             needs:null},
   {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
   {id:"links",   tab:"Links",   title:"Links",           needs:"links"},
   {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true, parentTab:true},
   {id:"ela",     tab:"ELA",     title:"Literature",      needs:null, parent:true},
   {id:"history", tab:"History", title:"U.S. History",    needs:null, parent:true},
+  {id:"log",     tab:"Log",     title:"Log",             needs:null, parent:true},
 ];
 
 /* --- colour of the left edge -------------------------------------------
@@ -5465,8 +5466,8 @@ function renderStub(host, view){
 
 /* ==========================================================================
    The Log — her daily notes (to Oct 2) and weekly notes (from Oct 5), from the
-   Log folder in the vault. The vault is the official record; this is a
-   read-only copy. scripts/publish-log.mjs puts each note in daily_log as it
+   Log folder in the vault, for a parent. The vault is the official record;
+   this is a read-only copy. scripts/publish-log.mjs puts each note in daily_log as it
    changes — frontmatter off (all but its status) and her name replaced — so
    what arrives here is ready to show. See supabase/log.sql.
    ========================================================================== */
@@ -5479,6 +5480,8 @@ let logFirst = true;                     // the newest note opens on the first l
 /* Never throws, so refresh() can wait on it beside the sheet tabs. */
 function loadLog(){
   if(auth.state!=="in") return Promise.resolve(logState);
+  // Not a parent: nothing to read, and no copy left from anyone else's sign-in.
+  if(auth.role!=="parent"){ if(logState.state!=="idle") forgetLog(); return Promise.resolve(logState); }
   if(logState.busy) return logState.busy;
   logState.busy=(async()=>{
     try{
@@ -5512,7 +5515,7 @@ function forgetLog(){
 
 /* Coming back to the page reads it again, so an evening update shows. */
 function logRefocus(){
-  if(currentView!=="log" || document.hidden || auth.state!=="in") return;
+  if(currentView!=="log" || document.hidden || auth.state!=="in" || auth.role!=="parent") return;
   loadLog().then(()=>{ if(currentView==="log") render(); });
 }
 window.addEventListener("focus", logRefocus);
@@ -5601,6 +5604,10 @@ function renderLog(host){
   setHead(kick, "Log", "");
   stepper([]);
 
+  if(auth.role!=="parent"){
+    host.appendChild(emptyCard("Parents only.", "<p>This page is for a parent's account.</p>"));
+    return;
+  }
   if(logState.state==="idle" || logState.state==="loading" || (logState.state!=="error" && !lpLib)){
     if(!lpLib) libsForPlans().then(()=>{ if(currentView==="log") render(); })
       .catch(err=>{ logState.libError=err; if(currentView==="log") render(); });
@@ -5859,7 +5866,7 @@ function render(){
   const f=document.getElementById("foot");
   if(lesson){ f.textContent=planFoot(lesson); return; }
   if(view.id==="log"){
-    f.textContent = logState.state!=="ok" ? ""
+    f.textContent = logState.state!=="ok" || auth.role!=="parent" ? ""
       : logState.cached ? "No connection — showing the last saved copy. The vault is the official record."
       : "A read-only copy of the vault's log, which is the official record · updates on its own.";
     return;

@@ -13,18 +13,18 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
-| **Log** — her daily and weekly notes, read-only | the vault's Log folder, via Supabase | built |
 | **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
 | **Links** — work samples and other links, by group | `links` tab | built |
 | **ELA** — the year's literature plan, parent only | the vault's plan, via a private Supabase bucket | built |
 | **History** — the year's U.S. History plan, parent only | the same, a second file | built |
+| **Log** — her daily and weekly notes, read-only, parent only | the vault's Log folder, via Supabase | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
 `#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#log`, `#map`, `#links` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
-`#ela` and `#history` have tabs only for a parent's account (below): a
-parent sees a second, smaller row of tabs, *Teaching* — Math, ELA, History —
+`#ela`, `#history` and `#log` have tabs only for a parent's account (below): a
+parent sees a second, smaller row of tabs, *Teaching* — Math, ELA, History, Log —
 under hers, which stays as it is.
 
 **On a phone** (narrower than 768px) neither row shows: the nav is the page's
@@ -753,7 +753,8 @@ rm ~/Library/LaunchAgents/local.schooldayz.export-day.plist
 ## The Log
 
 `#log` shows her log — the notes in the Log folder of her school year in the
-vault — read-only, to both accounts. **The vault is the official record**; this
+vault — read-only, to a parent's account only (the same `app_metadata.role`
+as ELA; her account sees *Parents only*). **The vault is the official record**; this
 is a copy of it, and nothing on the page can change it.
 
 Two kinds of note, both kept for good:
