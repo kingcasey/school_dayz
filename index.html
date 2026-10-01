@@ -69,6 +69,76 @@
   .tab:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
   @media (max-width:23rem){ .tab{font-size:.74rem} }
 
+  /* On a phone the tab rows don't fit (seven of hers, three more for a parent),
+     so the nav is the current page's name and a Menu button, which opens every
+     page in a sheet. Both are drawn from VIEWS; wider screens keep the rows. */
+  .navbar{display:none;align-items:center;gap:.6rem}
+  .navname{flex:1;font-size:1.02rem;font-weight:800;letter-spacing:-.015em;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menubtn{font-family:inherit;font-size:.85rem;font-weight:600;color:var(--navy);
+        background:transparent;border:1.5px solid var(--navy);border-radius:.2rem;
+        padding:.42rem .75rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem}
+  .menubtn svg{width:1rem;height:1rem}
+  .menubtn:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  @media (max-width:767.98px){
+    nav{padding:.6rem 0}
+    nav .tabs{display:none}
+    .navbar{display:flex}
+  }
+  .menusheet[hidden]{display:none}
+  .menuback{position:fixed;inset:0;z-index:30;background:rgba(35,26,18,.32)}
+  .menupanel{position:fixed;top:0;left:0;right:0;z-index:31;background:var(--cream);
+        max-height:100dvh;overflow-y:auto;padding:.6rem 1.1rem 1.1rem;
+        padding-top:max(.6rem, env(safe-area-inset-top));
+        border-bottom:1.5px solid var(--ink);box-shadow:0 .4rem 1.4rem rgba(35,26,18,.18)}
+  .menuhead{display:flex;align-items:center;justify-content:space-between;padding:.1rem 0 .4rem}
+  .menuhead b{font-size:1.02rem;font-weight:800;letter-spacing:-.015em}
+  .mgroup{margin-top:.7rem;padding-bottom:.2rem;font-size:.68rem;font-weight:600;
+        letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+  .mitem{display:block;width:100%;text-align:left;font-family:inherit;font-size:1.04rem;
+        font-weight:600;color:var(--ink);background:transparent;border:0;border-radius:.2rem;
+        padding:.62rem .75rem;cursor:pointer;letter-spacing:-.01em}
+  .mitem:hover{background:var(--cream-deep)}
+  .mitem[aria-current="page"]{background:var(--navy);color:var(--cream)}
+  .mitem:focus-visible{outline:2px solid var(--plum);outline-offset:1px}
+  body.menuopen{overflow:hidden}
+  @media (prefers-reduced-motion:no-preference){
+    .menupanel{animation:drop .16s ease-out}
+    @keyframes drop{from{transform:translateY(-.6rem);opacity:0}to{transform:none;opacity:1}}
+  }
+
+  /* The Log: the vault's daily and weekly notes, read-only. The left edge says
+     where a note stands — navy complete, ochre partial, red partial and past. */
+  .lwarn{margin:1rem 0 .3rem;padding:.7rem .85rem;border-left:5px solid #A32B1E;
+        background:var(--cream-deep);border-radius:0 .2rem .2rem 0;font-size:.88rem}
+  .lwarn b{font-weight:600}
+  .lwarn button{font-family:inherit;font-size:inherit;font-weight:600;color:#A32B1E;
+        background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;
+        text-underline-offset:.15em}
+  .lwarn button:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .lweek{margin:1.5rem 0 .1rem;font-size:.76rem;font-weight:600;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--ink-soft)}
+  .logcard{border-bottom:1px solid var(--rule);
+        scroll-margin-top:calc(var(--navh,4.5rem) + .5rem)}
+  .logcard>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;
+        gap:.3rem .5rem;padding:.8rem 2rem .8rem .8rem;border-left:5px solid var(--edge,var(--rule));
+        position:relative}
+  .logcard>summary::-webkit-details-marker{display:none}
+  .logcard>summary::after{content:"+";position:absolute;right:.1rem;top:.8rem;
+        font-size:1.25rem;font-weight:400;line-height:1}
+  .logcard[open]>summary::after{content:"–"}
+  .logcard>summary:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+  .lname{font-size:1.06rem;font-weight:600;letter-spacing:-.012em}
+  .lwhen{flex-basis:100%;font-size:.8rem;color:var(--ink-soft)}
+  .logcard .emd{padding:0 0 1.1rem .8rem;border-left:5px solid var(--edge,var(--rule))}
+  .logcard.st-done{--edge:var(--navy)}
+  .logcard.st-partial{--edge:var(--ochre)}
+  .logcard.st-stale{--edge:#A32B1E}
+  .tag.ok{border-color:var(--navy);color:var(--navy)}
+  .tag.partial{border-color:var(--ochre);color:var(--ochre)}
+  .tag.stale{border-color:#A32B1E;color:#fff;background:#A32B1E}
+  .log .emd code{font-family:ui-monospace,monospace;font-size:.84em;overflow-wrap:anywhere}
+
   .standing{margin:1.1rem 0 .4rem;padding:.75rem .85rem;background:var(--cream-deep);
             border-radius:.2rem;font-size:.88rem}
   .standing b{font-weight:600}
@@ -204,19 +274,19 @@
 
   .foot{margin-top:1.6rem;font-size:.8rem;color:var(--ink-soft)}
 
-  /* Lesson plans (ELA, History): as written in the vault, ticked here. Its boxes
-     are Today's .check, and a ticked line is struck through and faded the
+  /* Lesson plans (ELA, History) and the Log: Markdown from the vault. A plan's
+     boxes are Today's .check, and a ticked line is struck through and faded the
      same way — the words only, not the box. */
-  .lp .emd{font-size:.94rem;line-height:1.45}
-  .lp .emd>*+*{margin-top:.55rem}
-  .lp .emd ul,.lp .emd ol{padding-left:1.2rem}
-  .lp .emd li+li{margin-top:.2rem}
-  .lp .emd strong{font-weight:600}
-  .lp .emd h2{font-size:1.05rem;font-weight:800;letter-spacing:-.015em;margin-top:1.1rem}
-  .lp .emd blockquote{border-left:4px solid var(--ochre);background:var(--cream-deep);
+  :is(.lp,.log) .emd{font-size:.94rem;line-height:1.45}
+  :is(.lp,.log) .emd>*+*{margin-top:.55rem}
+  :is(.lp,.log) .emd ul,:is(.lp,.log) .emd ol{padding-left:1.2rem}
+  :is(.lp,.log) .emd li+li{margin-top:.2rem}
+  :is(.lp,.log) .emd strong{font-weight:600}
+  :is(.lp,.log) .emd h2{font-size:1.05rem;font-weight:800;letter-spacing:-.015em;margin-top:1.1rem}
+  :is(.lp,.log) .emd blockquote{border-left:4px solid var(--ochre);background:var(--cream-deep);
         padding:.55rem .75rem;border-radius:0 .2rem .2rem 0}
-  .lp .emd hr{display:none}
-  .lp .emd a{color:var(--navy)}
+  :is(.lp,.log) .emd hr{display:none}
+  :is(.lp,.log) .emd a{color:var(--navy)}
   .lp ul.tasks{list-style:none;padding-left:0}
   .lp li.task{position:relative;padding:.5rem 0 .5rem 2.2rem;margin:0;
         border-top:1px dotted var(--rule);min-height:2.4rem}
@@ -496,7 +566,7 @@
   }
 
   @media print{
-    nav,.helper,.check,.weekstep,.stepbtn,.jump,.foot,.notebtn,.noteedit,.addform{display:none}
+    nav,.menusheet,.helper,.check,.weekstep,.stepbtn,.jump,.foot,.notebtn,.noteedit,.addform{display:none}
 
     /* The Course Map prints as the evaluator's copy: the whole grid, the
        cards condensed to their category rows, the gaps listed, and a footer
@@ -576,9 +646,21 @@
 </header>
 
 <nav>
+  <div class="navbar">
+    <span class="navname" id="navname"></span>
+    <button class="menubtn" id="menubtn" type="button" aria-expanded="false" aria-controls="menusheet"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>Menu</button>
+  </div>
   <div class="tabs" id="viewtabs" role="tablist"></div>
   <div class="tabs tabs2" id="parenttabs" role="tablist" aria-label="Teaching" hidden></div>
 </nav>
+
+<div class="menusheet" id="menusheet" hidden>
+  <div class="menuback" data-close></div>
+  <div class="menupanel" role="dialog" aria-modal="true" aria-labelledby="menutitle">
+    <div class="menuhead"><b id="menutitle">Go to</b><button class="quietbtn" type="button" data-close>Close</button></div>
+    <div id="menulist"></div>
+  </div>
+</div>
 
 <div id="view" class="day"></div>
 
@@ -654,13 +736,13 @@ const SCHOOL_TERMS  = [
 /* The Course Map is last because it is the one she looks at a few times a
    year and you look at often — the tabs she taps every day come first, and
    nothing else depends on this order. Its route stays #map, which is what
-   was bookmarked when it was a stub. CNN 10 reads Supabase rather than a
-   sheet tab, which is what needs:null says.
-   Math has no tab of its own: it is the page for whoever works through math
-   with her, bookmarked as #math and linked from the Math row on Today and
-   the plan. A seventh tab wouldn't fit across her phone; a parent's account
-   gets it anyway (parentTab), in the second row of tabs that only a parent
-   sees, beside ELA and History.
+   was bookmarked when it was a stub. CNN 10 and the Log read Supabase rather
+   than a sheet tab, which is what needs:null says.
+   On a phone the tabs become a Menu (renderTabs); this list is both.
+   Math has no tab of its own in her row: it is the page for whoever works
+   through math with her, bookmarked as #math and linked from the Math row on
+   Today and the plan. A parent's account gets it anyway (parentTab), in the
+   Teaching row that only a parent sees, beside ELA and History.
    Plan (the week at a glance) is retired from the tabs, not removed: nobody
    was using it, but #plan still opens it and the code is all still here.
    ELA and History are lesson plans, for a parent: their tabs show only to an
@@ -672,6 +754,7 @@ const VIEWS = [
   {id:"reading", tab:"Reading", title:"Reading list",    needs:"reading"},
   {id:"wins",    tab:"Wins",    title:"Accomplishments", needs:"wins"},
   {id:"cnn10",   tab:"CNN 10",  title:"Current events",  needs:null},
+  {id:"log",     tab:"Log",     title:"Log",             needs:null},
   {id:"map",     tab:"Course Map", title:"Course Map",   needs:"map"},
   {id:"links",   tab:"Links",   title:"Links",           needs:"links"},
   {id:"math",    tab:"Math",    title:"Math",            needs:"plan", hidden:true, parentTab:true},
@@ -2197,7 +2280,7 @@ async function checkAuth(){
    included — except a half-written report, which is hers. */
 function signedOut(){
   auth.state="out"; auth.role=null;
-  forgetCnn(); forgetDay(); forgetPages(); forgetPlans();
+  forgetCnn(); forgetDay(); forgetPages(); forgetPlans(); forgetLog();
   Object.keys(GID).forEach(name=>{
     delete sheet[name];
     try{ localStorage.removeItem(CACHE+name); }catch(_){}
@@ -5380,21 +5463,246 @@ function renderStub(host, view){
   host.appendChild(emptyCard("Not built yet.", "<p>"+NOT_CONNECTED[view.needs]+"</p>"));
 }
 
+/* ==========================================================================
+   The Log — her daily notes (to Oct 2) and weekly notes (from Oct 5), from the
+   Log folder in the vault. The vault is the official record; this is a
+   read-only copy. scripts/publish-log.mjs puts each note in daily_log as it
+   changes — frontmatter off (all but its status) and her name replaced — so
+   what arrives here is ready to show. See supabase/log.sql.
+   ========================================================================== */
+const LOG_KEY = CACHE+"log";             // the last good read, for when there's no connection
+const LOG_FLAG_DAYS = 14;                // how far back the "still partial" line looks
+const logState = {rows:[], state:"idle", cached:false, error:null, at:null, busy:null};
+const logOpen = new Set();               // notes opened on this visit, so a reread doesn't fold them
+let logFirst = true;                     // the newest note opens on the first look
+
+/* Never throws, so refresh() can wait on it beside the sheet tabs. */
+function loadLog(){
+  if(auth.state!=="in") return Promise.resolve(logState);
+  if(logState.busy) return logState.busy;
+  logState.busy=(async()=>{
+    try{
+      const c=await client();
+      const rows=await readAll(()=>c.from("daily_log")
+        .select("file,kind,log_date,status,body,updated_at")
+        .order("log_date",{ascending:false}).order("file"));
+      Object.assign(logState, {rows, state:"ok", cached:false, error:null, at:new Date()});
+      try{ localStorage.setItem(LOG_KEY, JSON.stringify(rows)); }catch(_){}
+    }catch(err){
+      logState.error=err;
+      if(logState.state==="ok"){ logState.cached=true; }
+      else {
+        let saved=null;
+        try{ saved=JSON.parse(localStorage.getItem(LOG_KEY)||"null"); }catch(_){}
+        if(saved){ Object.assign(logState, {rows:saved, state:"ok", cached:true}); }
+        else logState.state="error";
+      }
+    }finally{
+      logState.busy=null;
+    }
+    return logState;
+  })();
+  return logState.busy;
+}
+function forgetLog(){
+  Object.assign(logState, {rows:[], state:"idle", cached:false, error:null, at:null});
+  logOpen.clear(); logFirst=true;
+  try{ localStorage.removeItem(LOG_KEY); }catch(_){}
+}
+
+/* Coming back to the page reads it again, so an evening update shows. */
+function logRefocus(){
+  if(currentView!=="log" || document.hidden || auth.state!=="in") return;
+  loadLog().then(()=>{ if(currentView==="log") render(); });
+}
+window.addEventListener("focus", logRefocus);
+document.addEventListener("visibilitychange", logRefocus);
+
+/* Where a note stands. A day still partial after its own day is past, and a
+   week still partial after its Friday, are the ones that need chasing. */
+function logFlag(r, todayIso){
+  if(r.status==="complete") return {st:"done", cls:"ok", word:"Complete"};
+  if(r.status!=="partial") return null;
+  if(r.kind==="day")
+    return r.log_date>=todayIso ? {st:"partial", cls:"partial", word:"Partial"}
+                                : {st:"stale", cls:"stale", word:"Still partial"};
+  const friday=iso(addDays(parseDate(r.log_date), 4));
+  return todayIso<=friday ? {st:"partial", cls:"partial", word:"In progress"}
+                          : {st:"stale", cls:"stale", word:"Still partial"};
+}
+
+function shortDay(d){ return MONTH[d.getMonth()].slice(0,3)+" "+d.getDate(); }
+
+function logTitle(r){
+  const d=parseDate(r.log_date);
+  return r.kind==="week" ? "Week of "+MONTH[d.getMonth()]+" "+d.getDate()
+                         : WEEKDAY[d.getDay()]+", "+MONTH[d.getMonth()]+" "+d.getDate();
+}
+
+function logWhen(r){
+  const t=new Date(r.updated_at);
+  if(isNaN(t)) return "";
+  const time=t.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  return "Updated "+(iso(t)===iso(today()) ? time : shortDay(t)+", "+time);
+}
+
+/* The note as Obsidian shows it, less its own "# 2026-09-30 (Wednesday)"
+   heading, which the card already says. Single line breaks are not kept: the
+   notes are wrapped at a fixed width, and a phone reads them better reflowed.
+   A [[link]] to another note is only its words here. */
+function logBody(md){
+  const text=String(md||"")
+    .replace(/^\s*#\s[^\n]*\n+/, "")
+    .replace(/!?\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a, b)=>b||a);
+  const n=el("div","emd");
+  n.innerHTML=lpLib.purify.sanitize(lpLib.marked.parse(text, {gfm:true, breaks:false}));
+  n.querySelectorAll('input[type="checkbox"]').forEach(b=>{ b.disabled=true; b.tabIndex=-1; });
+  n.querySelectorAll("a[href]").forEach(a=>{
+    if(/^https?:/i.test(a.getAttribute("href"))){ a.target="_blank"; a.rel="noopener"; }
+  });
+  n.querySelectorAll("table").forEach(t=>{
+    const w=el("div","escroll"); t.replaceWith(w); w.appendChild(t);
+  });
+  return n;
+}
+
+function logCard(r, todayIso){
+  const flag=logFlag(r, todayIso);
+  const card=el("details","logcard"+(flag?" st-"+flag.st:""));
+  card.dataset.file=r.file;
+  const sum=el("summary");
+  sum.appendChild(el("span","lname",logTitle(r)));
+  if(flag) sum.appendChild(el("span","tag "+flag.cls,flag.word));
+  const when=logWhen(r);
+  if(when) sum.appendChild(el("span","lwhen",when));
+  card.appendChild(sum);
+  card.appendChild(logBody(r.body));
+  card.open=logOpen.has(r.file);
+  card.addEventListener("toggle",()=>{
+    if(card.open) logOpen.add(r.file); else logOpen.delete(r.file);
+  });
+  return card;
+}
+
+function showLogNote(file){
+  logOpen.add(file);
+  render();
+  const n=[...document.querySelectorAll(".logcard")].find(c=>c.dataset.file===file);
+  if(n){ n.scrollIntoView({block:"start"}); const s=n.querySelector("summary"); if(s) s.focus({preventScroll:true}); }
+}
+
+function logNotSetUp(err){
+  const m=String(err && (err.code+" "+err.message) || "");
+  return /PGRST205|42P01|daily_log/.test(m) && /find|exist|relation/i.test(m);
+}
+
+function renderLog(host){
+  const kick="B"+(logState.cached?" · saved copy":"");
+  setHead(kick, "Log", "");
+  stepper([]);
+
+  if(logState.state==="idle" || logState.state==="loading" || (logState.state!=="error" && !lpLib)){
+    if(!lpLib) libsForPlans().then(()=>{ if(currentView==="log") render(); })
+      .catch(err=>{ logState.libError=err; if(currentView==="log") render(); });
+    if(logState.libError){
+      host.appendChild(errorCard("The log couldn't be shown.",
+        "Part of the page didn't load. Reloading usually sorts this out.",
+        String(logState.libError.message||logState.libError)));
+    } else host.appendChild(el("p","quiet","Reading the log…"));
+    return;
+  }
+  if(logState.state==="error"){
+    if(logNotSetUp(logState.error)){
+      host.appendChild(emptyCard("The log isn't set up yet.",
+        "<p>Run <code>supabase/log.sql</code> in the Supabase SQL editor, then "+
+        "<code>node scripts/publish-log.mjs --once</code> on the Mac. "+
+        "The README's “The Log” section has the rest.</p>"));
+    } else {
+      host.appendChild(errorCard("Can't reach the log right now.",
+        "There's no saved copy on this device yet. It will load on its own when the connection is back.",
+        String(logState.error && (logState.error.message||logState.error) || "")));
+    }
+    return;
+  }
+
+  const rows=logState.rows;
+  if(!rows.length){
+    host.appendChild(emptyCard("Nothing in the log yet.",
+      "<p>Notes appear here a few seconds after they're saved in the vault's Log folder, "+
+      "as long as <code>publish-log</code> is running on the Mac.</p>"));
+    return;
+  }
+
+  const days=rows.filter(r=>r.kind==="day").length, weeks=rows.length-days;
+  setHead(kick, "Log", [days?plural(days,"day","days"):"", weeks?plural(weeks,"week","weeks"):""]
+    .filter(Boolean).join(" · ")+" logged");
+
+  const todayIso=iso(today());
+  if(logFirst){ logOpen.add(rows[0].file); logFirst=false; }
+
+  // The notes still partial once their day or week is over, from the last two weeks.
+  const since=iso(addDays(today(), -LOG_FLAG_DAYS));
+  const chase=rows.filter(r=>r.log_date>=since && (logFlag(r, todayIso)||{}).st==="stale");
+  if(chase.length){
+    const box=el("div","lwarn");
+    box.appendChild(el("b",null,"Still partial: "));
+    chase.slice().reverse().forEach((r,i)=>{
+      if(i) box.appendChild(document.createTextNode(", "));
+      const d=parseDate(r.log_date);
+      const b=el("button",null,(r.kind==="week"?"week of ":WEEKDAY[d.getDay()].slice(0,3)+" ")+shortDay(d));
+      b.type="button";
+      b.addEventListener("click",()=>showLogNote(r.file));
+      box.appendChild(b);
+    });
+    host.appendChild(box);
+  }
+
+  // Grouped by week, newest first. A week with a weekly note is that note; a
+  // week of daily notes gets a heading over its days.
+  let monday=null;
+  rows.forEach(r=>{
+    const m=iso(mondayOf(parseDate(r.log_date)));
+    if(r.kind==="day" && m!==monday){
+      const d=parseDate(m);
+      host.appendChild(el("h2","lweek","Week of "+MONTH[d.getMonth()]+" "+d.getDate()));
+    }
+    monday=m;
+    host.appendChild(logCard(r, todayIso));
+  });
+}
+
 /* --- the frame ---------------------------------------------------------- */
 /* Her pages in the first row; a parent's own (Math, ELA, History) in a row of
-   their own under it, shown only to a parent's account. */
-function renderTabs(){
+   their own under it, shown only to a parent's account. On a phone neither row
+   shows: the same two lists go in the Menu sheet instead (CSS decides which). */
+function navLists(){
   const parent=auth.role==="parent";
-  const hers=VIEWS.filter(v=>!v.hidden && !v.parent);
-  const mine=parent ? VIEWS.filter(v=>v.parent || (v.hidden && v.parentTab)) : [];
+  return {
+    hers: VIEWS.filter(v=>!v.hidden && !v.parent),
+    mine: parent ? VIEWS.filter(v=>v.parent || (v.hidden && v.parentTab)) : [],
+  };
+}
+
+function renderTabs(){
+  const {hers, mine}=navLists();
   fillTabs(document.getElementById("viewtabs"), hers, null);
   const second=document.getElementById("parenttabs");
   second.hidden=!mine.length;
   fillTabs(second, mine, "Teaching");
+  const view=VIEWS.find(v=>v.id===currentView)||VIEWS[0];
+  document.getElementById("navname").textContent=view.tab;
+  fillMenu(hers, mine);
   // The sticky header is taller with the second row; what sticks beneath it
   // (a plan's side column) reads its height from here.
   const nav=document.querySelector("nav");
   if(nav.offsetHeight) document.documentElement.style.setProperty("--navh", nav.offsetHeight+"px");
+}
+
+function goView(id){
+  currentView=id;
+  location.hash=id;
+  render();
+  window.scrollTo({top:0,behavior:"instant"});
 }
 
 function fillTabs(host, tabs, label){
@@ -5410,15 +5718,79 @@ function fillTabs(host, tabs, label){
     b.dataset.view=v.id;
     b.setAttribute("role","tab");
     b.setAttribute("aria-selected",String(v.id===currentView));
-    b.addEventListener("click",()=>{
-      currentView=v.id;
-      location.hash=v.id;
-      render();
-      window.scrollTo({top:0,behavior:"instant"});
-    });
+    b.addEventListener("click",()=>goView(v.id));
     host.appendChild(b);
   });
 }
+
+/* The Menu sheet. Redrawn only when the list itself changes, so the minute's
+   refresh can't take focus out from under someone choosing. */
+function fillMenu(hers, mine){
+  const host=document.getElementById("menulist");
+  const sig=hers.concat(mine).map(v=>v.id).join(",");
+  if(host.dataset.sig!==sig){
+    host.innerHTML="";
+    [["School",hers],["Teaching",mine]].forEach(([label, list])=>{
+      if(!list.length) return;
+      host.appendChild(el("div","mgroup",label));
+      list.forEach(v=>{
+        const b=el("button","mitem",v.tab);
+        b.type="button";
+        b.dataset.view=v.id;
+        b.addEventListener("click",()=>{ closeMenu(false); goView(v.id); });
+        host.appendChild(b);
+      });
+    });
+    host.dataset.sig=sig;
+  }
+  host.querySelectorAll(".mitem").forEach(b=>{
+    if(b.dataset.view===currentView) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
+  });
+}
+
+function menuIsOpen(){ return !document.getElementById("menusheet").hidden; }
+
+function openMenu(){
+  const sheet=document.getElementById("menusheet");
+  sheet.hidden=false;
+  document.getElementById("menubtn").setAttribute("aria-expanded","true");
+  document.body.classList.add("menuopen");
+  const at=sheet.querySelector('.mitem[aria-current="page"]')||sheet.querySelector(".mitem");
+  if(at) at.focus();
+}
+
+function closeMenu(refocus){
+  if(!menuIsOpen()) return;
+  document.getElementById("menusheet").hidden=true;
+  const btn=document.getElementById("menubtn");
+  btn.setAttribute("aria-expanded","false");
+  document.body.classList.remove("menuopen");
+  if(refocus) btn.focus();
+}
+
+(function wireMenu(){
+  const sheet=document.getElementById("menusheet");
+  document.getElementById("menubtn").addEventListener("click",()=>{
+    if(menuIsOpen()) closeMenu(true); else openMenu();
+  });
+  sheet.addEventListener("click",ev=>{ if(ev.target.closest("[data-close]")) closeMenu(true); });
+  // Escape closes; Tab stays inside the sheet while it's open.
+  document.addEventListener("keydown",ev=>{
+    if(!menuIsOpen()) return;
+    if(ev.key==="Escape"){ ev.preventDefault(); closeMenu(true); return; }
+    if(ev.key!=="Tab") return;
+    const stops=[...sheet.querySelectorAll("button")];
+    const first=stops[0], last=stops[stops.length-1];
+    if(ev.shiftKey && document.activeElement===first){ ev.preventDefault(); last.focus(); }
+    else if(!ev.shiftKey && document.activeElement===last){ ev.preventDefault(); first.focus(); }
+  });
+  // Turned to landscape, or a window widened past the phone layout: the tabs
+  // are back, so the sheet goes.
+  const wide=window.matchMedia("(min-width:768px)");
+  const onWide=()=>{ if(wide.matches) closeMenu(false); };
+  if(wide.addEventListener) wide.addEventListener("change", onWide);
+})();
 
 function render(){
   const view=VIEWS.find(v=>v.id===currentView)||VIEWS[0];
@@ -5429,6 +5801,7 @@ function render(){
   // Nothing but the sign-in until this browser is signed in.
   if(auth.state!=="in"){
     setLandscape(false);
+    closeMenu(false);
     nav.style.display="none";
     document.getElementById("foot").textContent="";
     host.innerHTML="";
@@ -5437,6 +5810,7 @@ function render(){
   }
   nav.style.display="";
   renderTabs();
+  host.classList.toggle("log", view.id==="log");
   // The Course Map prints as a landscape document; nothing else does.
   setLandscape(view.id==="map");
 
@@ -5448,6 +5822,9 @@ function render(){
   // Coming to a lesson plan reads it again, so an edit made a moment ago shows.
   if(lesson && lastShown!==view.id)
     loadPlan(lesson).then(()=>{ if(currentView===lesson.id) render(); });
+  // Coming to the Log reads it again too.
+  if(view.id==="log" && lastShown!=="log" && logState.state==="ok")
+    loadLog().then(()=>{ if(currentView==="log") render(); });
   lastShown=view.id;
 
   if(view.id==="today")        renderToday(host);
@@ -5455,6 +5832,7 @@ function render(){
   else if(view.id==="reading") renderReading(host);
   else if(view.id==="wins")    renderWins(host);
   else if(view.id==="links")   renderLinks(host);
+  else if(view.id==="log")     renderLog(host);
   else if(view.id==="map")     renderCourseMap(host);
   else if(view.id==="math")    renderMath(host);
   else if(lesson){
@@ -5480,6 +5858,12 @@ function render(){
 
   const f=document.getElementById("foot");
   if(lesson){ f.textContent=planFoot(lesson); return; }
+  if(view.id==="log"){
+    f.textContent = logState.state!=="ok" ? ""
+      : logState.cached ? "No connection — showing the last saved copy. The vault is the official record."
+      : "A read-only copy of the vault's log, which is the official record · updates on its own.";
+    return;
+  }
   if(view.needs===null){
     // Not a sheet tab — the foot follows the Supabase read instead.
     f.textContent = cnn.state!=="ok" ? ""
@@ -5500,7 +5884,7 @@ async function refresh(){
   // borrow its colours. Supabase loads beside the sheet tabs and never throws,
   // so it can't hold any of them up.
   await Promise.all([load("plan"), load("reading"), load("wins"), load("map"),
-                     load("activities"), load("links"), loadCnn10(), loadDay(shownDay||today()), loadPages(),
+                     load("activities"), load("links"), loadCnn10(), loadDay(shownDay||today()), loadPages(), loadLog(),
                      PLANS[currentView] ? loadPlan(PLANS[currentView]) : null]);
   if(auth.state!=="in") return;             // signed out while that was on its way
   planModel=null; planError=null;

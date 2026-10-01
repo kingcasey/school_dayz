@@ -13,18 +13,24 @@ intent; the app is record.** The whole page sits behind one family sign-in.
 | **Reading** — reading now / to read / finished | `reading` tab | built |
 | **Wins** — accomplishments, by year | `wins` tab | built |
 | **CNN 10** — daily line and weekly current-events report | Supabase, signed in | built |
+| **Log** — her daily and weekly notes, read-only | the vault's Log folder, via Supabase | built |
 | **Course Map** — 8th to 12th, against three Florida yardsticks | `map` + `activities` tabs | built |
 | **Links** — work samples and other links, by group | `links` tab | built |
 | **ELA** — the year's literature plan, parent only | the vault's plan, via a private Supabase bucket | built |
 | **History** — the year's U.S. History plan, parent only | the same, a second file | built |
 
 Plain HTML/CSS/JS in `index.html`. No framework, no npm. Views are linkable:
-`#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#map`, `#links` — the hashes are
+`#today`, `#plan`, `#reading`, `#wins`, `#cnn10`, `#log`, `#map`, `#links` — the hashes are
 fixed, so tab order can change without breaking a bookmark. One more page,
 `#math`, has no tab: it's for whoever works through math with her (below).
 `#ela` and `#history` have tabs only for a parent's account (below): a
 parent sees a second, smaller row of tabs, *Teaching* — Math, ELA, History —
 under hers, which stays as it is.
+
+**On a phone** (narrower than 768px) neither row shows: the nav is the page's
+name and a **Menu** button, which opens every page in one list — *School*, and
+for a parent *Teaching*. An iPad or laptop keeps the rows. Both are drawn from
+the one `VIEWS` list in `index.html`, so a new page is added once.
 
 **Every view asks for the family sign-in first**, once per browser. Anyone
 helping on the day needs it on their device too. Signing out (at the foot of
@@ -743,6 +749,93 @@ To uninstall it, stop it as above, then:
 ```bash
 rm ~/Library/LaunchAgents/local.schooldayz.export-day.plist
 ```
+
+## The Log
+
+`#log` shows her log — the notes in the Log folder of her school year in the
+vault — read-only, to both accounts. **The vault is the official record**; this
+is a copy of it, and nothing on the page can change it.
+
+Two kinds of note, both kept for good:
+
+| file | what | dated by |
+|---|---|---|
+| `YYYY-MM-DD.md` | a day (to 2026-10-02) | that day |
+| `YYYY-MM-DD week.md` | a week (from 2026-10-05) | that week's Monday |
+
+The page groups them by week, newest first; a week of daily notes has a
+heading over its days, and a weekly note is its own card. The newest note
+opens; tap any other to open it. The frontmatter is never shown — only its
+`status` is used, as a tag and the card's left edge:
+
+| status | tag |
+|---|---|
+| `partial`, a day, today | *Partial* (ochre) |
+| `partial`, a week, up to its Friday | *In progress* (ochre) |
+| `partial`, once its day or week is over | *Still partial* (red), and listed at the top if it's from the last two weeks |
+| `complete` | *Complete* (navy) |
+| none | no tag |
+
+Days with no note show nothing.
+
+### Setting it up
+
+1. Run `supabase/log.sql` in the Supabase SQL editor.
+2. Add two lines to `scripts/.env` (gitignored — both have her name in them,
+   and the repo is public):
+   - `LOG_DIR=` the full path of the Log folder
+   - `REDACT_NAMES=` her first name, and any fuller form of it, comma-separated.
+     Each is shown as "B" — whole words, any case — before the note leaves the
+     Mac, so her name never reaches Supabase. The script won't start without it.
+3. Send everything once: `node scripts/publish-log.mjs --once`
+4. Install the watcher (below).
+
+### Publishing from the vault
+
+`scripts/publish-log.mjs` lists the Log folder every two seconds and uploads a
+note a few seconds after it stops changing — so the 6:20 PM log and each
+evening update show within seconds, as do edits made by hand in Obsidian. It
+opens only files named like a note, never reads anything else in the vault,
+and never writes there. A note deleted or renamed in the vault is deleted from
+the table too; a folder that suddenly lists nothing (iCloud having a moment)
+deletes nothing, and a note iCloud has offloaded counts as still there.
+
+It runs at login as a launchd agent. To install it:
+
+```bash
+cp scripts/launchd/local.schooldayz.publish-log.plist ~/Library/LaunchAgents/
+```
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.schooldayz.publish-log.plist
+```
+
+Its log is `~/Library/Logs/school-dayz-log.log`:
+
+```bash
+tail -f ~/Library/Logs/school-dayz-log.log
+```
+
+After changing `scripts/.env`, restart it:
+
+```bash
+launchctl kickstart -k gui/$(id -u)/local.schooldayz.publish-log
+```
+
+To stop it until the next login:
+
+```bash
+launchctl bootout gui/$(id -u)/local.schooldayz.publish-log
+```
+
+To uninstall it, stop it as above, then:
+
+```bash
+rm ~/Library/LaunchAgents/local.schooldayz.publish-log.plist
+```
+
+As with the literature watcher, if the log says macOS is blocking iCloud Drive,
+give `/opt/homebrew/bin/node` Full Disk Access.
 
 ## When a tab is missing or empty
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Runs scripts/publish-log.mjs at login and keeps it running.
+  Install, stop and uninstall: see "The Log" in the README.
+  Log: ~/Library/Logs/school-dayz-log.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.schooldayz.publish-log</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/caseyking/Repos/school_dayz/scripts/publish-log.mjs</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/caseyking/Repos/school_dayz/scripts</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>/Users/caseyking/Library/Logs/school-dayz-log.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/caseyking/Library/Logs/school-dayz-log.log</string>
+</dict>
+</plist>
